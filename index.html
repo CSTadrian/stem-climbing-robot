@@ -3,398 +3,469 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AI Robot Gesture Arena - Arcade Edition</title>
-    <!-- TensorFlow.js & Teachable Machine Libraries -->
+    <title>AI Robot Hand-Dance Arena</title>
     <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@latest/dist/tf.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@teachablemachine/image@latest/dist/teachablemachine-image.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
     <style>
         :root {
-            --bg-dark: #090d16;
-            --card-dark: #131a29;
-            --neon-blue: #00e5ff;
-            --neon-green: #00ff88;
-            --neon-yellow: #ffb700;
-            --neon-red: #ff3366;
-            --text-main: #f8fafc;
-            --text-muted: #64748b;
+            --neon-pink: #ff007f;
+            --neon-blue: #00f0ff;
+            --neon-yellow: #ffe600;
+            --neon-green: #00ff66;
+            --bg-dark: #0d0e1b;
+            --card-bg: rgba(26, 29, 58, 0.85);
         }
 
         * { box-sizing: border-box; }
         body {
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-            background: radial-gradient(circle at top, #1e1b4b 0%, var(--bg-dark) 100%);
-            color: var(--text-main);
             margin: 0;
-            padding: 16px;
+            padding: 12px;
+            font-family: 'Impact', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background: radial-gradient(circle at center, #1b1e3f 0%, var(--bg-dark) 100%);
+            color: #ffffff;
             min-height: 100vh;
+            overflow-x: hidden;
         }
 
-        .arena-container {
-            max-width: 1080px;
-            margin: 0 auto;
-            display: flex;
-            flex-direction: column;
-            gap: 16px;
-        }
-
-        /* Top Config Strip */
-        .config-panel {
-            background: rgba(19, 26, 41, 0.85);
-            backdrop-filter: blur(8px);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            border-radius: 12px;
-            padding: 12px 18px;
-            display: grid;
-            grid-template-columns: 1fr 1fr 1fr 1.5fr;
-            gap: 10px;
-            align-items: center;
-        }
-        input, select, textarea {
-            background: #0b0f19;
-            border: 1px solid #243048;
-            color: #fff;
+        /* 頂部導師設定抽屜 (收納工程雜項，把畫面還給學生) */
+        details.teacher-dock {
+            background: #111428;
+            border: 1px dashed #343b68;
+            border-radius: 8px;
             padding: 8px 12px;
-            border-radius: 6px;
-            font-size: 13px;
+            margin-bottom: 12px;
+            font-family: sans-serif;
+            font-size: 12px;
+        }
+        details.teacher-dock summary {
+            cursor: pointer;
+            color: #8b95c9;
+            font-weight: bold;
+        }
+        .config-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+            gap: 8px;
+            margin-top: 8px;
+        }
+        input, select {
+            background: #080914;
+            border: 1px solid #3d4679;
+            color: #fff;
+            padding: 6px 10px;
+            border-radius: 4px;
+            font-size: 12px;
             width: 100%;
         }
-        .btn-row {
-            grid-column: span 4;
-            display: flex;
-            gap: 10px;
-            margin-top: 4px;
-        }
-        button {
-            background: linear-gradient(135deg, #2563eb, #1d4ed8);
-            color: white;
+        .btn-setup {
+            background: #2b3566;
             border: none;
-            padding: 10px 18px;
-            border-radius: 8px;
-            font-weight: 700;
-            font-size: 13px;
+            color: #fff;
+            padding: 6px 10px;
+            border-radius: 4px;
             cursor: pointer;
-            transition: all 0.2s;
-            box-shadow: 0 2px 10px rgba(37, 99, 235, 0.3);
-        }
-        button:hover { transform: translateY(-1px); filter: brightness(1.1); }
-        button:disabled { background: #334155; color: #64748b; cursor: not-allowed; box-shadow: none; }
-        button.btn-start {
-            background: linear-gradient(135deg, #059669, var(--neon-green));
-            color: #042f2e;
-            font-size: 15px;
-            flex-grow: 1;
+            font-weight: bold;
         }
 
-        /* Rhythm Game Arcade Arena */
-        .stage-card {
-            background: rgba(19, 26, 41, 0.9);
-            border: 1px solid #1e293b;
-            border-radius: 16px;
-            padding: 20px;
-            position: relative;
-            overflow: hidden;
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+        /* 遊戲主舞台佈局 */
+        .arcade-grid {
+            display: grid;
+            grid-template-columns: 1fr 200px;
+            gap: 16px;
+            max-width: 1100px;
+            margin: 0 auto;
         }
 
-        .score-hud {
+        /* 左側主擂台 */
+        .main-arena {
+            background: var(--card-bg);
+            border: 2px solid #2e366b;
+            border-radius: 20px;
+            padding: 16px 20px;
+            box-shadow: 0 0 30px rgba(0, 240, 255, 0.15);
+            display: flex;
+            flex-direction: column;
+            gap: 14px;
+        }
+
+        /* 街機 HUD (計分、連擊與倒數) */
+        .hud-row {
             display: flex;
             justify-content: space-between;
-            align-items: flex-end;
-            margin-bottom: 12px;
-            border-bottom: 1px solid #1e293b;
-            padding-bottom: 8px;
+            align-items: center;
         }
-        .score-value {
-            font-size: 38px;
-            font-weight: 900;
-            color: var(--neon-green);
-            text-shadow: 0 0 12px rgba(0, 255, 136, 0.4);
+        .combo-badge {
+            font-size: 28px;
+            color: var(--neon-yellow);
+            text-shadow: 0 0 15px rgba(255, 230, 0, 0.8);
+            letter-spacing: 1px;
+            transform: scale(1);
+            transition: transform 0.1s ease-out;
+        }
+        .combo-badge.pop { transform: scale(1.35) rotate(-3deg); }
+        .score-pill {
+            background: linear-gradient(90deg, #ff007f, #7928ca);
+            padding: 6px 20px;
+            border-radius: 30px;
+            font-size: 22px;
+            letter-spacing: 1px;
+            box-shadow: 0 0 15px rgba(255, 0, 127, 0.5);
         }
 
-        /* Kinect / Just Dance Style Gesture Ribbon */
-        .ribbon-track-wrapper {
-            background: #0b0f19;
-            border-radius: 14px;
-            padding: 16px;
-            border: 2px solid #1e293b;
+        /* 節奏光軌 (Dance Central / Just Dance 橫向流動佇列) */
+        .track-box {
+            background: #090a16;
+            border: 3px solid #232850;
+            border-radius: 16px;
+            padding: 16px 12px;
             position: relative;
+            overflow: hidden;
         }
-        .ribbon-track {
+        .track-cards {
             display: flex;
             align-items: center;
-            gap: 16px;
-            min-height: 180px;
+            gap: 14px;
         }
-
-        /* Action Flashcard */
-        .flashcard {
-            background: #141e33;
-            border: 2px solid #243452;
-            border-radius: 12px;
-            min-width: 120px;
-            height: 160px;
+        
+        /* 動作卡片 */
+        .action-card {
+            background: #161936;
+            border: 2px solid #333d73;
+            border-radius: 14px;
+            min-width: 105px;
+            height: 145px;
             display: flex;
             flex-direction: column;
             align-items: center;
             justify-content: center;
-            transition: all 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
             position: relative;
+            transition: all 0.25s cubic-bezier(0.175, 0.885, 0.32, 1.275);
         }
-        .flashcard .symbol { font-size: 52px; line-height: 1; margin-bottom: 6px; }
-        .flashcard .gesture-name { font-size: 15px; font-weight: 800; letter-spacing: 0.5px; }
-        
-        /* The Reminder Row: Number in very small subtle size */
-        .flashcard .number-reminder {
+        .action-card .emoji { font-size: 48px; line-height: 1; margin-bottom: 6px; }
+        .action-card .c-name { font-size: 16px; letter-spacing: 0.5px; }
+        .action-card .sub-num {
+            font-family: sans-serif;
             font-size: 11px;
-            color: #94a3b8;
-            font-weight: 700;
+            font-weight: 800;
+            color: #64748b;
+            margin-top: 4px;
             background: rgba(255, 255, 255, 0.08);
             padding: 2px 8px;
-            border-radius: 8px;
-            margin-top: 6px;
-            letter-spacing: 0.5px;
+            border-radius: 6px;
         }
 
-        /* The Active "HIT ZONE" Card */
-        .flashcard.active-target {
-            min-width: 150px;
-            height: 180px;
-            background: linear-gradient(180deg, #1e293b 0%, #0f172a 100%);
-            border: 3px solid var(--neon-blue);
-            transform: scale(1.05);
-            box-shadow: 0 0 24px rgba(0, 229, 255, 0.35);
+        /* 命中專區 (HIT ZONE - 正在比對的大卡片) */
+        .action-card.active-target {
+            min-width: 135px;
+            height: 165px;
+            background: linear-gradient(180deg, #2a1548 0%, #151a3c 100%);
+            border: 3px solid var(--neon-pink);
+            box-shadow: 0 0 25px rgba(255, 0, 127, 0.6);
+            transform: scale(1.06);
             z-index: 2;
+            animation: pulse-border 1s infinite alternate;
         }
-        .flashcard.active-target .symbol { font-size: 64px; }
-        .flashcard.active-target::before {
-            content: "⚡ HIT NOW";
+        .action-card.active-target .emoji { font-size: 62px; }
+        .action-card.active-target::before {
+            content: "🔥 MATCH NOW";
             position: absolute;
             top: -12px;
-            background: var(--neon-blue);
-            color: #000;
-            font-size: 10px;
+            background: var(--neon-pink);
+            color: #fff;
+            font-size: 11px;
             font-weight: 900;
-            padding: 2px 8px;
+            padding: 2px 10px;
             border-radius: 20px;
-            box-shadow: 0 0 8px var(--neon-blue);
+            box-shadow: 0 0 10px var(--neon-pink);
         }
-        .flashcard.active-target .number-reminder {
-            background: rgba(0, 229, 255, 0.2);
-            color: var(--neon-blue);
+        .action-card.upcoming { opacity: 0.6; transform: scale(0.92); }
+
+        @keyframes pulse-border {
+            0% { border-color: var(--neon-pink); box-shadow: 0 0 15px rgba(255, 0, 127, 0.4); }
+            100% { border-color: var(--neon-blue); box-shadow: 0 0 25px rgba(0, 240, 255, 0.7); }
         }
 
-        .flashcard.upcoming { opacity: 0.65; transform: scale(0.92); }
-
-        /* Timer Indicator Strip */
-        .timer-strip-bg {
-            height: 6px;
-            background: #1e293b;
+        /* 倒數能量條 */
+        .energy-bar-bg {
+            height: 8px;
+            background: #1a1e3b;
             border-radius: 4px;
             margin-top: 14px;
             overflow: hidden;
         }
-        .timer-strip-bar {
+        .energy-bar-fill {
             height: 100%;
             width: 100%;
             background: var(--neon-blue);
             transition: width 0.05s linear;
         }
 
-        /* Feedback Popup Alert */
-        #feedback-toast {
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%) scale(0.8);
-            font-size: 40px;
-            font-weight: 900;
-            opacity: 0;
-            pointer-events: none;
-            transition: all 0.25s ease-out;
-            z-index: 10;
-            text-shadow: 0 0 20px rgba(0,0,0,0.8);
-        }
-        #feedback-toast.show {
-            opacity: 1;
-            transform: translate(-50%, -50%) scale(1.1);
-        }
-
-        /* Dual Column: Video & Prediction + Data Logging */
-        .bottom-grid {
+        /* 下半部：鏡頭輸入 + 信心度計量器 */
+        .bottom-shelf {
             display: grid;
-            grid-template-columns: 360px 1fr;
-            gap: 16px;
-        }
-        .subcard {
-            background: rgba(19, 26, 41, 0.85);
-            border: 1px solid #1e293b;
-            border-radius: 12px;
-            padding: 14px;
+            grid-template-columns: 240px 1fr;
+            gap: 14px;
+            align-items: center;
         }
         #webcam-container {
-            width: 320px;
-            height: 240px;
+            width: 240px;
+            height: 160px;
             background: #000;
-            border-radius: 8px;
+            border: 2px solid #2e366b;
+            border-radius: 12px;
             overflow: hidden;
-            margin: 0 auto 10px auto;
-            border: 1px solid #243452;
         }
-        .live-meter-badge {
+        .meters-list {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 6px;
+            font-family: sans-serif;
+        }
+        .meter-row {
+            background: #10132b;
+            border: 1px solid #232a54;
+            border-radius: 6px;
+            padding: 6px 10px;
+            font-size: 12px;
             display: flex;
             justify-content: space-between;
-            background: #0b0f19;
-            padding: 4px 8px;
-            border-radius: 4px;
-            margin-bottom: 4px;
-            font-size: 12px;
-            border: 1px solid #1e293b;
         }
-        .live-meter-badge.matched {
-            background: rgba(0, 255, 136, 0.15);
+        .meter-row.hot {
+            background: rgba(0, 255, 102, 0.15);
             border-color: var(--neon-green);
             color: var(--neon-green);
             font-weight: bold;
         }
-        .log-box {
-            height: 100px;
-            background: #06090e;
-            border-radius: 6px;
-            padding: 8px;
-            font-family: monospace;
-            font-size: 11px;
-            color: #38bdf8;
-            overflow-y: auto;
+
+        /* 右側：攀爬高度塔 (Visual Climbing Tower) */
+        .climb-tower {
+            background: var(--card-bg);
+            border: 2px solid #2e366b;
+            border-radius: 20px;
+            padding: 16px 12px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            box-shadow: 0 0 20px rgba(0,0,0,0.4);
         }
+        .tower-shaft {
+            flex-grow: 1;
+            width: 6px;
+            background: #343b68;
+            border-radius: 3px;
+            margin: 12px 0;
+            position: relative;
+            display: flex;
+            flex-direction: column-reverse;
+        }
+        .robot-climber {
+            position: absolute;
+            left: 50%;
+            transform: translateX(-50%);
+            bottom: 0%;
+            font-size: 38px;
+            transition: bottom 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+            filter: drop-shadow(0 0 8px #00f0ff);
+        }
+
+        /* 命中飄字動畫 (PERFECT!) */
+        #hit-splash {
+            position: absolute;
+            top: 40%;
+            left: 50%;
+            transform: translate(-50%, -50%) scale(0);
+            font-size: 46px;
+            font-weight: 900;
+            letter-spacing: 2px;
+            pointer-events: none;
+            transition: all 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            z-index: 20;
+        }
+        #hit-splash.pop-in {
+            transform: translate(-50%, -50%) scale(1.15);
+        }
+
+        /* 大按鈕 */
+        .btn-huge-start {
+            background: linear-gradient(135deg, #00f0ff, #00ff66);
+            color: #032117;
+            border: none;
+            border-radius: 12px;
+            padding: 14px 24px;
+            font-size: 20px;
+            font-weight: 900;
+            letter-spacing: 1px;
+            cursor: pointer;
+            box-shadow: 0 0 20px rgba(0, 240, 255, 0.5);
+            transition: transform 0.1s;
+        }
+        .btn-huge-start:hover { transform: scale(1.03); }
+        .btn-huge-start:disabled { background: #3d4679; color: #727ca8; cursor: not-allowed; box-shadow: none; }
     </style>
 </head>
 <body>
 
-<div class="arena-container">
-    <!-- Configuration / Header Panel -->
-    <div class="config-panel">
-        <input type="text" id="groupId" placeholder="Group (e.g. Group-01)">
-        <input type="text" id="studentId" placeholder="Student ID (e.g. S01)">
-        <select id="conditionType">
-            <option value="XAI_GradCAM">Group A (XAI Visuals)</option>
-            <option value="No_XAI_Blackbox">Group B (Black-Box)</option>
-        </select>
-        <input type="text" id="modelUrl" placeholder="GTM Share Link (https://teachablemachine.withgoogle.com/models/.../)">
-        
-        <div class="btn-row">
-            <button onclick="connectSerial()">1. Connect Tx micro:bit (USB)</button>
-            <button onclick="initAI()" id="btn-ai">2. Load Model & Webcam</button>
-            <button onclick="startGame()" id="btn-start" class="btn-start" disabled>3. START GAME</button>
+    <!-- 頂部：導師快速設定 (點擊展開，平時不打擾學生) -->
+    <details class="teacher-dock">
+        <summary>⚙️ 導師與系統設定 (點擊展開 / 收起)</summary>
+        <div class="config-grid">
+            <input type="text" id="groupId" placeholder="組別 (Group-01)">
+            <input type="text" id="studentId" placeholder="學生代號 (S01)">
+            <select id="conditionType">
+                <option value="XAI_GradCAM">實驗組 (Grad-CAM 熱力圖)</option>
+                <option value="No_XAI_Blackbox">對照組 (無解釋黑盒)</option>
+            </select>
+            <input type="text" id="modelUrl" placeholder="貼上 Teachable Machine 網址">
+            <button class="btn-setup" onclick="connectSerial()">1. 駁 Tx micro:bit (USB)</button>
+            <button class="btn-setup" onclick="initAI()" id="btn-load-ai">2. 啟動鏡頭與模型</button>
+        </div>
+    </details>
+
+    <!-- 街機擂台 -->
+    <div class="arcade-grid">
+        <div class="main-arena">
+            <!-- HUD 頂欄 -->
+            <div class="hud-row">
+                <div class="combo-badge" id="combo-display">0x COMBO</div>
+                <div class="score-pill">攀爬得分：<span id="score-counter">0</span></div>
+            </div>
+
+            <!-- 動作流動軌道 (Rhythm Track) -->
+            <div class="track-box">
+                <div class="track-cards" id="queue-ribbon">
+                    <!-- 動態渲染卡片：最左側為 HIT ZONE，右側為預告 -->
+                </div>
+                <div class="energy-bar-bg">
+                    <div class="energy-bar-fill" id="energy-bar"></div>
+                </div>
+                <div id="hit-splash">PERFECT!</div>
+            </div>
+
+            <!-- 下方狀態區 -->
+            <div class="bottom-shelf">
+                <div id="webcam-container"></div>
+                <div>
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                        <button class="btn-huge-start" id="btn-start" onclick="startGame()" disabled>🚀 開始挑戰！</button>
+                        <button onclick="uploadDataToDrive()" style="background:#1a214d; color:#8ea0e8; border:1px solid #343f80; border-radius:6px; padding:6px 10px; cursor:pointer; font-family:sans-serif; font-size:11px;">
+                            📤 上傳日誌至 Drive
+                        </button>
+                    </div>
+                    <div class="meters-list" id="meters-container"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 右側：攀爬高度塔 -->
+        <div class="climb-tower">
+            <div style="font-size: 28px;">🏆</div>
+            <div style="font-size: 11px; color: #8b95c9; letter-spacing: 1px;">FINISH</div>
+            <div class="tower-shaft" id="tower-shaft">
+                <div class="robot-climber" id="robot-climber">🤖</div>
+            </div>
+            <div style="font-size: 13px; color: #8b95c9;">START</div>
+            <div style="font-size: 20px;">🚩</div>
         </div>
     </div>
-
-    <!-- Main Arcade Arena (Xbox Kinect / Just Dance Style) -->
-    <div class="stage-card">
-        <div class="score-hud">
-            <div>
-                <span style="color: var(--text-muted); font-size: 12px; font-weight: bold; text-transform: uppercase;">Climbing Distance</span>
-                <div class="score-value"><span id="score-counter">0</span> <span style="font-size: 18px; color: #94a3b8;">STEPS</span></div>
-            </div>
-            <div style="text-align: right;">
-                <span style="color: var(--text-muted); font-size: 12px; font-weight: bold;">TIME REMAINING</span>
-                <div id="clock-display" style="font-size: 24px; font-weight: 800; color: var(--neon-blue);">3.0s</div>
-            </div>
-        </div>
-
-        <div class="ribbon-track-wrapper">
-            <div class="ribbon-track" id="queue-ribbon">
-                <!-- Dynamically populated: 1 Active Target + 4 Upcoming -->
-            </div>
-            <div class="timer-strip-bg">
-                <div class="timer-strip-bar" id="timer-bar"></div>
-            </div>
-            <div id="feedback-toast">PERFECT!</div>
-        </div>
-    </div>
-
-    <!-- Bottom: Live Camera Stream & Reflection / Cloud Sync -->
-    <div class="bottom-grid">
-        <!-- Left: Camera Preview & Confidence -->
-        <div class="subcard">
-            <h4 style="margin: 0 0 8px 0; font-size: 13px; color: #94a3b8;">PLAYER MOTION TRACKING</h4>
-            <div id="webcam-container"></div>
-            <div id="meter-container"></div>
-        </div>
-
-        <!-- Right: Event Log & Reflection Upload -->
-        <div class="subcard" style="display: flex; flex-direction: column; justify-content: space-between;">
-            <div>
-                <h4 style="margin: 0 0 8px 0; font-size: 13px; color: #94a3b8;">ACTION LOGS</h4>
-                <div class="log-box" id="log-box"></div>
-            </div>
-            <div style="margin-top: 10px;">
-                <textarea id="studentComments" rows="2" placeholder="Student reflection / comments on model accuracy..."></textarea>
-                <button onclick="uploadDataToDrive()" style="width: 100%; margin-top: 6px; background: #059669;">
-                    📤 Submit Run Data to Drive (18VTaAPt86z7u4BCevGm96ZDF6uRdoODu)
-                </button>
-            </div>
-        </div>
-    </div>
-</div>
 
 <script>
-    // 5 Classes configuration exactly matching the project guidelines
+    // 嚴格維持 5 類定義
     const GESTURES = {
-        "Class 1": { name: "石頭", symbol: "✊", num: "No. 1" },
-        "Class 2": { name: "剪刀", symbol: "✌️", num: "No. 2" },
-        "Class 3": { name: "布",   symbol: "🖐️", num: "No. 3" },
-        "Class 4": { name: "讚好", symbol: "👍", num: "No. 4" },
-        "Class 5": { name: "待機", symbol: "🫱", num: "No. 5" }
+        "Class 1": { name: "石頭", emoji: "✊", num: "No. 1" },
+        "Class 2": { name: "剪刀", emoji: "✌️", num: "No. 2" },
+        "Class 3": { name: "布",   emoji: "🖐️", num: "No. 3" },
+        "Class 4": { name: "讚好", emoji: "👍", num: "No. 4" },
+        "Class 5": { name: "待機", emoji: "🫱", num: "No. 5" }
     };
-    const ACTIVE_TARGETS = ["Class 1", "Class 2", "Class 3", "Class 4"]; // Class 5 is reserved for neutral standby
-
+    const ACTIVE_TARGETS = ["Class 1", "Class 2", "Class 3", "Class 4"];
     const DRIVE_FOLDER_ID = "18VTaAPt86z7u4BCevGm96ZDF6uRdoODu";
     const GAS_ENDPOINT = "YOUR_GOOGLE_APPS_SCRIPT_WEB_APP_URL_HERE";
+
+    // Web Audio API 街機音效生成器 (無須加載外部 mp3，零延遲不卡頓)
+    let audioCtx = null;
+    function playSfx(type) {
+        try {
+            if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+
+            const now = audioCtx.currentTime;
+            if (type === "hit") {
+                // 清脆雙音階叮噹聲
+                osc.type = "sine";
+                osc.frequency.setValueAtTime(587.33, now); // D5
+                osc.frequency.exponentialRampToValueAtTime(880, now + 0.1); // A5
+                gain.gain.setValueAtTime(0.3, now);
+                gain.gain.exponentialRampToValueAtTime(0.001, now + 0.25);
+                osc.start(now);
+                osc.stop(now + 0.25);
+            } else if (type === "combo") {
+                // 連擊上揚琶音
+                osc.type = "triangle";
+                osc.frequency.setValueAtTime(523.25, now); // C5
+                osc.frequency.setValueAtTime(659.25, now + 0.08); // E5
+                osc.frequency.setValueAtTime(783.99, now + 0.16); // G5
+                gain.gain.setValueAtTime(0.4, now);
+                gain.gain.exponentialRampToValueAtTime(0.001, now + 0.35);
+                osc.start(now);
+                osc.stop(now + 0.35);
+            } else if (type === "miss") {
+                // 沉悶低頻報警
+                osc.type = "sawtooth";
+                osc.frequency.setValueAtTime(160, now);
+                osc.frequency.linearRampToValueAtTime(90, now + 0.2);
+                gain.gain.setValueAtTime(0.25, now);
+                gain.gain.exponentialRampToValueAtTime(0.001, now + 0.25);
+                osc.start(now);
+                osc.stop(now + 0.25);
+            }
+        } catch(e) {}
+    }
 
     let model, webcam, maxPredictions;
     let serialPort, serialWriter;
 
-    // Game state
+    // 遊戲流動變數
     let actionQueue = [];
     const QUEUE_LENGTH = 5;
-    let isGameActive = false;
-    let isCoolingDown = false;
+    let isRunning = false;
+    let isLocked = false;
     let score = 0;
+    let combo = 0;
     let roundStart = 0;
-    const ROUND_LIMIT_MS = 3000;
-    let gameLoopTimer = null;
+    const TIME_LIMIT_MS = 3000;
+    let timerLoop = null;
     let eventLogs = [];
 
-    // 1. WebSerial Connection to Transmitter micro:bit
+    // 1. 連接 WebSerial
     async function connectSerial() {
         try {
             serialPort = await navigator.serial.requestPort();
             await serialPort.open({ baudRate: 115200 });
-            const encoder = new TextEncoderStream();
-            encoder.readable.pipeTo(serialPort.writable);
-            serialWriter = encoder.writable.getWriter();
-            addLog("Serial: Tx micro:bit connected.");
+            const enc = new TextEncoderStream();
+            enc.readable.pipeTo(serialPort.writable);
+            serialWriter = enc.writable.getWriter();
+            alert("Tx micro:bit 連線成功！");
             checkReady();
-        } catch (err) {
-            addLog("Serial Error: " + err.message);
+        } catch (e) {
+            alert("Serial 連線錯誤: " + e.message);
         }
     }
 
-    // 2. Load Teachable Machine Model
+    // 2. 載入模型
     async function initAI() {
         let url = document.getElementById("modelUrl").value.trim();
-        if (!url) {
-            alert("Please paste your Teachable Machine model URL first.");
-            return;
-        }
+        if (!url) { alert("請先填寫模型連結！"); return; }
         if (!url.endsWith("/")) url += "/";
 
         try {
-            addLog("Loading AI Model...");
             model = await tmImage.load(url + "model.json", url + "metadata.json");
             maxPredictions = model.getTotalClasses();
 
-            webcam = new tmImage.Webcam(320, 240, true);
+            webcam = new tmImage.Webcam(240, 160, true);
             await webcam.setup();
             await webcam.play();
             window.requestAnimationFrame(predictLoop);
@@ -402,18 +473,18 @@
             document.getElementById("webcam-container").innerHTML = "";
             document.getElementById("webcam-container").appendChild(webcam.canvas);
 
-            const meterContainer = document.getElementById("meter-container");
-            meterContainer.innerHTML = "";
+            const mBox = document.getElementById("meters-container");
+            mBox.innerHTML = "";
             for (let i = 0; i < maxPredictions; i++) {
-                const badge = document.createElement("div");
-                badge.className = "live-meter-badge";
-                badge.id = "meter-" + i;
-                meterContainer.appendChild(badge);
+                const row = document.createElement("div");
+                row.className = "meter-row";
+                row.id = "meter-row-" + i;
+                mBox.appendChild(row);
             }
-            addLog("AI Camera tracking online.");
+            alert("Webcam 與 AI 模型就緒！");
             checkReady();
-        } catch (err) {
-            addLog("Model Error: " + err.message);
+        } catch (e) {
+            alert("模型載入失敗: " + e.message);
         }
     }
 
@@ -425,201 +496,210 @@
 
     async function predictLoop() {
         webcam.update();
-        await evaluatePrediction();
+        await evaluateTarget();
         window.requestAnimationFrame(predictLoop);
     }
 
-    // 3. Real-time Inference & Hit Detection
-    async function evaluatePrediction() {
+    // 3. 即時比對判定
+    async function evaluateTarget() {
         if (!model) return;
         const predictions = await model.predict(webcam.canvas);
 
-        let topClass = "";
-        let topConfidence = 0;
+        let topCls = "";
+        let topProb = 0;
 
         for (let i = 0; i < maxPredictions; i++) {
-            const cName = predictions[i].className;
+            const name = predictions[i].className;
             const prob = predictions[i].probability;
-            const el = document.getElementById("meter-" + i);
-            const gesture = GESTURES[cName] || { symbol: "", name: cName, num: "" };
+            const row = document.getElementById("meter-row-" + i);
+            const g = GESTURES[name] || { emoji: "", name: name, num: "" };
 
-            el.innerHTML = `<span>${gesture.symbol} ${cName} (${gesture.name})</span><span>${(prob * 100).toFixed(0)}%</span>`;
+            row.innerHTML = `<span>${g.emoji} ${g.name}</span><span>${(prob*100).toFixed(0)}%</span>`;
 
-            if (prob > topConfidence) {
-                topConfidence = prob;
-                topClass = cName;
+            if (prob > topProb) {
+                topProb = prob;
+                topCls = name;
             }
             if (prob > 0.75) {
-                el.classList.add("matched");
+                row.classList.add("hot");
             } else {
-                el.classList.remove("matched");
+                row.classList.remove("hot");
             }
         }
 
-        // Validate current target
-        if (isGameActive && !isCoolingDown && actionQueue.length > 0) {
+        // 判定 HIT ZONE
+        if (isRunning && !isLocked && actionQueue.length > 0) {
             const currentTarget = actionQueue[0];
-            if (topClass === currentTarget && topConfidence > 0.75) {
-                triggerSuccess(topClass, topConfidence);
+            if (topCls === currentTarget && topProb > 0.75) {
+                handleSuccess(topCls, topProb);
             }
         }
     }
 
-    // 4. Game Control & Xbox Style Visual Queue
+    // 4. 遊戲控制
     function startGame() {
-        isGameActive = true;
-        isCoolingDown = false;
+        isRunning = true;
+        isLocked = false;
         score = 0;
+        combo = 0;
         eventLogs = [];
-        document.getElementById("score-counter").innerText = "0";
-        document.getElementById("btn-start").disabled = true;
+        updateUIElements();
 
         actionQueue = [];
         for (let i = 0; i < QUEUE_LENGTH; i++) {
             actionQueue.push(getRandomGesture());
         }
-        renderRibbon();
-        startRoundTimer();
-        addLog("Game Started! Watch the Hit Zone.");
+        renderQueue();
+        startTimer();
     }
 
     function getRandomGesture() {
         return ACTIVE_TARGETS[Math.floor(Math.random() * ACTIVE_TARGETS.length)];
     }
 
-    function renderRibbon() {
+    function renderQueue() {
         const ribbon = document.getElementById("queue-ribbon");
         ribbon.innerHTML = "";
 
         actionQueue.forEach((clsKey, index) => {
             const g = GESTURES[clsKey];
             const card = document.createElement("div");
-            card.className = "flashcard " + (index === 0 ? "active-target" : "upcoming");
-            
+            card.className = "action-card " + (index === 0 ? "active-target" : "upcoming");
             card.innerHTML = `
-                <div class="symbol">${g.symbol}</div>
-                <div class="gesture-name">${g.name}</div>
-                <div class="number-reminder">${g.num}</div>
+                <div class="emoji">${g.emoji}</div>
+                <div class="c-name">${g.name}</div>
+                <div class="sub-num">${g.num}</div>
             `;
             ribbon.appendChild(card);
         });
     }
 
-    function startRoundTimer() {
-        clearInterval(gameLoopTimer);
+    function startTimer() {
+        clearInterval(timerLoop);
         roundStart = performance.now();
-        const bar = document.getElementById("timer-bar");
-        const clock = document.getElementById("clock-display");
+        const bar = document.getElementById("energy-bar");
 
-        gameLoopTimer = setInterval(() => {
+        timerLoop = setInterval(() => {
             const elapsed = performance.now() - roundStart;
-            const remaining = Math.max(0, ROUND_LIMIT_MS - elapsed);
-            const pct = (remaining / ROUND_LIMIT_MS) * 100;
+            const remaining = Math.max(0, TIME_LIMIT_MS - elapsed);
+            const pct = (remaining / TIME_LIMIT_MS) * 100;
 
             bar.style.width = pct + "%";
-            clock.innerText = (remaining / 1000).toFixed(1) + "s";
-
-            if (pct > 50) bar.style.background = "var(--neon-blue)";
-            else if (pct > 20) bar.style.background = "var(--neon-yellow)";
-            else bar.style.background = "var(--neon-red)";
+            if (pct > 40) bar.style.background = "var(--neon-blue)";
+            else bar.style.background = "var(--neon-pink)";
 
             if (remaining <= 0) {
-                clearInterval(gameLoopTimer);
-                triggerTimeout();
+                clearInterval(timerLoop);
+                handleTimeout();
             }
         }, 30);
     }
 
-    async function triggerSuccess(matchedClass, prob) {
-        isCoolingDown = true;
-        clearInterval(gameLoopTimer);
+    async function handleSuccess(matchedCls, prob) {
+        isLocked = true;
+        clearInterval(timerLoop);
 
         const duration = Math.round(performance.now() - roundStart);
         score++;
-        document.getElementById("score-counter").innerText = score;
-        showToast("PERFECT! ⚡", "var(--neon-green)");
-        addLog(`HIT: [${matchedClass}] in ${duration}ms (${(prob*100).toFixed(0)}%)`);
+        combo++;
 
-        // Record metrics
+        // 觸發音效與視覺
+        if (combo >= 3) {
+            playSfx("combo");
+            popSplash("🔥 " + combo + "x COMBO!", "var(--neon-yellow)");
+            // 連擊彩紙特效
+            if (typeof confetti === "function") {
+                confetti({ particleCount: 30, spread: 60, origin: { y: 0.6 } });
+            }
+        } else {
+            playSfx("hit");
+            popSplash("PERFECT! ⚡", "var(--neon-green)");
+        }
+
+        updateUIElements();
+
         eventLogs.push({
             timestamp: new Date().toISOString(),
             target: actionQueue[0],
-            matched: matchedClass,
+            matched: matchedCls,
             durationMs: duration,
             status: "HIT"
         });
 
-        // Trigger Tx micro:bit pulse forward (Sends '1\n')
+        // 透過 WebSerial 送 1\n 讓 Tx 廣播 move 爬行 0.8s
         if (serialWriter) {
-            try {
-                await serialWriter.write("1\n");
-            } catch (err) {
-                addLog("Serial Send Err: " + err.message);
-            }
+            try { await serialWriter.write("1\n"); } catch(e) {}
         }
 
-        // Shift queue forward
+        // 佇列推進
         actionQueue.shift();
         actionQueue.push(getRandomGesture());
-        renderRibbon();
+        renderQueue();
 
-        // 800ms cooldown syncs with M1 motor physical pulse
+        // 800ms 物理爬行冷卻
         setTimeout(() => {
-            isCoolingDown = false;
-            if (isGameActive) startRoundTimer();
+            isLocked = false;
+            if (isRunning) startTimer();
         }, 800);
     }
 
-    function triggerTimeout() {
-        showToast("MISS! ✖", "var(--neon-red)");
-        addLog(`MISS: [${actionQueue[0]}] Timed out`);
+    function handleTimeout() {
+        combo = 0; // 中斷連擊
+        playSfx("miss");
+        popSplash("MISS! ✖", "var(--neon-pink)");
+        updateUIElements();
 
         eventLogs.push({
             timestamp: new Date().toISOString(),
             target: actionQueue[0],
             matched: "NONE",
-            durationMs: ROUND_LIMIT_MS,
+            durationMs: TIME_LIMIT_MS,
             status: "TIMEOUT"
         });
 
         actionQueue.shift();
         actionQueue.push(getRandomGesture());
-        renderRibbon();
-        if (isGameActive) startRoundTimer();
+        renderQueue();
+        if (isRunning) startTimer();
     }
 
-    function showToast(text, color) {
-        const toast = document.getElementById("feedback-toast");
-        toast.innerText = text;
-        toast.style.color = color;
-        toast.classList.add("show");
-        setTimeout(() => toast.classList.remove("show"), 500);
+    function popSplash(text, color) {
+        const el = document.getElementById("hit-splash");
+        el.innerText = text;
+        el.style.color = color;
+        el.classList.add("pop-in");
+        setTimeout(() => el.classList.remove("pop-in"), 450);
     }
 
-    function addLog(msg) {
-        const b = document.getElementById("log-box");
-        b.innerHTML += `<div>> ${msg}</div>`;
-        b.scrollTop = b.scrollHeight;
+    function updateUIElements() {
+        document.getElementById("score-counter").innerText = score;
+        const comboEl = document.getElementById("combo-display");
+        comboEl.innerText = combo + "x COMBO";
+        comboEl.classList.add("pop");
+        setTimeout(() => comboEl.classList.remove("pop"), 120);
+
+        // 更新攀爬機械人高度 (以 15 步到頂為例)
+        const climbPct = Math.min(92, (score / 15) * 92);
+        document.getElementById("robot-climber").style.bottom = climbPct + "%";
     }
 
-    // 5. Cloud Logging to Google Drive
+    // 5. 數據上傳至 Google Drive
     async function uploadDataToDrive() {
         if (!GAS_ENDPOINT || GAS_ENDPOINT.includes("YOUR_GOOGLE_APPS_SCRIPT")) {
-            alert("Please paste your Google Apps Script endpoint URL.");
+            alert("請先填寫 Google Apps Script 網址！");
             return;
         }
 
         const payload = {
             folderId: DRIVE_FOLDER_ID,
-            groupId: document.getElementById("groupId").value || "Unassigned",
-            studentId: document.getElementById("studentId").value || "Anonymous",
+            groupId: document.getElementById("groupId").value || "G_Unknown",
+            studentId: document.getElementById("studentId").value || "S_Unknown",
             condition: document.getElementById("conditionType").value,
             score: score,
-            comments: document.getElementById("studentComments").value,
+            comments: "",
             logs: eventLogs
         };
 
-        addLog("Syncing logs to Google Drive...");
         try {
             await fetch(GAS_ENDPOINT, {
                 method: "POST",
@@ -627,11 +707,9 @@
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify(payload)
             });
-            alert("Logs saved successfully to Google Drive!");
-            addLog("Cloud sync complete.");
+            alert("挑戰日誌已成功儲存至 Google Drive！");
         } catch (err) {
-            addLog("Sync failed: " + err.message);
-            alert("Upload failed. Check network connection.");
+            alert("上傳失敗: " + err.message);
         }
     }
 </script>
