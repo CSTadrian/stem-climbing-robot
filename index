@@ -1,0 +1,283 @@
+<!DOCTYPE html>
+<html lang="zh-HK">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI 機器人手勢競技與數據收集平台</title>
+    <!-- 引入 TensorFlow.js 與 Teachable Machine -->
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@latest/dist/tf.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@teachablemachine/image@latest/dist/teachablemachine-image.min.js"></script>
+    <style>
+        :root { --primary: #2563eb; --success: #16a34a; --bg: #f8fafc; }
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: var(--bg); margin: 0; padding: 20px; }
+        .container { max-width: 900px; margin: 0 auto; display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+        .card { background: white; padding: 20px; border-radius: 12px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); }
+        .full-width { grid-column: span 2; }
+        button { background: var(--primary); color: white; border: none; padding: 10px 16px; border-radius: 6px; cursor: pointer; font-weight: 600; margin-right: 8px; }
+        button:disabled { background: #94a3b8; cursor: not-allowed; }
+        input, textarea, select { width: 100%; padding: 8px; margin: 8px 0; box-sizing: border-box; border: 1px solid #cbd5e1; border-radius: 6px; }
+        #webcam-container { width: 320px; height: 240px; border-radius: 8px; overflow: hidden; background: #000; margin: 10px auto; }
+        #target-box { font-size: 42px; font-weight: bold; color: var(--primary); text-align: center; padding: 15px; background: #eff6ff; border-radius: 8px; border: 2px dashed #93c5fd; }
+        .log-box { height: 120px; overflow-y: scroll; font-family: monospace; font-size: 12px; background: #f1f5f9; padding: 10px; border-radius: 6px; }
+        .badge { display: inline-block; padding: 4px 8px; border-radius: 4px; font-size: 12px; font-weight: bold; background: #e2e8f0; margin-right: 5px; }
+        .active-prediction { background: #dcfce7; color: #166534; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <!-- 頂部：學生基本資料與系統連線 -->
+    <div class="card full-width">
+        <h2>🤖 STEM AI 手勢競技控制台</h2>
+        <div style="display: flex; gap: 15px;">
+            <input type="text" id="groupId" placeholder="組別編號 (e.g. Group-01)">
+            <input type="text" id="studentId" placeholder="學生代號 (e.g. S01)">
+            <select id="conditionType">
+                <option value="XAI_GradCAM">實驗組 (有 Grad-CAM 熱力圖)</option>
+                <option value="No_XAI_Blackbox">對照組 (無 XAI / 黑盒)</option>
+            </select>
+        </div>
+        <div style="margin-top: 10px;">
+            <input type="text" id="modelUrl" placeholder="請貼上 Teachable Machine 模型分享連結 (https://teachablemachine.withgoogle.com/models/.../)">
+            <button onclick="connectSerial()">1. 連接發射端 micro:bit</button>
+            <button onclick="initAI()" id="btn-load-ai">2. 載入模型並開啟鏡頭</button>
+            <button onclick="startGame()" id="btn-start" disabled>3. 開始比賽 (QTE 衝刺)</button>
+        </div>
+    </div>
+
+    <!-- 左側：視覺辨識區 -->
+    <div class="card">
+        <h3>即時手勢偵測</h3>
+        <div id="webcam-container"></div>
+        <div id="label-container" style="display: flex; flex-wrap: wrap; gap: 6px;"></div>
+    </div>
+
+    <!-- 右側：遊戲 QTE 互動區 -->
+    <div class="card">
+        <h3>當前目標題目</h3>
+        <div id="target-box">等待開始</div>
+        <p>剩餘時間：<span id="timer-val" style="color: red; font-weight: bold;">--</span> 秒</p>
+        <p>累積成功推進：<span id="score-val" style="font-weight: bold;">0</span> 次</p>
+        <h4>操作日誌</h4>
+        <div class="log-box" id="log-console"></div>
+    </div>
+
+    <!-- 底部：回饋反思與數據上傳區 -->
+    <div class="card full-width">
+        <h3>學生學習回饋與除錯反思 (Comments & Reflection)</h3>
+        <p style="color: #64748b; font-size: 14px;">（本部分留空，供後續評估題目接入）</p>
+        <textarea id="studentComments" rows="3" placeholder="在此輸入你的除錯心得或遇到的困難..."></textarea>
+        <button onclick="uploadDataToDrive()" style="background: var(--success); width: 100%; margin-top: 10px;">
+            📤 上傳本次實驗數據至 Google Drive
+        </button>
+    </div>
+</div>
+
+<script>
+    // 替換為你的 Google Apps Script Web App URL
+    const GAS_ENDPOINT = "https://script.google.com/macros/s/AKfycby3CQLDCBUHj3cNwj-BR40eY_gAfP1R-WKpQ_qvTxMqP-ASV7SVnxHJXtdjjFmdEcP1/exec";
+
+    let model, webcam, labelContainer, maxPredictions;
+    let serialPort, serialWriter;
+    let isRunning = false;
+    let targetGesture = "";
+    let currentScore = 0;
+    let roundTimeout;
+    
+    // 實驗日誌數據容器
+    let trialLogs = [];
+    const classes = ["Class 1", "Class 2", "Class 3", "Class 4", "Class 5"];
+
+    // 1. 連接 WebSerial
+    async function connectSerial() {
+        try {
+            serialPort = await navigator.serial.requestPort();
+            await serialPort.open({ baudRate: 115200 });
+            const encoder = new TextEncoderStream();
+            encoder.readable.pipeTo(serialPort.writable);
+            serialWriter = encoder.writable.getWriter();
+            logMessage("Serial: 發射端 micro:bit 連線成功");
+            checkReadyState();
+        } catch (err) {
+            logMessage("Serial 錯誤: " + err.message);
+        }
+    }
+
+    // 2. 載入 GTM 模型
+    async function initAI() {
+        let url = document.getElementById("modelUrl").value.trim();
+        if (!url.endsWith("/")) url += "/";
+        try {
+            model = await tmImage.load(url + "model.json", url + "metadata.json");
+            maxPredictions = model.getTotalClasses();
+            
+            webcam = new tmImage.Webcam(320, 240, true);
+            await webcam.setup();
+            await webcam.play();
+            window.requestAnimationFrame(loop);
+
+            document.getElementById("webcam-container").innerHTML = "";
+            document.getElementById("webcam-container").appendChild(webcam.canvas);
+            
+            labelContainer = document.getElementById("label-container");
+            labelContainer.innerHTML = "";
+            for (let i = 0; i < maxPredictions; i++) {
+                const badge = document.createElement("div");
+                badge.className = "badge";
+                labelContainer.appendChild(badge);
+            }
+            logMessage("AI: 模型與鏡頭就緒");
+            checkReadyState();
+        } catch (err) {
+            logMessage("AI 載入錯誤: " + err.message);
+        }
+    }
+
+    function checkReadyState() {
+        if (model && serialWriter) {
+            document.getElementById("btn-start").disabled = false;
+        }
+    }
+
+    async function loop() {
+        webcam.update();
+        await predict();
+        window.requestAnimationFrame(loop);
+    }
+
+    // 3. 模型預測與即時比對
+    async function predict() {
+        const prediction = await model.predict(webcam.canvas);
+        let topClass = "";
+        let topProb = 0;
+
+        for (let i = 0; i < maxPredictions; i++) {
+            const prob = prediction[i].probability;
+            const cName = prediction[i].className;
+            labelContainer.childNodes[i].innerHTML = `${cName}: ${(prob * 100).toFixed(0)}%`;
+            
+            if (prob > topProb) {
+                topProb = prob;
+                topClass = cName;
+            }
+            if (prob > 0.85) {
+                labelContainer.childNodes[i].classList.add("active-prediction");
+            } else {
+                labelContainer.childNodes[i].classList.remove("active-prediction");
+            }
+        }
+
+        // QTE 比對：若目標一致且信心度 > 85%
+        if (isRunning && topClass === targetGesture && topProb > 0.85) {
+            handleSuccess(topClass, topProb);
+        }
+    }
+
+    // 4. 遊戲控制邏輯
+    function startGame() {
+        isRunning = true;
+        currentScore = 0;
+        trialLogs = [];
+        document.getElementById("score-val").innerText = "0";
+        document.getElementById("btn-start").disabled = true;
+        logMessage("遊戲開始！");
+        nextQuestion();
+    }
+
+    function nextQuestion() {
+        clearTimeout(roundTimeout);
+        // 隨機選出目標手勢 (排除 Class 5 待機類)
+        const validClasses = classes.filter(c => c !== "Class 5");
+        targetGesture = validClasses[Math.floor(Math.random() * validClasses.length)];
+        
+        document.getElementById("target-box").innerText = targetGesture;
+        let timeLeft = 3;
+        document.getElementById("timer-val").innerText = timeLeft;
+
+        const roundStartTime = performance.now();
+
+        // 3秒超時機制
+        roundTimeout = setInterval(() => {
+            timeLeft--;
+            document.getElementById("timer-val").innerText = timeLeft;
+            if (timeLeft <= 0) {
+                clearInterval(roundTimeout);
+                handleTimeout(targetGesture, performance.now() - roundStartTime);
+            }
+        }, 1000);
+    }
+
+    async function handleSuccess(matchedClass, prob) {
+        clearInterval(roundTimeout);
+        isRunning = false;
+        currentScore++;
+        document.getElementById("score-val").innerText = currentScore;
+        logMessage(`[成功] 命中 ${matchedClass} (${(prob*100).toFixed(1)}%)`);
+
+        // 記錄數據
+        recordTrialLog(targetGesture, matchedClass, true);
+
+        // 透過 WebSerial 發送字元 '1' 驅動步進爬行
+        if (serialWriter) {
+            await serialWriter.write("1\n");
+        }
+
+        // 停頓 1 秒讓機械人爬完一步後進入下一題
+        setTimeout(() => {
+            isRunning = true;
+            nextQuestion();
+        }, 1000);
+    }
+
+    function handleTimeout(target, duration) {
+        logMessage(`[超時] 未能在時限內比出 ${target}`);
+        recordTrialLog(target, "None", false);
+        nextQuestion();
+    }
+
+    function recordTrialLog(target, predicted, success) {
+        trialLogs.push({
+            timestamp: new Date().toISOString(),
+            target: target,
+            predicted: predicted,
+            success: success
+        });
+    }
+
+    function logMessage(msg) {
+        const consoleDiv = document.getElementById("log-console");
+        consoleDiv.innerHTML += `<div>> ${msg}</div>`;
+        consoleDiv.scrollTop = consoleDiv.scrollHeight;
+    }
+
+    // 5. 數據上傳至 Google Drive
+    async function uploadDataToDrive() {
+        const payload = {
+            folderId: "18VTaAPt86z7u4BCevGm96ZDF6uRdoODu",
+            groupId: document.getElementById("groupId").value || "G_Unknown",
+            studentId: document.getElementById("studentId").value || "S_Unknown",
+            condition: document.getElementById("conditionType").value,
+            score: currentScore,
+            comments: document.getElementById("studentComments").value,
+            logs: trialLogs
+        };
+
+        logMessage("正在上傳數據至 Google Drive...");
+        try {
+            // 使用 no-cors 避免瀏覽器跨域阻擋問題
+            await fetch(GAS_ENDPOINT, {
+                method: "POST",
+                mode: "no-cors",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(payload)
+            });
+            alert("數據已成功儲存至 Google Drive 指定資料夾！");
+            logMessage("上傳完成！");
+        } catch (err) {
+            logMessage("上傳失敗: " + err.message);
+            alert("上傳失敗，請檢查網絡或聯絡導師。");
+        }
+    }
+</script>
+</body>
+</html>
