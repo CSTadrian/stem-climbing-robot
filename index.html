@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AI Robot Gesture Arena - Full-Spectrum Grad-CAM Edition</title>
+    <title>AI Robot Gesture Arena - GTM Dynamic Grad-CAM Edition</title>
     <!-- 引入 TensorFlow.js 與 Teachable Machine 核心庫 -->
     <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@latest/dist/tf.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@teachablemachine/image@latest/dist/teachablemachine-image.min.js"></script>
@@ -289,7 +289,6 @@
             height: 100%;
             transform: scaleX(-1); /* 鏡像翻轉 */
         }
-        /* 全彩 Jet 光譜圖例說明 */
         .gradcam-legend {
             display: flex;
             align-items: center;
@@ -405,17 +404,17 @@
             </button>
         </div>
 
-        <!-- 步驟 2: AI 模型與鏡頭 -->
+        <!-- 步驟 2: 學生匯入 GTM 專屬模型與鏡頭 -->
         <div class="step-card" id="card-step2">
             <div>
                 <div class="step-header">
-                    <span class="step-title">📷 步驟 2：載入模型</span>
+                    <span class="step-title">📷 步驟 2：載入 GTM 模型</span>
                     <span class="step-tag" id="tag-step2">未載入 ⚪</span>
                 </div>
-                <input type="text" id="modelUrl" placeholder="貼上 Teachable Machine 模型連結" style="background:#090b16; border:1px solid #333d6b; color:#fff; width:100%; padding:6px; font-size:11px; border-radius:4px; margin-bottom: 8px;">
+                <input type="text" id="modelUrl" placeholder="貼上你在 Teachable Machine 訓練好的模型連結" style="background:#090b16; border:1px solid #333d6b; color:#fff; width:100%; padding:6px; font-size:11px; border-radius:4px; margin-bottom: 8px;">
             </div>
             <button class="step-btn" id="btn-step2" onclick="initAI()">
-                啟動模型與鏡頭
+                解析模型並啟動鏡頭
             </button>
         </div>
 
@@ -558,9 +557,9 @@
         }
     }
 
-    // ================= 步驟 2：AI 模型載入與 Grad-CAM 結構解析 =================
-    let convSubModel = null;
-    let remainingLayers = [];
+    // ================= 步驟 2：動態解析學生匯入的 GTM 模型 =================
+    let convFeatureModel = null; // 截取至最後卷積層的特徵模型
+    let headLayers = [];         // 學生自己訓練的分類層 (Dense / Dropout / Softmax)
     let displayCanvas, displayCtx;
     let offCanvas, offCtx;
     let gradCamThrottle = 0;
@@ -568,14 +567,15 @@
 
     async function initAI() {
         let url = document.getElementById("modelUrl").value.trim();
-        if (!url) { alert("請先填寫 Teachable Machine 網址！"); return; }
+        if (!url) { alert("請先填寫你在 Teachable Machine 訓練好的模型網址！"); return; }
         if (!url.endsWith("/")) url += "/";
 
         const btn = document.getElementById("btn-step2");
-        btn.innerText = "載入中，請稍候...";
+        btn.innerText = "載入學生專屬模型中...";
         btn.disabled = true;
 
         try {
+            // 1. 動態載入學生自己的 GTM 模型與 metadata
             model = await tmImage.load(url + "model.json", url + "metadata.json");
             maxPredictions = model.getTotalClasses();
 
@@ -586,8 +586,8 @@
             displayCanvas = document.getElementById("xai-canvas");
             displayCtx = displayCanvas.getContext("2d");
 
-            // 自動解構 GTM 卷積層結構以支援 Grad-CAM
-            inspectAndSetupGradCAM();
+            // 2. 自動解剖該 GTM 模型的內部結構以支援 Grad-CAM 求導
+            setupDynamicGradCAM(model.model);
 
             const mBox = document.getElementById("meters-container");
             mBox.innerHTML = "";
@@ -601,7 +601,7 @@
             step2Ready = true;
             document.getElementById("card-step2").classList.add("done");
             document.getElementById("tag-step2").innerText = "已就緒 🟢";
-            btn.innerText = "✔ 模型與鏡頭就緒";
+            btn.innerText = "✔ 專屬模型與鏡頭就緒";
             btn.classList.add("ready-btn");
             btn.disabled = false;
             checkCanUnlockStep3();
@@ -610,60 +610,63 @@
         } catch (e) {
             btn.innerText = "重新載入模型";
             btn.disabled = false;
-            alert("模型載入失敗，請確認網址正確: " + e.message);
+            alert("模型載入失敗，請確認 Teachable Machine 網址公開且正確: " + e.message);
         }
     }
 
-    // 自動搜尋 GTM 的最後一層卷積層並將後續 Dense 層解耦
-    function inspectAndSetupGradCAM() {
-        if (!model || !model.model) return;
-        remainingLayers = [];
+    // 動態拆解學生 GTM 模型的卷積層 (MobileNet) 與分類層 (Student Custom Head)
+    function setupDynamicGradCAM(tfLayersModel) {
+        if (!tfLayersModel) return;
+        headLayers = [];
         let targetConvLayer = null;
 
         try {
-            // 處理 GTM 的巢狀結構 (Layer 0 為 Truncated MobileNet)
-            if (model.model.layers[0] && model.model.layers[0].layers) {
-                const subLayers = model.model.layers[0].layers;
+            // GTM Image 模型結構通常是：Layer 0 為 Truncated MobileNet，Layer 1+ 為學生訓練的 Dense 層
+            if (tfLayersModel.layers[0] && tfLayersModel.layers[0].layers) {
+                const subLayers = tfLayersModel.layers[0].layers;
+                // 從 MobileNet 的最深層往回找最後一個卷積特徵圖
                 for (let i = subLayers.length - 1; i >= 0; i--) {
                     const l = subLayers[i];
                     const name = (l.name || "").toLowerCase();
                     const cls = (l.getClassName ? l.getClassName().toLowerCase() : "");
                     if (name.includes("conv") || cls.includes("conv") || (l.outputShape && l.outputShape.length === 4)) {
                         targetConvLayer = l;
-                        for (let j = i + 1; j < subLayers.length; j++) remainingLayers.push(subLayers[j]);
+                        // 收集 MobileNet 內部卷積層之後的過渡層 (如 Global Pooling)
+                        for (let j = i + 1; j < subLayers.length; j++) headLayers.push(subLayers[j]);
                         break;
                     }
                 }
-                for (let k = 1; k < model.model.layers.length; k++) remainingLayers.push(model.model.layers[k]);
-                
+                // 收集外部學生親手訓練的 Dense 層
+                for (let k = 1; k < tfLayersModel.layers.length; k++) headLayers.push(tfLayersModel.layers[k]);
+
                 if (targetConvLayer) {
-                    convSubModel = tf.model({
-                        inputs: model.model.layers[0].inputs,
+                    convFeatureModel = tf.model({
+                        inputs: tfLayersModel.layers[0].inputs,
                         outputs: targetConvLayer.output
                     });
                 }
             } else {
-                // 平鋪結構
-                for (let i = model.model.layers.length - 1; i >= 0; i--) {
-                    const l = model.model.layers[i];
+                // 平鋪架構處理
+                for (let i = tfLayersModel.layers.length - 1; i >= 0; i--) {
+                    const l = tfLayersModel.layers[i];
                     const name = (l.name || "").toLowerCase();
                     const cls = (l.getClassName ? l.getClassName().toLowerCase() : "");
                     if (name.includes("conv") || cls.includes("conv") || (l.outputShape && l.outputShape.length === 4)) {
                         targetConvLayer = l;
-                        for (let j = i + 1; j < model.model.layers.length; j++) remainingLayers.push(model.model.layers[j]);
+                        for (let j = i + 1; j < tfLayersModel.layers.length; j++) headLayers.push(tfLayersModel.layers[j]);
                         break;
                     }
                 }
                 if (targetConvLayer) {
-                    convSubModel = tf.model({
-                        inputs: model.model.inputs,
+                    convFeatureModel = tf.model({
+                        inputs: tfLayersModel.inputs,
                         outputs: targetConvLayer.output
                     });
                 }
             }
-            console.log("✔ Grad-CAM 已成功綁定特徵卷積層:", targetConvLayer ? targetConvLayer.name : "未找到");
+            console.log("✔ 學生 GTM 模型 Grad-CAM 特徵層綁定成功:", targetConvLayer ? targetConvLayer.name : "未找到");
         } catch(err) {
-            console.warn("Grad-CAM 結構解析提示: 將使用自適應特徵回退方案", err);
+            console.warn("Grad-CAM 結構解析異常:", err);
         }
     }
 
@@ -673,25 +676,15 @@
         let r = 0, g = 0, b = 0;
 
         if (val < 0.125) {
-            r = 0;
-            g = 0;
-            b = 0.5 + 4 * val; // 0.5 -> 1.0 (深藍到亮藍)
+            r = 0; g = 0; b = 0.5 + 4 * val; // 深藍到亮藍 (0% 權重)
         } else if (val < 0.375) {
-            r = 0;
-            g = 4 * (val - 0.125); // 0.0 -> 1.0
-            b = 1.0;               // 青藍色 (Cyan)
+            r = 0; g = 4 * (val - 0.125); b = 1.0; // 青藍色 (Cyan)
         } else if (val < 0.625) {
-            r = 4 * (val - 0.375); // 0.0 -> 1.0
-            g = 1.0;
-            b = 1.0 - 4 * (val - 0.375); // 1.0 -> 0.0 (純綠到黃綠)
+            r = 4 * (val - 0.375); g = 1.0; b = 1.0 - 4 * (val - 0.375); // 純綠到黃綠
         } else if (val < 0.875) {
-            r = 1.0;
-            g = 1.0 - 4 * (val - 0.625); // 1.0 -> 0.0 (亮黃到橙紅)
-            b = 0;
+            r = 1.0; g = 1.0 - 4 * (val - 0.625); b = 0; // 亮黃到橙紅
         } else {
-            r = 1.0;
-            g = 0;
-            b = 0; // 核心焦點：純紅 (Crimson Red)
+            r = 1.0; g = 0; b = 0; // 核心焦點：鮮紅 (100% 權重)
         }
 
         return [
@@ -701,36 +694,37 @@
         ];
     }
 
-    // 計算特定目標類別的 Grad-CAM 熱力矩陣
+    // 計算指定手勢類別的 Grad-CAM 熱力圖
     async function calculateGradCamTensor(inputTensor, targetClassIdx) {
-        if (!convSubModel) return null;
+        if (!convFeatureModel) return null;
 
         return tf.tidy(() => {
-            const convOutput = convSubModel.predict(inputTensor); // [1, H, W, Depth]
+            // 1. 通過卷積基礎網絡獲取特徵圖 A^k (通常是 7x7 空間解析度)
+            const convOutput = convFeatureModel.predict(inputTensor); // [1, H, W, Depth]
 
-            // 定義頂層評分傳遞函數
+            // 2. 定義通過學生自訂分類層的評分函數
             const getTargetScore = (convFeat) => {
                 let x = convFeat;
-                for (let l of remainingLayers) {
+                for (let l of headLayers) {
                     x = l.apply(x);
                 }
                 return x.as1D().gather([targetClassIdx]);
             };
 
-            // 自動微分：目標分類評分對卷積特徵圖的梯度
+            // 3. 自動求導：計算目標類別得分對特徵圖的梯度 dY/dA
             const gradFn = tf.grad(getTargetScore);
             const grads = gradFn(convOutput); // [1, H, W, Depth]
 
-            // 全局平均池化 (GAP) 求特徵通道權重
+            // 4. 全局平均池化 (GAP) 求取各通道重要性權重
             const pooledWeights = grads.mean([0, 1, 2]); // [Depth]
 
-            // 特徵權重加權總和
+            // 5. 特徵圖與權重線性加權求和
             const cam = convOutput.squeeze(0).mul(pooledWeights).sum(-1); // [H, W]
 
-            // 施加 ReLU (排除負面貢獻特徵)
+            // 6. 施加 ReLU (僅保留正面支持該類別的特徵)
             const reluCam = tf.relu(cam);
 
-            // 歸一化至 0.0 ~ 1.0
+            // 7. 歸一化至 0.0 ~ 1.0
             const maxVal = reluCam.max();
             const minVal = reluCam.min();
             return reluCam.sub(minVal).div(maxVal.sub(minVal).add(1e-8));
@@ -747,7 +741,7 @@
     async function evaluateTargetAndRenderXAI() {
         if (!model) return;
 
-        // 1. 原生 GTM 概率推論
+        // 1. 原生 GTM 概率推論（完全使用學生匯入的模型）
         const predictions = await model.predict(webcam.canvas);
         let topCls = "";
         let topProb = 0;
@@ -770,7 +764,7 @@
             else row.classList.remove("matched");
         }
 
-        // 2. 決定當前 Grad-CAM 需可視化的目標類別
+        // 2. 決定 Grad-CAM 解釋目標：比賽中優先解釋「當前任務目標」，平常則解釋「最高信心度手勢」
         let explainIdx = topIdx;
         if (isRunning && actionQueue.length > 0) {
             const targetName = actionQueue[0];
@@ -778,11 +772,11 @@
             if (found !== -1) explainIdx = found;
         }
 
-        // 3. 節流計算 Grad-CAM (每 3 幀運算一次，保持 60 FPS 流暢度)
+        // 3. 節流計算 Grad-CAM (每 3 幀計算一次，維持流暢度並釋放 GPU 資源)
         gradCamThrottle++;
         const isXAI = document.getElementById("conditionType").value === "XAI_GradCAM";
 
-        if (isXAI && convSubModel && gradCamThrottle % 3 === 0) {
+        if (isXAI && convFeatureModel && gradCamThrottle % 3 === 0) {
             try {
                 const inputTensor = tf.tidy(() => {
                     let img = tf.browser.fromPixels(webcam.canvas);
@@ -805,7 +799,7 @@
                         offCtx = offCanvas.getContext("2d");
                     }
 
-                    // 映射為全彩 Jet 光譜
+                    // 映射為全彩 Jet 光譜像素
                     const imgData = offCtx.createImageData(w, h);
                     for (let i = 0; i < data.length; i++) {
                         const val = data[i]; // 0.0 ~ 1.0
@@ -813,7 +807,7 @@
                         imgData.data[i * 4 + 0] = r;
                         imgData.data[i * 4 + 1] = g;
                         imgData.data[i * 4 + 2] = b;
-                        // 透明度平滑權重：冷色半透明，暖紅高權重區鮮艷顯眼
+                        // 透明度平滑過渡：藍色冷區稍透，暖紅焦點鮮艷顯眼
                         imgData.data[i * 4 + 3] = Math.round(110 + val * 135);
                     }
                     offCtx.putImageData(imgData, 0, 0);
@@ -824,19 +818,19 @@
             }
         }
 
-        // 4. 畫面合成：視訊影像 + 全彩熱力圖疊加
+        // 4. 畫面合成：鏡頭視訊 + 全彩熱力圖雙線性平滑疊加
         displayCtx.drawImage(webcam.canvas, 0, 0, displayCanvas.width, displayCanvas.height);
 
         if (isXAI && cachedHeatmapCanvas) {
             displayCtx.save();
-            displayCtx.globalAlpha = 0.52; // 52% 疊加半透明，底層手形與全彩光譜清晰共存
+            displayCtx.globalAlpha = 0.52; // 52% 疊加半透明
             displayCtx.imageSmoothingEnabled = true;
             displayCtx.imageSmoothingQuality = "high"; // 雙線性平滑放大
             displayCtx.drawImage(cachedHeatmapCanvas, 0, 0, displayCanvas.width, displayCanvas.height);
             displayCtx.restore();
         }
 
-        // 5. 街機邏輯判定
+        // 5. 街機邏輯比對
         if (isRunning && !isLocked && actionQueue.length > 0) {
             const currentTarget = actionQueue[0];
             if (topCls === currentTarget && topProb > 0.75) {
