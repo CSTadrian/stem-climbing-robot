@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AI Robot Gesture Arena - Arcade Edition</title>
+    <title>AI Robot Gesture Arena - Arcade Edition (Grad-CAM XAI)</title>
     <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@latest/dist/tf.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@teachablemachine/image@latest/dist/teachablemachine-image.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
@@ -272,6 +272,11 @@
             gap: 14px;
             align-items: center;
         }
+        .webcam-box {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
         #webcam-container {
             width: 220px;
             height: 150px;
@@ -279,7 +284,30 @@
             border-radius: 10px;
             overflow: hidden;
             border: 1px solid #2e366b;
+            position: relative;
         }
+        #webcam-container canvas {
+            width: 100%;
+            height: 100%;
+            transform: scaleX(-1); /* 鏡像顯示 */
+        }
+        .gradcam-legend-bar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            font-size: 9px;
+            color: #8892b0;
+            padding: 0 2px;
+        }
+        .gradcam-spectrum {
+            flex-grow: 1;
+            height: 5px;
+            margin: 0 6px;
+            border-radius: 3px;
+            background: linear-gradient(to right, rgba(0,255,255,0.4) 0%, #00ff00 35%, #ffff00 70%, #ff0000 100%);
+            border: 1px solid #334155;
+        }
+
         .meters-grid {
             display: grid;
             grid-template-columns: 1fr 1fr;
@@ -354,7 +382,7 @@
         <input type="text" id="groupId" placeholder="組別 (例: Group-01)">
         <input type="text" id="studentId" placeholder="學號 (例: S01)">
         <select id="conditionType">
-            <option value="XAI_GradCAM">實驗組 (Grad-CAM 熱力圖)</option>
+            <option value="XAI_GradCAM">實驗組 (全彩 Grad-CAM 熱力圖)</option>
             <option value="No_XAI_Blackbox">對照組 (黑盒無解釋)</option>
         </select>
         <button onclick="uploadDataToDrive()" style="background:#1e293b; color:#94a3b8; border:1px solid #334155; border-radius:6px; padding:6px 12px; cursor:pointer; font-size:12px;">
@@ -432,7 +460,14 @@
 
             <!-- 鏡頭與類別判定比率 -->
             <div class="arena-footer">
-                <div id="webcam-container"></div>
+                <div class="webcam-box">
+                    <div id="webcam-container"></div>
+                    <div class="gradcam-legend-bar">
+                        <span>透明(無關)</span>
+                        <div class="gradcam-spectrum"></div>
+                        <span>🔥 核心特徵(紅)</span>
+                    </div>
+                </div>
                 <div class="meters-grid" id="meters-container"></div>
             </div>
         </div>
@@ -507,6 +542,14 @@
     let model, webcam, maxPredictions;
     let serialPort, serialWriter;
 
+    // Grad-CAM 相關變數
+    let convSubModel = null;
+    let headLayers = [];
+    let displayCanvas, displayCtx;
+    let offCanvas, offCtx;
+    let gradCamThrottle = 0;
+    let cachedHeatmapCanvas = null;
+
     // 遊戲流變數
     let actionQueue = [];
     const QUEUE_LENGTH = 5;
@@ -540,10 +583,11 @@
         }
     }
 
-    // ================= 步驟 2：AI 模型與鏡頭 =================
+    // ================= 步驟 2：AI 模型與鏡頭 (整合 Grad-CAM 特徵圖解構) =================
     async function initAI() {
         let url = document.getElementById("modelUrl").value.trim();
         if (!url) { alert("請先填寫 Teachable Machine 網址！"); return; }
+        if (url.endsWith("model.json")) url = url.replace("model.json", "");
         if (!url.endsWith("/")) url += "/";
 
         const btn = document.getElementById("btn-step2");
@@ -551,16 +595,26 @@
         btn.disabled = true;
 
         try {
+            // 載入學生匯入的 GTM 模型
             model = await tmImage.load(url + "model.json", url + "metadata.json");
             maxPredictions = model.getTotalClasses();
 
             webcam = new tmImage.Webcam(220, 150, true);
             await webcam.setup();
             await webcam.play();
-            window.requestAnimationFrame(predictLoop);
 
-            document.getElementById("webcam-container").innerHTML = "";
-            document.getElementById("webcam-container").appendChild(webcam.canvas);
+            // 建立支援 Grad-CAM 疊加渲染的展示畫布
+            displayCanvas = document.createElement("canvas");
+            displayCanvas.width = 220;
+            displayCanvas.height = 150;
+            displayCtx = displayCanvas.getContext("2d");
+
+            const container = document.getElementById("webcam-container");
+            container.innerHTML = "";
+            container.appendChild(displayCanvas);
+
+            // 自動解構 GTM 卷積特徵層與分類頭以支援求導
+            setupGradCAMComponents(model.model);
 
             const mBox = document.getElementById("meters-container");
             mBox.innerHTML = "";
@@ -579,11 +633,134 @@
             btn.classList.add("ready-btn");
             btn.disabled = false;
             checkCanUnlockStep3();
+
+            window.requestAnimationFrame(predictLoop);
         } catch (e) {
             btn.innerText = "重新載入模型";
             btn.disabled = false;
             alert("模型載入失敗，請確認網址正確: " + e.message);
         }
+    }
+
+    // 動態綁定 GTM 底層 MobileNet 的最後一層卷積層
+    function setupGradCAMComponents(tmLayersModel) {
+        if (!tmLayersModel) return;
+        headLayers = [];
+        let targetConvLayer = null;
+
+        try {
+            // 處理 GTM 的標準結構 (Layer 0 為 MobileNet, Layer 1+ 為學生訓練的 Dense 層)
+            if (tmLayersModel.layers[0] && tmLayersModel.layers[0].layers) {
+                const subLayers = tmLayersModel.layers[0].layers;
+                for (let i = subLayers.length - 1; i >= 0; i--) {
+                    const l = subLayers[i];
+                    const shape = l.outputShape;
+                    if (shape && shape.length === 4 && shape[1] > 1) {
+                        targetConvLayer = l;
+                        for (let j = i + 1; j < subLayers.length; j++) headLayers.push(subLayers[j]);
+                        break;
+                    }
+                }
+                for (let k = 1; k < tmLayersModel.layers.length; k++) {
+                    headLayers.push(tmLayersModel.layers[k]);
+                }
+                if (targetConvLayer) {
+                    convSubModel = tf.model({
+                        inputs: tmLayersModel.layers[0].inputs,
+                        outputs: targetConvLayer.output
+                    });
+                }
+            } else {
+                // 平鋪結構
+                for (let i = tmLayersModel.layers.length - 1; i >= 0; i--) {
+                    const l = tmLayersModel.layers[i];
+                    const shape = l.outputShape;
+                    if (shape && shape.length === 4 && shape[1] > 1) {
+                        targetConvLayer = l;
+                        for (let j = i + 1; j < tmLayersModel.layers.length; j++) headLayers.push(tmLayersModel.layers[j]);
+                        break;
+                    }
+                }
+                if (targetConvLayer) {
+                    convSubModel = tf.model({
+                        inputs: tmLayersModel.inputs,
+                        outputs: targetConvLayer.output
+                    });
+                }
+            }
+            console.log("✔ Grad-CAM 已成功綁定卷積層:", targetConvLayer ? targetConvLayer.name : "未找到");
+        } catch(err) {
+            console.warn("Grad-CAM 綁定提示:", err);
+        }
+    }
+
+    // 全彩光譜 Jet Colormap：無關背景透明，特徵區域青藍 -> 亮綠 -> 金黃 -> 鮮紅
+    function getJetColorAndAlpha(val) {
+        val = Math.max(0, Math.min(1, val));
+        
+        // 低於 0.15 視為背景雜訊，完全透明保留視訊畫面
+        if (val < 0.15) {
+            return [0, 0, 0, 0];
+        }
+
+        const norm = (val - 0.15) / 0.85; // 0.0 ~ 1.0 歸一化
+        let r = 0, g = 0, b = 0;
+
+        if (norm < 0.25) {
+            // 亮藍到青藍 (Blue -> Cyan)
+            r = 0;
+            g = Math.round(255 * (norm / 0.25));
+            b = 255;
+        } else if (norm < 0.5) {
+            // 青藍到純綠 (Cyan -> Green)
+            r = 0;
+            g = 255;
+            b = Math.round(255 * (1 - (norm - 0.25) / 0.25));
+        } else if (norm < 0.75) {
+            // 純綠到亮黃 (Green -> Yellow)
+            r = Math.round(255 * ((norm - 0.5) / 0.25));
+            g = 255;
+            b = 0;
+        } else {
+            // 亮黃到鮮紅 (Yellow -> Crimson Red)
+            r = 255;
+            g = Math.round(255 * (1 - (norm - 0.75) / 0.25));
+            b = 0;
+        }
+
+        const a = Math.round(70 + norm * 130); // 隨重要性平滑增加不透明度
+        return [r, g, b, a];
+    }
+
+    // 計算 Grad-CAM 熱力圖張量
+    async function computeGradCAM(inputTensor, targetClassIdx) {
+        if (!convSubModel || headLayers.length === 0) return null;
+
+        return tf.tidy(() => {
+            const convOutput = convSubModel.predict(inputTensor); // [1, 7, 7, Depth]
+
+            const scoreFn = (act) => {
+                let x = act;
+                for (let l of headLayers) {
+                    x = l.apply(x);
+                }
+                return x.as1D().gather([targetClassIdx]);
+            };
+
+            const gradFn = tf.grad(scoreFn);
+            const grads = gradFn(convOutput); // [1, 7, 7, Depth]
+
+            // 全局平均池化 (GAP) 求特徵通道權重
+            const weights = grads.mean([0, 1, 2]);
+
+            // 加權求和與 ReLU
+            const cam = convOutput.squeeze(0).mul(weights).sum(-1);
+            const reluCam = tf.relu(cam);
+
+            const maxVal = reluCam.max();
+            const minVal = reluCam.min();
+            return reluCam.sub(minVal).div(maxVal.sub(minVal).add(1e-8));
+        });
     }
 
     // ================= 檢查並解鎖步驟 3 =================
@@ -606,13 +783,15 @@
         window.requestAnimationFrame(predictLoop);
     }
 
-    // 實時推論比對
+    // 實時推論比對與 Grad-CAM 熱力圖渲染
     async function evaluateTarget() {
         if (!model) return;
-        const predictions = await model.predict(webcam.canvas);
 
+        // 1. 原生 GTM 概率預測
+        const predictions = await model.predict(webcam.canvas);
         let topCls = "";
         let topProb = 0;
+        let topIdx = 0;
 
         for (let i = 0; i < maxPredictions; i++) {
             const name = predictions[i].className;
@@ -625,6 +804,7 @@
             if (prob > topProb) {
                 topProb = prob;
                 topCls = name;
+                topIdx = i;
             }
             if (prob > 0.75) {
                 row.classList.add("matched");
@@ -633,6 +813,70 @@
             }
         }
 
+        // 2. 決定 Grad-CAM 解釋目標
+        let explainIdx = topIdx;
+        if (isRunning && actionQueue.length > 0) {
+            const targetName = actionQueue[0];
+            const foundIdx = predictions.findIndex(p => p.className === targetName);
+            if (foundIdx !== -1) explainIdx = foundIdx;
+        }
+
+        // 3. 節流運算 Grad-CAM (每 3 幀計算一次維持流暢度)
+        gradCamThrottle++;
+        const isXAI = document.getElementById("conditionType").value === "XAI_GradCAM";
+
+        if (isXAI && convSubModel && gradCamThrottle % 3 === 0) {
+            try {
+                const inputTensor = tf.tidy(() => {
+                    let img = tf.browser.fromPixels(webcam.canvas);
+                    img = tf.image.resizeBilinear(img, [224, 224]);
+                    return img.toFloat().div(127.5).sub(1.0).expandDims(0);
+                });
+
+                const heatmapTensor = await computeGradCAM(inputTensor, explainIdx);
+                inputTensor.dispose();
+
+                if (heatmapTensor) {
+                    const [h, w] = heatmapTensor.shape;
+                    const data = await heatmapTensor.data();
+                    heatmapTensor.dispose();
+
+                    if (!offCanvas) {
+                        offCanvas = document.createElement("canvas");
+                        offCanvas.width = w;
+                        offCanvas.height = h;
+                        offCtx = offCanvas.getContext("2d");
+                    }
+
+                    const imgData = offCtx.createImageData(w, h);
+                    for (let i = 0; i < data.length; i++) {
+                        const [r, g, b, a] = getJetColorAndAlpha(data[i]);
+                        imgData.data[i * 4 + 0] = r;
+                        imgData.data[i * 4 + 1] = g;
+                        imgData.data[i * 4 + 2] = b;
+                        imgData.data[i * 4 + 3] = a;
+                    }
+                    offCtx.putImageData(imgData, 0, 0);
+                    cachedHeatmapCanvas = offCanvas;
+                }
+            } catch(e) {
+                console.error("Grad-CAM 略過:", e);
+            }
+        }
+
+        // 4. 畫布渲染：底層相機畫面 + 疊加全彩平滑熱力圖
+        if (displayCtx) {
+            displayCtx.drawImage(webcam.canvas, 0, 0, displayCanvas.width, displayCanvas.height);
+            if (isXAI && cachedHeatmapCanvas) {
+                displayCtx.save();
+                displayCtx.imageSmoothingEnabled = true;
+                displayCtx.imageSmoothingQuality = "high";
+                displayCtx.drawImage(cachedHeatmapCanvas, 0, 0, displayCanvas.width, displayCanvas.height);
+                displayCtx.restore();
+            }
+        }
+
+        // 5. 命中判定
         if (isRunning && !isLocked && actionQueue.length > 0) {
             const currentTarget = actionQueue[0];
             if (topCls === currentTarget && topProb > 0.75) {
