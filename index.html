@@ -3,9 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AI Robot Gesture Arena - Arcade Edition</title>
-    <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@latest/dist/tf.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@teachablemachine/image@latest/dist/teachablemachine-image.min.js"></script>
+    <title>AI Robot Gesture Arena - MediaPipe Edition</title>
+    <!-- 引入 MediaPipe Hands 庫 -->
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/hands/hands.js" crossorigin="anonymous"></script>
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
     <style>
         :root {
@@ -59,7 +60,7 @@
         /* ================= 核心：1-2-3 步驟結構看板 ================= */
         .stepper-board {
             display: grid;
-            grid-template-columns: 1fr 1.3fr 1fr;
+            grid-template-columns: 1fr 1.6fr 1fr;
             gap: 14px;
         }
         .step-card {
@@ -73,7 +74,6 @@
             position: relative;
             transition: all 0.3s ease;
         }
-        /* 步驟狀態樣式 */
         .step-card.done {
             border-color: var(--neon-green);
             box-shadow: 0 0 15px rgba(0, 255, 102, 0.2);
@@ -124,7 +124,39 @@
             border-color: var(--neon-green);
         }
 
-        /* 步驟 3 大按鈕 (就緒前灰色鎖定，就緒後超亮脈衝) */
+        /* 骨骼採樣按鈕組 */
+        .sample-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 6px;
+            margin-bottom: 8px;
+        }
+        .sample-btn {
+            background: #0e1124;
+            border: 1px solid #333d6b;
+            color: #fff;
+            padding: 6px;
+            border-radius: 6px;
+            font-size: 11px;
+            font-weight: bold;
+            cursor: pointer;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 2px;
+            transition: all 0.2s;
+        }
+        .sample-btn:active, .sample-btn.recording {
+            background: var(--neon-pink);
+            border-color: #fff;
+            transform: scale(0.95);
+        }
+        .sample-count {
+            font-size: 9px;
+            color: var(--neon-yellow);
+        }
+
+        /* 步驟 3 大按鈕 */
         .btn-launch {
             background: #1a2035;
             color: #64748b;
@@ -188,7 +220,7 @@
             font-weight: 900;
         }
 
-        /* 動作流動軌道 (Rhythm Ribbon) */
+        /* 動作流動軌道 */
         .ribbon-track-wrapper {
             background: #080914;
             border: 2px solid #202747;
@@ -226,7 +258,6 @@
             border-radius: 4px;
             margin-top: 4px;
         }
-        /* 當前需要匹配的 HIT ZONE */
         .action-card.active-target {
             min-width: 130px;
             height: 160px;
@@ -250,7 +281,6 @@
         }
         .action-card.upcoming { opacity: 0.6; transform: scale(0.92); }
 
-        /* 計時倒數條 */
         .timer-bg {
             height: 7px;
             background: #181d38;
@@ -265,20 +295,27 @@
             transition: width 0.05s linear;
         }
 
-        /* 視訊預覽與信心度 */
+        /* 視訊骨骼畫布 */
         .arena-footer {
             display: grid;
             grid-template-columns: 220px 1fr;
             gap: 14px;
             align-items: center;
         }
-        #webcam-container {
+        .canvas-wrapper {
             width: 220px;
             height: 150px;
             background: #000;
             border-radius: 10px;
             overflow: hidden;
             border: 1px solid #2e366b;
+            position: relative;
+        }
+        #webcam-video { display: none; }
+        #output-canvas {
+            width: 100%;
+            height: 100%;
+            transform: scaleX(-1); /* 鏡像翻轉 */
         }
         .meters-grid {
             display: grid;
@@ -330,7 +367,6 @@
             filter: drop-shadow(0 0 6px #00f0ff);
         }
 
-        /* 命中動畫 */
         #splash-text {
             position: absolute;
             top: 40%;
@@ -349,20 +385,19 @@
 <body>
 
 <div class="arena-container">
-    <!-- 學生分組資料列 -->
     <div class="meta-strip">
         <input type="text" id="groupId" placeholder="組別 (例: Group-01)">
         <input type="text" id="studentId" placeholder="學號 (例: S01)">
         <select id="conditionType">
-            <option value="XAI_GradCAM">實驗組 (Grad-CAM 熱力圖)</option>
-            <option value="No_XAI_Blackbox">對照組 (黑盒無解釋)</option>
+            <option value="MediaPipe_Geometry">骨骼幾何模型組 (MediaPipe)</option>
+            <option value="Baseline_Raw">傳統特徵對照組</option>
         </select>
         <button onclick="uploadDataToDrive()" style="background:#1e293b; color:#94a3b8; border:1px solid #334155; border-radius:6px; padding:6px 12px; cursor:pointer; font-size:12px;">
             📤 提交成績到 Drive
         </button>
     </div>
 
-    <!-- ================= 核心 1-2-3 任務看板 ================= -->
+    <!-- 1-2-3 步驟看板 -->
     <div class="stepper-board">
         <!-- 步驟 1: 硬件串口連接 -->
         <div class="step-card" id="card-step1">
@@ -380,17 +415,43 @@
             </button>
         </div>
 
-        <!-- 步驟 2: AI 模型與視訊鏡頭 -->
+        <!-- 步驟 2: 現場手勢骨骼錄製與極速訓練 -->
         <div class="step-card" id="card-step2">
             <div>
                 <div class="step-header">
-                    <span class="step-title">📷 步驟 2：載入模型</span>
-                    <span class="step-tag" id="tag-step2">未載入 ⚪</span>
+                    <span class="step-title">✋ 步驟 2：手勢採樣</span>
+                    <span class="step-tag" id="tag-step2">未啟動 ⚪</span>
                 </div>
-                <input type="text" id="modelUrl" placeholder="貼上 Teachable Machine 模型連結" style="background:#090b16; border:1px solid #333d6b; color:#fff; width:100%; padding:6px; font-size:11px; border-radius:4px; margin-bottom: 8px;">
+                <!-- 5 類手勢採樣按鈕 -->
+                <div class="sample-grid">
+                    <button class="sample-btn" id="btn-sample-Class 1" onmousedown="startSampling('Class 1')" onmouseup="stopSampling()">
+                        <span>✊ 石頭</span>
+                        <span class="sample-count" id="cnt-Class 1">0 幀</span>
+                    </button>
+                    <button class="sample-btn" id="btn-sample-Class 2" onmousedown="startSampling('Class 2')" onmouseup="stopSampling()">
+                        <span>✌️ 剪刀</span>
+                        <span class="sample-count" id="cnt-Class 2">0 幀</span>
+                    </button>
+                    <button class="sample-btn" id="btn-sample-Class 3" onmousedown="startSampling('Class 3')" onmouseup="stopSampling()">
+                        <span>🖐️ 布</span>
+                        <span class="sample-count" id="cnt-Class 3">0 幀</span>
+                    </button>
+                    <button class="sample-btn" id="btn-sample-Class 4" onmousedown="startSampling('Class 4')" onmouseup="stopSampling()">
+                        <span>👍 讚好</span>
+                        <span class="sample-count" id="cnt-Class 4">0 幀</span>
+                    </button>
+                    <button class="sample-btn" id="btn-sample-Class 5" onmousedown="startSampling('Class 5')" onmouseup="stopSampling()">
+                        <span>🫱 待機</span>
+                        <span class="sample-count" id="cnt-Class 5">0 幀</span>
+                    </button>
+                    <button class="sample-btn" style="background:#2a1b40; border-color:#ff007f;" onclick="clearDataset()">
+                        <span>🗑️ 重置</span>
+                        <span style="font-size:9px; color:#8892b0;">清空樣本</span>
+                    </button>
+                </div>
             </div>
-            <button class="step-btn" id="btn-step2" onclick="initAI()">
-                啟動模型與鏡頭
+            <button class="step-btn" id="btn-step2" onclick="initMediaPipe()">
+                啟動鏡頭開始採樣
             </button>
         </div>
 
@@ -402,7 +463,7 @@
                     <span class="step-tag" id="tag-step3">待解鎖 🔒</span>
                 </div>
                 <div style="font-size: 11px; color: #8892b0; margin-bottom: 10px;" id="desc-step3">
-                    需先完成步驟 1 及 步驟 2
+                    需完成步驟 1 並每款手勢錄製 ≥10 幀
                 </div>
             </div>
             <button class="btn-launch" id="btn-launch" onclick="startGame()" disabled>
@@ -421,18 +482,19 @@
 
             <!-- 動作預告流動軌道 -->
             <div class="ribbon-track-wrapper">
-                <div class="ribbon-track" id="queue-ribbon">
-                    <!-- 動態生成 1 個 Active + 4 個 Upcoming -->
-                </div>
+                <div class="ribbon-track" id="queue-ribbon"></div>
                 <div class="timer-bg">
                     <div class="timer-fill" id="timer-bar"></div>
                 </div>
                 <div id="splash-text">PERFECT!</div>
             </div>
 
-            <!-- 鏡頭與類別判定比率 -->
+            <!-- 視訊骨骼預覽與信心度 -->
             <div class="arena-footer">
-                <div id="webcam-container"></div>
+                <div class="canvas-wrapper">
+                    <video id="webcam-video" playsinline></video>
+                    <canvas id="output-canvas"></canvas>
+                </div>
                 <div class="meters-grid" id="meters-container"></div>
             </div>
         </div>
@@ -451,7 +513,6 @@
 </div>
 
 <script>
-    // 固定的 5 類定義
     const GESTURES = {
         "Class 1": { name: "石頭", symbol: "✊", num: "No. 1" },
         "Class 2": { name: "剪刀", symbol: "✌️", num: "No. 2" },
@@ -463,11 +524,10 @@
     const DRIVE_FOLDER_ID = "18VTaAPt86z7u4BCevGm96ZDF6uRdoODu";
     const GAS_ENDPOINT = "YOUR_GOOGLE_APPS_SCRIPT_WEB_APP_URL_HERE";
 
-    // 步驟完成狀態旗標
     let step1Ready = false;
     let step2Ready = false;
 
-    // Web Audio 合成音效
+    // 音效模組
     let audioCtx = null;
     function playSfx(type) {
         try {
@@ -504,20 +564,7 @@
         } catch(e) {}
     }
 
-    let model, webcam, maxPredictions;
     let serialPort, serialWriter;
-
-    // 遊戲流變數
-    let actionQueue = [];
-    const QUEUE_LENGTH = 5;
-    let isRunning = false;
-    let isLocked = false;
-    let score = 0;
-    let combo = 0;
-    let roundStart = 0;
-    const TIME_LIMIT_MS = 3000;
-    let timerLoop = null;
-    let eventLogs = [];
 
     // ================= 步驟 1：WebSerial 連接 =================
     async function connectSerial() {
@@ -528,7 +575,6 @@
             enc.readable.pipeTo(serialPort.writable);
             serialWriter = enc.writable.getWriter();
 
-            // 更新步驟 1 UI
             step1Ready = true;
             document.getElementById("card-step1").classList.add("done");
             document.getElementById("tag-step1").innerText = "已連線 🟢";
@@ -540,49 +586,235 @@
         }
     }
 
-    // ================= 步驟 2：AI 模型與鏡頭 =================
-    async function initAI() {
-        let url = document.getElementById("modelUrl").value.trim();
-        if (!url) { alert("請先填寫 Teachable Machine 網址！"); return; }
-        if (!url.endsWith("/")) url += "/";
+    // ================= 步驟 2：MediaPipe Hands & 骨骼特徵數據集 =================
+    let hands, camera;
+    let videoElement, canvasElement, canvasCtx;
+    let currentLandmarks = null; // 當前偵測到的 21 點
+    let dataset = [];            // 學生採樣的骨骼特徵庫 { label: "Class 1", vector: [...] }
+    let isSampling = false;
+    let samplingTarget = null;
+    let sampleInterval = null;
 
+    async function initMediaPipe() {
         const btn = document.getElementById("btn-step2");
-        btn.innerText = "載入中，請稍候...";
+        btn.innerText = "載入 MediaPipe 引擎中...";
         btn.disabled = true;
 
-        try {
-            model = await tmImage.load(url + "model.json", url + "metadata.json");
-            maxPredictions = model.getTotalClasses();
+        videoElement = document.getElementById("webcam-video");
+        canvasElement = document.getElementById("output-canvas");
+        canvasCtx = canvasElement.getContext("2d");
 
-            webcam = new tmImage.Webcam(220, 150, true);
-            await webcam.setup();
-            await webcam.play();
-            window.requestAnimationFrame(predictLoop);
+        // 初始化 MediaPipe Hands
+        hands = new Hands({
+            locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/hands/${file}`
+        });
 
-            document.getElementById("webcam-container").innerHTML = "";
-            document.getElementById("webcam-container").appendChild(webcam.canvas);
+        hands.setOptions({
+            maxNumHands: 1,
+            modelComplexity: 1,
+            minDetectionConfidence: 0.6,
+            minTrackingConfidence: 0.6
+        });
 
-            const mBox = document.getElementById("meters-container");
-            mBox.innerHTML = "";
-            for (let i = 0; i < maxPredictions; i++) {
-                const row = document.createElement("div");
-                row.className = "meter-row";
-                row.id = "meter-row-" + i;
-                mBox.appendChild(row);
+        hands.onResults(onHandResults);
+
+        // 啟動鏡頭串流
+        camera = new Camera(videoElement, {
+            onFrame: async () => {
+                await hands.send({ image: videoElement });
+            },
+            width: 320,
+            height: 240
+        });
+        await camera.start();
+
+        // 建立信心度計量條 UI
+        const mBox = document.getElementById("meters-container");
+        mBox.innerHTML = "";
+        Object.keys(GESTURES).forEach((key) => {
+            const row = document.createElement("div");
+            row.className = "meter-row";
+            row.id = "meter-row-" + key.replace(" ", "-");
+            mBox.appendChild(row);
+        });
+
+        document.getElementById("tag-step2").innerText = "鏡頭就緒 🟡";
+        btn.innerText = "請在上方按住按鈕錄製手勢";
+        btn.classList.add("ready-btn");
+    }
+
+    // 處理手勢識別結果並繪製骨骼
+    function onHandResults(results) {
+        canvasElement.width = videoElement.videoWidth || 320;
+        canvasElement.height = videoElement.videoHeight || 240;
+
+        canvasCtx.save();
+        canvasCtx.clearRect(0, 0, canvasElement.width, canvasElement.height);
+        canvasCtx.drawImage(results.image, 0, 0, canvasElement.width, canvasElement.height);
+
+        if (results.multiHandLandmarks && results.multiHandLandmarks.length > 0) {
+            currentLandmarks = results.multiHandLandmarks[0];
+            drawSkeleton(currentLandmarks);
+
+            // 如果正在訓練中且有數據，進行即時幾何分類預測
+            if (dataset.length > 0) {
+                classifyCurrentPose();
             }
+        } else {
+            currentLandmarks = null;
+        }
+        canvasCtx.restore();
+    }
 
-            // 更新步驟 2 UI
+    // 繪製科幻螢光骨骼線條
+    function drawSkeleton(landmarks) {
+        const CONNECTIONS = [
+            [0,1],[1,2],[2,3],[3,4],
+            [0,5],[5,6],[6,7],[7,8],
+            [5,9],[9,10],[10,11],[11,12],
+            [9,13],[13,14],[14,15],[15,16],
+            [13,17],[17,18],[18,19],[19,20],[0,17]
+        ];
+
+        canvasCtx.strokeStyle = "#00f0ff";
+        canvasCtx.lineWidth = 3;
+        CONNECTIONS.forEach(([i, j]) => {
+            canvasCtx.beginPath();
+            canvasCtx.moveTo(landmarks[i].x * canvasElement.width, landmarks[i].y * canvasElement.height);
+            canvasCtx.lineTo(landmarks[j].x * canvasElement.width, landmarks[j].y * canvasElement.height);
+            canvasCtx.stroke();
+        });
+
+        // 關節節點
+        canvasCtx.fillStyle = "#ff007f";
+        landmarks.forEach(pt => {
+            canvasCtx.beginPath();
+            canvasCtx.arc(pt.x * canvasElement.width, pt.y * canvasElement.height, 4, 0, 2 * Math.PI);
+            canvasCtx.fill();
+        });
+    }
+
+    // 幾何特徵歸一化（將 21 個點以手腕為原點平移並按手掌尺寸縮放）
+    function extractNormalizedFeatures(landmarks) {
+        const base = landmarks[0]; // 手腕座標
+        // 以手腕到中指根節點 (Landmark 9) 的歐氏距離作為手掌基準尺寸
+        const scale = Math.hypot(landmarks[9].x - base.x, landmarks[9].y - base.y) || 1.0;
+        
+        const featureVector = [];
+        for (let i = 0; i < 21; i++) {
+            featureVector.push((landmarks[i].x - base.x) / scale);
+            featureVector.push((landmarks[i].y - base.y) / scale);
+            featureVector.push((landmarks[i].z - base.z) / scale);
+        }
+        return featureVector; // 63 維幾何特徵向量
+    }
+
+    // 學生長按採樣機制
+    function startSampling(label) {
+        if (!currentLandmarks) {
+            alert("鏡頭前未偵測到手掌，請先將手伸入畫面！");
+            return;
+        }
+        isSampling = true;
+        samplingTarget = label;
+        document.getElementById("btn-sample-" + label).classList.add("recording");
+
+        sampleInterval = setInterval(() => {
+            if (isSampling && currentLandmarks) {
+                const vector = extractNormalizedFeatures(currentLandmarks);
+                dataset.push({ label: samplingTarget, vector: vector });
+                updateSampleCountUI(samplingTarget);
+                checkModelReadiness();
+            }
+        }, 80); // 每 80ms 取樣一幀
+    }
+
+    function stopSampling() {
+        isSampling = false;
+        clearInterval(sampleInterval);
+        if (samplingTarget) {
+            document.getElementById("btn-sample-" + samplingTarget).classList.remove("recording");
+            samplingTarget = null;
+        }
+    }
+
+    function updateSampleCountUI(label) {
+        const count = dataset.filter(d => d.label === label).length;
+        document.getElementById("cnt-" + label).innerText = count + " 幀";
+    }
+
+    function clearDataset() {
+        dataset = [];
+        Object.keys(GESTURES).forEach(key => updateSampleCountUI(key));
+        step2Ready = false;
+        document.getElementById("card-step2").classList.remove("done");
+        document.getElementById("tag-step2").innerText = "已重置 ⚪";
+        document.getElementById("btn-step2").innerText = "請重新錄製 5 款手勢";
+        checkCanUnlockStep3();
+    }
+
+    function checkModelReadiness() {
+        // 檢查 5 款手勢每款是否皆錄了 ≥ 8 幀
+        const counts = Object.keys(GESTURES).map(k => dataset.filter(d => d.label === k).length);
+        const allReady = counts.every(c => c >= 8);
+
+        if (allReady && !step2Ready) {
             step2Ready = true;
             document.getElementById("card-step2").classList.add("done");
-            document.getElementById("tag-step2").innerText = "已就緒 🟢";
-            btn.innerText = "✔ 模型與鏡頭就緒";
-            btn.classList.add("ready-btn");
-            btn.disabled = false;
+            document.getElementById("tag-step2").innerText = "訓練完成 🟢";
+            document.getElementById("btn-step2").innerText = "✔ 5 款手勢模型就緒";
             checkCanUnlockStep3();
-        } catch (e) {
-            btn.innerText = "重新載入模型";
-            btn.disabled = false;
-            alert("模型載入失敗，請確認網址正確: " + e.message);
+        }
+    }
+
+    // 核心輕量分類器（KNN：最近鄰歐氏距離算法）
+    function classifyCurrentPose() {
+        const currentVec = extractNormalizedFeatures(currentLandmarks);
+
+        // 計算當前特徵與資料庫所有樣本的歐氏距離
+        const distances = dataset.map(sample => {
+            let distSq = 0;
+            for (let i = 0; i < currentVec.length; i++) {
+                const diff = currentVec[i] - sample.vector[i];
+                distSq += diff * diff;
+            }
+            return { label: sample.label, dist: Math.sqrt(distSq) };
+        });
+
+        // 排序取前 K 個最近鄰 (K=5)
+        distances.sort((a, b) => a.dist - b.dist);
+        const k = Math.min(5, distances.length);
+        const topK = distances.slice(0, k);
+
+        // 統計各類別得票與信心度
+        const scores = {};
+        Object.keys(GESTURES).forEach(k => scores[k] = 0);
+        topK.forEach(item => scores[item.label]++);
+
+        let topCls = "Class 5";
+        let maxVotes = 0;
+        Object.keys(scores).forEach(cls => {
+            const prob = scores[cls] / k;
+            const row = document.getElementById("meter-row-" + cls.replace(" ", "-"));
+            const g = GESTURES[cls];
+            row.innerHTML = `<span>${g.symbol} ${g.name}</span><span>${(prob * 100).toFixed(0)}%</span>`;
+
+            if (prob > 0.6) row.classList.add("matched");
+            else row.classList.remove("matched");
+
+            if (scores[cls] > maxVotes) {
+                maxVotes = scores[cls];
+                topCls = cls;
+            }
+        });
+
+        // 觸發遊戲比對
+        if (isRunning && !isLocked && actionQueue.length > 0) {
+            const currentTarget = actionQueue[0];
+            const topProb = maxVotes / k;
+            if (topCls === currentTarget && topProb >= 0.6) {
+                handleSuccess(topCls, topProb);
+            }
         }
     }
 
@@ -600,48 +832,18 @@
         }
     }
 
-    async function predictLoop() {
-        webcam.update();
-        await evaluateTarget();
-        window.requestAnimationFrame(predictLoop);
-    }
+    // ================= 遊戲核心循環 =================
+    let actionQueue = [];
+    const QUEUE_LENGTH = 5;
+    let isRunning = false;
+    let isLocked = false;
+    let score = 0;
+    let combo = 0;
+    let roundStart = 0;
+    const TIME_LIMIT_MS = 3000;
+    let timerLoop = null;
+    let eventLogs = [];
 
-    // 實時推論比對
-    async function evaluateTarget() {
-        if (!model) return;
-        const predictions = await model.predict(webcam.canvas);
-
-        let topCls = "";
-        let topProb = 0;
-
-        for (let i = 0; i < maxPredictions; i++) {
-            const name = predictions[i].className;
-            const prob = predictions[i].probability;
-            const row = document.getElementById("meter-row-" + i);
-            const g = GESTURES[name] || { symbol: "", name: name, num: "" };
-
-            row.innerHTML = `<span>${g.symbol} ${g.name}</span><span>${(prob*100).toFixed(0)}%</span>`;
-
-            if (prob > topProb) {
-                topProb = prob;
-                topCls = name;
-            }
-            if (prob > 0.75) {
-                row.classList.add("matched");
-            } else {
-                row.classList.remove("matched");
-            }
-        }
-
-        if (isRunning && !isLocked && actionQueue.length > 0) {
-            const currentTarget = actionQueue[0];
-            if (topCls === currentTarget && topProb > 0.75) {
-                handleSuccess(topCls, topProb);
-            }
-        }
-    }
-
-    // ================= 步驟 3：開始遊戲 =================
     function startGame() {
         isRunning = true;
         isLocked = false;
@@ -734,7 +936,7 @@
             status: "HIT"
         });
 
-        // 經 WebSerial 送 1\n 讓 Tx 驅動機械人推進
+        // 經 WebSerial 送 1\n 讓 Tx 驅動爬繩機械人推進
         if (serialWriter) {
             try { await serialWriter.write("1\n"); } catch(e) {}
         }
@@ -788,7 +990,7 @@
         document.getElementById("robot-indicator").style.bottom = climbPct + "%";
     }
 
-    // 上傳成績至 Google Drive
+    // 上傳成績至 Google Drive / Sheets
     async function uploadDataToDrive() {
         if (!GAS_ENDPOINT || GAS_ENDPOINT.includes("YOUR_GOOGLE_APPS_SCRIPT")) {
             alert("請先填寫 Google Apps Script 網址！");
@@ -801,7 +1003,7 @@
             studentId: document.getElementById("studentId").value || "S_Unknown",
             condition: document.getElementById("conditionType").value,
             score: score,
-            comments: "",
+            totalSamples: dataset.length,
             logs: eventLogs
         };
 
@@ -812,7 +1014,7 @@
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify(payload)
             });
-            alert("比賽日誌已成功儲存至 Google Drive！");
+            alert("比賽日誌與採樣特徵已成功儲存！");
         } catch (err) {
             alert("上傳失敗: " + err.message);
         }
