@@ -962,17 +962,26 @@
         }
     }
 
-    // MediaPipe 骨骼幾何分類核心
+    // =========================================================================
+    // 【模式二升級】真實連續幾何置信度算法 (Real Continuous Confidence Scoring)
+    // =========================================================================
     function onMediaPipeResults(results) {
         mpCtx.clearRect(0, 0, mpCanvas.width, mpCanvas.height);
         mpCtx.drawImage(results.image, 0, 0, mpCanvas.width, mpCanvas.height);
 
+        // 預設四類置信度分數 (0.0 ~ 1.0)
+        let confidences = {
+            "Rock": 0.0,
+            "Scissors": 0.0,
+            "Paper": 0.0,
+            "ThumbsUp": 0.0
+        };
         let detectedGesture = "None";
 
         if (results.multiHandLandmarks && results.multiHandLandmarks.length > 0) {
             const lm = results.multiHandLandmarks[0];
 
-            // 繪製骨骼線 (Neon Blue)
+            // 1. 繪製青藍色骨骼拓撲線
             mpCtx.strokeStyle = "var(--neon-blue)";
             mpCtx.lineWidth = 2.5;
             for (let c of HAND_CONNECTIONS) {
@@ -983,7 +992,7 @@
                 mpCtx.stroke();
             }
 
-            // 繪製 21 個關鍵點 (Neon Pink)
+            // 2. 繪製 21 個粉紅關鍵節點
             mpCtx.fillStyle = "var(--neon-pink)";
             for (let p of lm) {
                 mpCtx.beginPath();
@@ -991,40 +1000,67 @@
                 mpCtx.fill();
             }
 
-            // 幾何特徵向量與歐氏距離解算
+            // 3. 幾何尺規：以手掌基底長度 (手腕點 0 到 中指根部點 9) 作為手掌個體比例尺
             const dist = (i, j) => Math.hypot(lm[i].x - lm[j].x, lm[i].y - lm[j].y);
+            const palmBase = dist(0, 9) + 1e-5;
 
-            // 指尖相對於掌心與關節的伸展判定
-            const isIndexOpen = dist(8, 0) > dist(6, 0) * 1.15;
-            const isMiddleOpen = dist(12, 0) > dist(10, 0) * 1.15;
-            const isRingOpen = dist(16, 0) > dist(14, 0) * 1.15;
-            const isPinkyOpen = dist(20, 0) > dist(18, 0) * 1.15;
-            const isThumbOpen = dist(4, 17) > dist(2, 17) * 1.2;
+            // 計算 5 根手指的連續伸展系數 (0.0: 完全彎曲, 1.0: 完全伸直)
+            const getExtension = (tip, pip) => {
+                const ratio = dist(tip, 0) / (dist(pip, 0) + 1e-5);
+                // 映射 ratio (0.8~1.35) 到 0.0~1.0
+                return Math.max(0.0, Math.min(1.0, (ratio - 0.85) / 0.45));
+            };
 
-            // 4 類經典手勢決策樹
-            if (isIndexOpen && isMiddleOpen && isRingOpen && isPinkyOpen) {
-                detectedGesture = "Paper";
-            } else if (isIndexOpen && isMiddleOpen && !isRingOpen && !isPinkyOpen) {
-                detectedGesture = "Scissors";
-            } else if (!isIndexOpen && !isMiddleOpen && !isRingOpen && !isPinkyOpen && isThumbOpen && (lm[4].y < lm[3].y)) {
-                detectedGesture = "ThumbsUp";
-            } else if (!isIndexOpen && !isMiddleOpen && !isRingOpen && !isPinkyOpen) {
-                detectedGesture = "Rock";
+            const extThumb = Math.max(0.0, Math.min(1.0, (dist(4, 17) / palmBase - 0.7) / 0.5));
+            const extIndex = getExtension(8, 6);
+            const extMiddle = getExtension(12, 10);
+            const extRing = getExtension(16, 14);
+            const extPinky = getExtension(20, 18);
+
+            // 拇指朝上幾何權重 (點 4 必須高於點 2，螢幕 Y 坐標越小越高)
+            const thumbUpFactor = Math.max(0.0, Math.min(1.0, (lm[2].y - lm[4].y) / (palmBase * 0.4)));
+
+            // 4. 動態計算各類別的連續幾何置信度 (0.0 ~ 1.0)
+            // 布 (Paper): 五指全部伸直
+            confidences["Paper"] = extIndex * 0.25 + extMiddle * 0.25 + extRing * 0.25 + extPinky * 0.25;
+
+            // 石頭 (Rock): 四指全部收攏
+            confidences["Rock"] = (1.0 - extIndex) * 0.25 + (1.0 - extMiddle) * 0.25 + (1.0 - extRing) * 0.25 + (1.0 - extPinky) * 0.25;
+
+            // 剪刀 (Scissors): 食中伸直，無名尾指收攏
+            confidences["Scissors"] = (extIndex * 0.3) + (extMiddle * 0.3) + ((1.0 - extRing) * 0.2) + ((1.0 - extPinky) * 0.2);
+
+            // 讚好 (ThumbsUp): 四指收攏，拇指獨立朝上
+            confidences["ThumbsUp"] = ((1.0 - extIndex) * 0.2) + ((1.0 - extMiddle) * 0.2) + ((1.0 - extRing) * 0.2) + (extThumb * 0.2) + (thumbUpFactor * 0.2);
+
+            // 找出當前置信度最高的手勢
+            let maxScore = 0;
+            for (let k in confidences) {
+                if (confidences[k] > maxScore) {
+                    maxScore = confidences[k];
+                    detectedGesture = k;
+                }
+            }
+
+            // 置信度未達 65% 視為未決狀態 (None)
+            if (maxScore < 0.65) {
+                detectedGesture = "None";
             }
         }
 
-        updateMediaPipeMeters(detectedGesture);
+        // 更新介面連續百分比
+        updateMediaPipeMeters(detectedGesture, confidences);
 
-        // 命中判定
+        // 競技節奏判定
         if (isMPGameRunning && !isMPLocked && mpActionQueue.length > 0) {
             const currentTarget = mpActionQueue[0];
-            if (detectedGesture === currentTarget) {
+            if (detectedGesture === currentTarget && confidences[detectedGesture] >= 0.75) {
                 handleMPSuccess(detectedGesture);
             }
         }
     }
 
-    function updateMediaPipeMeters(detected) {
+    function updateMediaPipeMeters(detected, confidences) {
         const rows = {
             "Rock": document.getElementById("mp-row-rock"),
             "Scissors": document.getElementById("mp-row-scissors"),
@@ -1039,12 +1075,13 @@
         };
 
         for (let k in rows) {
-            if (k === detected) {
+            const pctVal = Math.round((confidences[k] || 0) * 100);
+            pcts[k].innerText = `${pctVal}%`;
+
+            if (k === detected && pctVal >= 75) {
                 rows[k].classList.add("matched");
-                pcts[k].innerText = "100% 🎯";
             } else {
                 rows[k].classList.remove("matched");
-                pcts[k].innerText = "0%";
             }
         }
     }
