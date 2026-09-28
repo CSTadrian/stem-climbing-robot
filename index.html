@@ -13,6 +13,7 @@
             --neon-blue: #00f0ff;
             --neon-yellow: #ffe600;
             --neon-green: #00ff66;
+            --wood-tone: #d4b287;
             --bg-dark: #0a0b16;
             --card-bg: rgba(22, 26, 51, 0.9);
             --border-dim: #262c54;
@@ -36,7 +37,7 @@
             gap: 14px;
         }
 
-        /* 模式切換頂欄導航 */
+        /* 模式切換導航欄 */
         .mode-nav-bar {
             display: grid;
             grid-template-columns: 1fr 1fr;
@@ -69,7 +70,7 @@
             box-shadow: 0 0 16px rgba(0, 240, 255, 0.35);
         }
 
-        /* 學生基本資訊條 */
+        /* 學生基本資訊膠囊條 */
         .meta-strip {
             display: grid;
             grid-template-columns: 140px 140px 1.5fr auto;
@@ -89,10 +90,10 @@
             font-size: 13px;
         }
 
-        /* ================= 模式一：街機看板與任務卡 ================= */
         .mode-section { display: none; flex-direction: column; gap: 14px; }
         .mode-section.active-mode { display: flex; }
 
+        /* ================= 模式一：駕駛艙 UI ================= */
         .stepper-board {
             display: grid;
             grid-template-columns: 1fr 1.3fr 1fr;
@@ -372,7 +373,7 @@
         }
         #splash-text.show { transform: translate(-50%, -50%) scale(1.15); }
 
-        /* ================= 模式二：地面遙測站視覺面板 ================= */
+        /* ================= 模式二：地面遙測站 UI (適配原色木質機身) ================= */
         .telemetry-layout {
             display: grid;
             grid-template-columns: 1.4fr 1fr;
@@ -406,13 +407,14 @@
             position: absolute;
             top: 10px;
             left: 10px;
-            background: rgba(0,0,0,0.65);
-            padding: 6px 12px;
+            background: rgba(0,0,0,0.75);
+            padding: 8px 12px;
             border-radius: 6px;
             font-size: 11px;
-            color: var(--neon-blue);
+            color: #fff;
             border: 1px solid rgba(0, 240, 255, 0.3);
             pointer-events: none;
+            line-height: 1.4;
         }
 
         .telemetry-data-card {
@@ -434,7 +436,6 @@
             font-size: 12px;
             color: #8892b0;
             font-weight: 800;
-            letter-spacing: 0.5px;
             display: flex;
             justify-content: space-between;
         }
@@ -447,7 +448,6 @@
         .val-speed { color: var(--neon-green); text-shadow: 0 0 12px rgba(0, 255, 102, 0.4); }
         .val-dist { color: var(--neon-blue); text-shadow: 0 0 12px rgba(0, 240, 255, 0.4); }
 
-        /* 實時速度折線圖 Canvas */
         #speed-chart-canvas {
             width: 100%;
             height: 90px;
@@ -480,7 +480,7 @@
 
 <div class="arena-container">
 
-    <!-- 頂部：雙模式切換導航欄 -->
+    <!-- 頂部雙模式切換導航 -->
     <div class="mode-nav-bar">
         <button class="mode-tab-btn active" id="tab-mode-1" onclick="switchSystemMode(1)">
             <span>🎮 模式一：駕駛艙</span>
@@ -488,11 +488,11 @@
         </button>
         <button class="mode-tab-btn" id="tab-mode-2" onclick="switchSystemMode(2)">
             <span>📡 模式二：地面遙測站</span>
-            <span style="font-size: 11px; font-weight: normal; opacity: 0.8;">(視覺測速 + 鏡頭空間測距)</span>
+            <span style="font-size: 11px; font-weight: normal; opacity: 0.8;">(木質機身追蹤 + 空間深度測距)</span>
         </button>
     </div>
 
-    <!-- 學生分組資料列 (兩模式共用) -->
+    <!-- 學生分組資料列 -->
     <div class="meta-strip">
         <input type="text" id="groupId" placeholder="組別 (例: Group-01)">
         <input type="text" id="studentId" placeholder="學號 (例: S01)">
@@ -505,13 +505,9 @@
         </button>
     </div>
 
-    <!-- =========================================================================
-         【模式一：駕駛艙 UI (原功能完整保留)】
-         ========================================================================= -->
+    <!-- ================= 模式一：駕駛艙 (保持完整) ================= -->
     <div class="mode-section active-mode" id="section-mode-1">
-        <!-- 1-2-3 步驟看板 -->
         <div class="stepper-board">
-            <!-- 步驟 1: 硬件串口連接 -->
             <div class="step-card" id="card-step1">
                 <div>
                     <div class="step-header">
@@ -527,7 +523,6 @@
                 </button>
             </div>
 
-            <!-- 步驟 2: AI 模型與鏡頭 -->
             <div class="step-card" id="card-step2">
                 <div>
                     <div class="step-header">
@@ -541,7 +536,6 @@
                 </button>
             </div>
 
-            <!-- 步驟 3: 啟動對戰競技 -->
             <div class="step-card" id="card-step3">
                 <div>
                     <div class="step-header">
@@ -558,7 +552,6 @@
             </div>
         </div>
 
-        <!-- 主遊戲擂台 -->
         <div class="stage-layout">
             <div class="arena-box">
                 <div class="hud-bar">
@@ -566,7 +559,6 @@
                     <div class="score-pill">攀爬得分：<span id="score-counter">0</span></div>
                 </div>
 
-                <!-- 動作預告流動軌道 -->
                 <div class="ribbon-track-wrapper">
                     <div class="ribbon-track" id="queue-ribbon"></div>
                     <div class="timer-bg">
@@ -575,7 +567,6 @@
                     <div id="splash-text">PERFECT!</div>
                 </div>
 
-                <!-- 鏡頭與類別判定比率 -->
                 <div class="arena-footer">
                     <div class="webcam-box">
                         <div id="webcam-container"></div>
@@ -589,7 +580,6 @@
                 </div>
             </div>
 
-            <!-- 右側攀爬高度塔 -->
             <div class="tower-card">
                 <div style="font-size: 26px;">🏆</div>
                 <div style="font-size: 10px; color: #8892b0; font-weight: bold;">FINISH</div>
@@ -602,22 +592,19 @@
         </div>
     </div>
 
-    <!-- =========================================================================
-         【模式二：地面遙測站 UI (新增：速度與鏡頭空間距離監控)】
-         ========================================================================= -->
+    <!-- ================= 模式二：地面遙測站 (木質機械人追蹤與測速) ================= -->
     <div class="mode-section" id="section-mode-2">
         <div class="telemetry-layout">
-            <!-- 視訊追蹤與 HUD 畫布 -->
             <div class="telemetry-cam-card">
                 <div style="display:flex; justify-content:space-between; align-items:center;">
-                    <span style="font-weight:800; font-size:14px; color:var(--neon-blue);">📡 軌道全局追蹤視野 (Global Tracker)</span>
+                    <span style="font-weight:800; font-size:14px; color:var(--neon-blue);">📡 軌道全局追蹤視野 (Wood Body Tracker)</span>
                     <span id="track-status-tag" style="font-size:11px; background:#111428; border:1px solid #333d6b; color:#8892b0; padding:2px 8px; border-radius:10px;">未啟動鏡頭</span>
                 </div>
                 <div class="cam-feed-wrapper">
                     <canvas id="telemetry-canvas" width="640" height="480"></canvas>
                     <div class="cam-crosshair-hud">
-                        點擊畫面中機械人色塊可重新校準取色 🎯<br>
-                        目標錨點：<span id="target-rgb-preview" style="color:var(--neon-pink); font-weight:bold;">螢光標記 (RGB: 255, 0, 128)</span>
+                        點擊畫面中機械人木板可重新校準取色 🎯<br>
+                        追蹤目標：<span id="target-rgb-preview" style="color:var(--wood-tone); font-weight:bold;">椴木面板 (RGB: 212, 178, 135)</span>
                     </div>
                 </div>
                 <div class="telemetry-ctrl-strip">
@@ -625,14 +612,12 @@
                         📷 開啟/重啟遙測鏡頭
                     </button>
                     <button class="step-btn" style="background:#1e274a; border-color:#3a4b88;" onclick="resetTelemetryCalibration()">
-                        🔄 恢復預設螢光粉紅標記
+                        🔄 恢復預設椴木板取色
                     </button>
                 </div>
             </div>
 
-            <!-- 數據儀表板與運動學折線圖 -->
             <div class="telemetry-data-card">
-                <!-- 瞬時速度瓦片 -->
                 <div class="metric-tile">
                     <div class="metric-title">
                         <span>⚡ 機械人攀爬速度 (SPEED: v)</span>
@@ -641,15 +626,13 @@
                     <div class="metric-val val-speed">
                         <span id="telemetry-speed-val">0.0</span><span class="metric-unit">cm/s</span>
                     </div>
-                    <!-- 即時速度動態折線圖 -->
                     <canvas id="speed-chart-canvas" width="300" height="90"></canvas>
                 </div>
 
-                <!-- 鏡頭三維空間距離瓦片 -->
                 <div class="metric-tile">
                     <div class="metric-title">
                         <span>📏 機械人距鏡頭空間距離 (DEPTH: Z)</span>
-                        <span style="font-size:10px; color:#8892b0;">基於 5cm 實體標記針孔模型</span>
+                        <span style="font-size:10px; color:#8892b0;">基於 7.0cm 實體木機身幾何投影</span>
                     </div>
                     <div class="metric-val val-dist">
                         <span id="telemetry-dist-val">--</span><span class="metric-unit">cm</span>
@@ -659,16 +642,14 @@
                     </div>
                 </div>
 
-                <!-- 異常警報盒 -->
                 <div class="stall-badge" id="stall-warning-box">
                     ⚠️ 偵測到機械堵轉或停滯！(速度接近 0 cm/s 超過 1.5 秒)
                 </div>
 
-                <!-- 遙測輔助資訊 -->
                 <div style="background:#090b16; border:1px solid #232a50; border-radius:10px; padding:10px 14px; font-size:11px; color:#8892b0; line-height:1.5;">
-                    💡 <b style="color:#fff;">遙測工程原理說明：</b><br>
-                    • <b>空間距離 $Z = \frac{W_{\text{real}} \times f}{w_{\text{pixel}}}$</b>：機械人離鏡頭越遠，標記像素越小。<br>
-                    • <b>物理速度 $v(t) = \frac{\Delta s}{\Delta t}$</b>：透過前後幀質心坐標歐氏位移解算瞬時速度。
+                    🪵 <b style="color:var(--wood-tone);">椴木機身追蹤演算法：</b><br>
+                    • 針對原色雷射切片採用 <b>HSV 暖色域過濾（Hue 25°–45°）</b>，避免誤判背景木桌。<br>
+                    • 空間距離公式：$Z = \frac{7.0\text{ cm} \times f}{w_{\text{pixel}}}$，隨機械人遠離鏡頭動態縮減。
                 </div>
             </div>
         </div>
@@ -680,7 +661,7 @@
     // =========================================================================
     // 雙模式全域切換邏輯
     // =========================================================================
-    let currentSystemMode = 1; // 1: 駕駛艙 (GTM), 2: 地面遙測站 (視覺測速/測距)
+    let currentSystemMode = 1;
 
     function switchSystemMode(modeNum) {
         currentSystemMode = modeNum;
@@ -689,14 +670,13 @@
         document.getElementById("section-mode-1").classList.toggle("active-mode", modeNum === 1);
         document.getElementById("section-mode-2").classList.toggle("active-mode", modeNum === 2);
 
-        if (modeNum === 2) {
-            // 切換至遙測模式時，自動確保遙測鏡頭運作
-            if (!telemetryVideo) initTelemetryCamera();
+        if (modeNum === 2 && !telemetryVideo) {
+            initTelemetryCamera();
         }
     }
 
     // =========================================================================
-    // 【模式一核心邏輯】GTM 手勢識別 + Grad-CAM + 街機遊戲
+    // 【模式一：駕駛艙】GTM + Grad-CAM
     // =========================================================================
     const GESTURES = {
         "Class 1": { name: "石頭", symbol: "✊", num: "No. 1" },
@@ -712,7 +692,6 @@
     let step1Ready = false;
     let step2Ready = false;
 
-    // Web Audio 合成音效
     let audioCtx = null;
     function playSfx(type) {
         try {
@@ -752,7 +731,6 @@
     let model, webcam, maxPredictions;
     let serialPort, serialWriter;
 
-    // Grad-CAM 相關變數
     let convSubModel = null;
     let headLayers = [];
     let displayCanvas, displayCtx;
@@ -760,7 +738,6 @@
     let gradCamThrottle = 0;
     let cachedHeatmapCanvas = null;
 
-    // 遊戲流變數
     let actionQueue = [];
     const QUEUE_LENGTH = 5;
     let isRunning = false;
@@ -772,7 +749,6 @@
     let timerLoop = null;
     let eventLogs = [];
 
-    // 步驟 1：WebSerial 連接
     async function connectSerial() {
         try {
             serialPort = await navigator.serial.requestPort();
@@ -792,7 +768,6 @@
         }
     }
 
-    // 步驟 2：AI 模型與鏡頭
     async function initAI() {
         let url = document.getElementById("modelUrl").value.trim();
         if (!url) { alert("請先填寫 Teachable Machine 網址！"); return; }
@@ -890,7 +865,6 @@
                     });
                 }
             }
-            console.log("✔ Grad-CAM 已成功綁定卷積層:", targetConvLayer ? targetConvLayer.name : "未找到");
         } catch(err) {
             console.warn("Grad-CAM 綁定提示:", err);
         }
@@ -1218,31 +1192,26 @@
     }
 
     // =========================================================================
-    // 【模式二核心邏輯】地面遙測站：視覺測速 + 鏡頭三維空間測距
+    // 【模式二：地面遙測站】專門適配「原色椴木雷射切片」追蹤
     // =========================================================================
     let telemetryVideo = null;
     let telemetryCanvas = document.getElementById("telemetry-canvas");
     let telemetryCtx = telemetryCanvas.getContext("2d");
     let isTelemetryRunning = false;
 
-    // 針孔相機模型參數 (Pinhole Depth Model)
-    // 假設機械人身上貼有寬度 W_real = 5.0 cm 的實體標記
-    const MARKER_REAL_WIDTH_CM = 5.0; 
-    // 標準 Webcam 焦距常數 (Focal length in pixels, 640x480 下約為 580)
-    const FOCAL_LENGTH_PX = 580.0; 
+    // 依據照片實體機身：椴木面板真實寬度約為 7.0 cm[cite: 1]
+    const ROBOT_REAL_WIDTH_CM = 7.0; 
+    const FOCAL_LENGTH_PX = 580.0; // 640x480 相機標準等效焦距
 
-    // 目標色塊追蹤閥值 (預設為螢光粉紅色)
-    let targetRGB = { r: 255, g: 20, b: 147 };
-    let colorTolerance = 75; // 色彩歐氏距離容差
+    // 預設為雷射切片原色椴木板 (Warm Plywood: R:212, G:178, B:135)[cite: 1]
+    let targetRGB = { r: 212, g: 178, b: 135 };
 
-    // 運動學計算歷史緩存
-    let prevPosition = null; // { x, y, timestamp }
-    let currentSpeed = 0.0;   // cm/s
-    let speedHistory = [];   // 用於折線圖繪製
+    let prevPosition = null;
+    let currentSpeed = 0.0;
+    let speedHistory = [];
     const MAX_HISTORY = 40;
-    let zeroSpeedDuration = 0; // 停滯累計時間 (ms)
+    let zeroSpeedDuration = 0;
 
-    // 啟動遙測鏡頭
     async function initTelemetryCamera() {
         try {
             if (!telemetryVideo) {
@@ -1283,7 +1252,7 @@
         }
     }
 
-    // 點擊畫面重新採樣標記顏色 (Click-to-Calibrate)
+    // 點擊畫面任意處，以該點像素作為木板顏色基準
     telemetryCanvas.addEventListener("click", function(e) {
         if (!telemetryVideo) return;
         const rect = telemetryCanvas.getBoundingClientRect();
@@ -1294,18 +1263,49 @@
 
         const p = telemetryCtx.getImageData(clickX, clickY, 1, 1).data;
         targetRGB = { r: p[0], g: p[1], b: p[2] };
-        document.getElementById("target-rgb-preview").innerText = `自訂標記 (RGB: ${p[0]}, ${p[1]}, ${p[2]})`;
+        document.getElementById("target-rgb-preview").innerText = `已校準木紋 (RGB: ${p[0]}, ${p[1]}, ${p[2]})`;
         document.getElementById("target-rgb-preview").style.color = `rgb(${p[0]}, ${p[1]}, ${p[2]})`;
     });
 
     function resetTelemetryCalibration() {
-        targetRGB = { r: 255, g: 20, b: 147 }; // 恢復預設鮮艷粉紅
-        document.getElementById("target-rgb-preview").innerText = `螢光標記 (RGB: 255, 20, 147)`;
-        document.getElementById("target-rgb-preview").style.color = "var(--neon-pink)";
+        targetRGB = { r: 212, g: 178, b: 135 }; // 恢復預設椴木板標準色[cite: 1]
+        document.getElementById("target-rgb-preview").innerText = `椴木面板 (RGB: 212, 178, 135)`;
+        document.getElementById("target-rgb-preview").style.color = "var(--wood-tone)";
     }
 
-    // 模式二主循環：特徵提取、距離解算、運動學微分
-    function telemetryProcessLoop(timestamp) {
+    // 判定像素是否屬於「椴木層板」：RGB 與 HSV 雙重濾波[cite: 1]
+    function isWoodColor(r, g, b) {
+        // 1. 天然木質特徵：R > G 且 G > B[cite: 1]
+        if (r <= g || g <= b) return false;
+
+        // 2. 轉換為 HSV 色相判定
+        const max = Math.max(r, g, b), min = Math.min(r, g, b);
+        const d = max - min;
+        if (max === 0 || d === 0) return false;
+
+        let h = 0;
+        if (max === r) h = ((g - b) / d) % 6;
+        else if (max === g) h = (b - r) / d + 2;
+        else h = (r - g) / d + 4;
+        h = Math.round(h * 60);
+        if (h < 0) h += 360;
+
+        const s = d / max;
+        const v = max / 255;
+
+        // 3. 椴木色相帶：Hue 22°–48°，飽和度適中 (0.16–0.58)，明度較高 (0.45–0.96)[cite: 1]
+        const isHueMatch = (h >= 22 && h <= 48);
+        const isSatMatch = (s >= 0.16 && s <= 0.58);
+        const isValMatch = (v >= 0.45 && v <= 0.96);
+
+        // 4. 與目標基準色彩的歐氏距離
+        const colorDiff = Math.hypot(r - targetRGB.r, g - targetRGB.g, b - targetRGB.b);
+
+        return isHueMatch && isSatMatch && isValMatch && (colorDiff < 75);
+    }
+
+    // 模式二主循環：空間深度測距與瞬時運動學解算
+    function telemetryProcessLoop() {
         if (!isTelemetryRunning || !telemetryVideo) return;
 
         telemetryCtx.drawImage(telemetryVideo, 0, 0, telemetryCanvas.width, telemetryCanvas.height);
@@ -1316,12 +1316,10 @@
         let minX = telemetryCanvas.width, maxX = 0;
         let minY = telemetryCanvas.height, maxY = 0;
 
-        // 色彩歐氏距離快速取樣過濾 (步長 4 像素以保證 60 FPS)
         for (let i = 0; i < d.length; i += 16) {
             const r = d[i], g = d[i+1], b = d[i+2];
-            const dist = Math.hypot(r - targetRGB.r, g - targetRGB.g, b - targetRGB.b);
 
-            if (dist < colorTolerance) {
+            if (isWoodColor(r, g, b)) {
                 const pixelIndex = i / 4;
                 const px = pixelIndex % telemetryCanvas.width;
                 const py = Math.floor(pixelIndex / telemetryCanvas.width);
@@ -1334,35 +1332,32 @@
             }
         }
 
-        // 成功辨識並追蹤到實體標記
-        if (count > 25) {
+        // 檢測到木質機身像素簇[cite: 1]
+        if (count > 30) {
             const cx = sumX / count;
             const cy = sumY / count;
             const markerWidthPx = Math.max(1, maxX - minX);
             const markerHeightPx = Math.max(1, maxY - minY);
-            const apparentPxSize = Math.max(markerWidthPx, markerHeightPx);
+            const apparentPxWidth = markerWidthPx;
 
-            // ================= 1. 鏡頭三維空間深度測距 (Depth Z) =================
-            // 針孔相機模型公式：Z = (實體尺寸 W * 焦距 F) / 成像像素尺寸 w_p
-            const depthCm = (MARKER_REAL_WIDTH_CM * FOCAL_LENGTH_PX) / apparentPxSize;
+            // 1. 空間深度測距：Z = (實體木機身 7.0cm * 焦距) / 像素寬度[cite: 1]
+            const depthCm = (ROBOT_REAL_WIDTH_CM * FOCAL_LENGTH_PX) / apparentPxWidth;
             document.getElementById("telemetry-dist-val").innerText = depthCm.toFixed(1);
-            document.getElementById("marker-px-width").innerText = apparentPxSize;
+            document.getElementById("marker-px-width").innerText = apparentPxWidth;
 
-            // ================= 2. 攀爬物理速度計算 (Speed v = Δs / Δt) =================
+            // 2. 運動學瞬時速度計算 (cm/s)
             const now = performance.now();
             if (prevPosition) {
-                const dt = (now - prevPosition.timestamp) / 1000.0; // 秒
-                if (dt > 0.04) { // 每 40ms 更新一次速度
-                    // 像素位移轉公分比例尺：1 pixel = (MARKER_REAL_WIDTH_CM / apparentPxSize) cm
-                    const pxToCm = MARKER_REAL_WIDTH_CM / apparentPxSize;
+                const dt = (now - prevPosition.timestamp) / 1000.0;
+                if (dt > 0.04) {
+                    const pxToCm = ROBOT_REAL_WIDTH_CM / apparentPxWidth;
                     const deltaPx = Math.hypot(cx - prevPosition.x, cy - prevPosition.y);
                     const deltaCm = deltaPx * pxToCm;
                     const rawSpeed = deltaCm / dt;
 
-                    // 低通濾波 (EMA)，濾除相機採樣像素微小毛刺抖動
-                    currentSpeed = (currentSpeed * 0.7) + (rawSpeed * 0.3);
+                    currentSpeed = (currentSpeed * 0.7) + (rawSpeed * 0.3); // 低通平滑濾波
 
-                    // 停滯/卡死檢測邏輯
+                    // 停滯警報
                     if (currentSpeed < 0.8) {
                         zeroSpeedDuration += (dt * 1000);
                         if (zeroSpeedDuration > 1500) {
@@ -1376,7 +1371,6 @@
                     document.getElementById("telemetry-speed-val").innerText = currentSpeed.toFixed(1);
                     document.getElementById("speed-trend-label").innerText = currentSpeed.toFixed(1) + " cm/s";
 
-                    // 記錄折線圖數據
                     speedHistory.push(currentSpeed);
                     if (speedHistory.length > MAX_HISTORY) speedHistory.shift();
                     drawSpeedChart();
@@ -1387,24 +1381,24 @@
                 prevPosition = { x: cx, y: cy, timestamp: now };
             }
 
-            // 繪製目標十字準星與邊界追蹤框 (Target Reticle)
-            telemetryCtx.strokeStyle = "var(--neon-green)";
+            // 繪製螢光青藍色追蹤框（避免與木質機身混色）[cite: 1]
+            telemetryCtx.strokeStyle = "var(--neon-blue)";
             telemetryCtx.lineWidth = 3;
             telemetryCtx.strokeRect(minX, minY, markerWidthPx, markerHeightPx);
 
+            // 標示質心準星
             telemetryCtx.strokeStyle = "var(--neon-yellow)";
             telemetryCtx.beginPath();
-            telemetryCtx.arc(cx, cy, 8, 0, Math.PI * 2);
-            telemetryCtx.moveTo(cx - 15, cy); telemetryCtx.lineTo(cx + 15, cy);
-            telemetryCtx.moveTo(cx, cy - 15); telemetryCtx.lineTo(cx, cy + 15);
+            telemetryCtx.arc(cx, cy, 7, 0, Math.PI * 2);
+            telemetryCtx.moveTo(cx - 14, cy); telemetryCtx.lineTo(cx + 14, cy);
+            telemetryCtx.moveTo(cx, cy - 14); telemetryCtx.lineTo(cx, cy + 14);
             telemetryCtx.stroke();
 
-            // 標註 HUD 數值至畫面
+            // 繪製實時 HUD 資訊
             telemetryCtx.fillStyle = "#ffffff";
             telemetryCtx.font = "bold 13px sans-serif";
-            telemetryCtx.fillText(`Z: ${depthCm.toFixed(1)}cm | V: ${currentSpeed.toFixed(1)}cm/s`, minX, Math.max(20, minY - 8));
+            telemetryCtx.fillText(`[WOOD BODY] Z: ${depthCm.toFixed(1)}cm | V: ${currentSpeed.toFixed(1)}cm/s`, minX, Math.max(20, minY - 8));
         } else {
-            // 丟失目標
             document.getElementById("telemetry-dist-val").innerText = "--";
             document.getElementById("marker-px-width").innerText = "0";
             prevPosition = null;
@@ -1413,7 +1407,6 @@
         requestAnimationFrame(telemetryProcessLoop);
     }
 
-    // 繪製即時速度折線圖
     const chartCanvas = document.getElementById("speed-chart-canvas");
     const chartCtx = chartCanvas.getContext("2d");
 
@@ -1422,7 +1415,6 @@
         const h = chartCanvas.height;
         chartCtx.clearRect(0, 0, w, h);
 
-        // 繪製網格線
         chartCtx.strokeStyle = "#161b36";
         chartCtx.lineWidth = 1;
         chartCtx.beginPath();
@@ -1431,11 +1423,10 @@
 
         if (speedHistory.length < 2) return;
 
-        // 繪製速度曲線
         chartCtx.strokeStyle = "#00ff66";
         chartCtx.lineWidth = 2.5;
         chartCtx.beginPath();
-        const maxVal = 25.0; // 假定最高速度 25 cm/s
+        const maxVal = 25.0;
 
         for (let i = 0; i < speedHistory.length; i++) {
             const x = (i / (MAX_HISTORY - 1)) * w;
