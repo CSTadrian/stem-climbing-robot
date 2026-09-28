@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AI Robot Gesture Arena & Telemetry Hub (Interactive ROI Edition)</title>
+    <title>AI Robot Gesture Arena & Telemetry Hub (HC010 Calibrated Edition)</title>
     <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@latest/dist/tf.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@teachablemachine/image@latest/dist/teachablemachine-image.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
@@ -70,7 +70,6 @@
             box-shadow: 0 0 16px rgba(0, 240, 255, 0.35);
         }
 
-        /* 學生基本資訊膠囊條 */
         .meta-strip {
             display: grid;
             grid-template-columns: 140px 140px 1.5fr auto;
@@ -93,12 +92,8 @@
         .mode-section { display: none; flex-direction: column; gap: 14px; }
         .mode-section.active-mode { display: flex; }
 
-        /* ================= 模式一：駕駛艙 UI ================= */
-        .stepper-board {
-            display: grid;
-            grid-template-columns: 1fr 1.3fr 1fr;
-            gap: 14px;
-        }
+        /* 模式一樣式維持不變 */
+        .stepper-board { display: grid; grid-template-columns: 1fr 1.3fr 1fr; gap: 14px; }
         .step-card {
             background: var(--card-bg);
             border: 2px solid var(--border-dim);
@@ -110,418 +105,76 @@
             position: relative;
             transition: all 0.3s ease;
         }
-        .step-card.done {
-            border-color: var(--neon-green);
-            box-shadow: 0 0 15px rgba(0, 255, 102, 0.2);
-        }
-        .step-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 8px;
-        }
-        .step-title {
-            font-weight: 800;
-            font-size: 14px;
-            display: flex;
-            align-items: center;
-            gap: 6px;
-        }
-        .step-tag {
-            font-size: 11px;
-            padding: 2px 8px;
-            border-radius: 12px;
-            background: #111428;
-            color: #8892b0;
-            border: 1px solid #333d6b;
-            font-weight: bold;
-        }
-        .step-card.done .step-tag {
-            background: rgba(0, 255, 102, 0.15);
-            color: var(--neon-green);
-            border-color: var(--neon-green);
-        }
-        .step-btn {
-            background: linear-gradient(135deg, #1e293b, #334155);
-            color: #fff;
-            border: 1px solid #475569;
-            padding: 10px 14px;
-            border-radius: 8px;
-            font-weight: bold;
-            font-size: 13px;
-            cursor: pointer;
-            width: 100%;
-        }
-        .step-btn.ready-btn {
-            background: linear-gradient(135deg, #059669, #10b981);
-            border-color: var(--neon-green);
-        }
+        .step-card.done { border-color: var(--neon-green); box-shadow: 0 0 15px rgba(0, 255, 102, 0.2); }
+        .step-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+        .step-title { font-weight: 800; font-size: 14px; display: flex; align-items: center; gap: 6px; }
+        .step-tag { font-size: 11px; padding: 2px 8px; border-radius: 12px; background: #111428; color: #8892b0; border: 1px solid #333d6b; font-weight: bold; }
+        .step-card.done .step-tag { background: rgba(0, 255, 102, 0.15); color: var(--neon-green); border-color: var(--neon-green); }
+        .step-btn { background: linear-gradient(135deg, #1e293b, #334155); color: #fff; border: 1px solid #475569; padding: 10px 14px; border-radius: 8px; font-weight: bold; font-size: 13px; cursor: pointer; width: 100%; }
+        .step-btn.ready-btn { background: linear-gradient(135deg, #059669, #10b981); border-color: var(--neon-green); }
+        .btn-launch { background: #1a2035; color: #64748b; border: 2px dashed #334155; padding: 12px; border-radius: 8px; font-size: 16px; font-weight: 900; cursor: not-allowed; width: 100%; min-height: 48px; }
+        .btn-launch.unlocked { background: linear-gradient(135deg, var(--neon-blue), var(--neon-green)); color: #032117; border: none; cursor: pointer; box-shadow: 0 0 20px rgba(0, 240, 255, 0.6); animation: pulse-launch 1.4s infinite alternate; }
+        @keyframes pulse-launch { 0% { transform: scale(1); } 100% { transform: scale(1.02); } }
 
-        .btn-launch {
-            background: #1a2035;
-            color: #64748b;
-            border: 2px dashed #334155;
-            padding: 12px;
-            border-radius: 8px;
-            font-size: 16px;
-            font-weight: 900;
-            cursor: not-allowed;
-            width: 100%;
-            min-height: 48px;
-        }
-        .btn-launch.unlocked {
-            background: linear-gradient(135deg, var(--neon-blue), var(--neon-green));
-            color: #032117;
-            border: none;
-            cursor: pointer;
-            box-shadow: 0 0 20px rgba(0, 240, 255, 0.6);
-            animation: pulse-launch 1.4s infinite alternate;
-        }
-        @keyframes pulse-launch {
-            0% { transform: scale(1); box-shadow: 0 0 15px rgba(0, 240, 255, 0.5); }
-            100% { transform: scale(1.02); box-shadow: 0 0 25px rgba(0, 255, 102, 0.8); }
-        }
-
-        .stage-layout {
-            display: grid;
-            grid-template-columns: 1fr 180px;
-            gap: 16px;
-        }
-        .arena-box {
-            background: var(--card-bg);
-            border: 2px solid var(--border-dim);
-            border-radius: 16px;
-            padding: 16px 20px;
-            display: flex;
-            flex-direction: column;
-            gap: 14px;
-        }
-        .hud-bar {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-        .combo-badge {
-            font-size: 26px;
-            color: var(--neon-yellow);
-            font-weight: 900;
-            text-shadow: 0 0 12px rgba(255, 230, 0, 0.7);
-        }
-        .score-pill {
-            background: linear-gradient(90deg, #ff007f, #7928ca);
-            padding: 6px 20px;
-            border-radius: 20px;
-            font-size: 20px;
-            font-weight: 900;
-        }
-
-        .ribbon-track-wrapper {
-            background: #080914;
-            border: 2px solid #202747;
-            border-radius: 14px;
-            padding: 14px;
-            position: relative;
-            overflow: hidden;
-        }
-        .ribbon-track {
-            display: flex;
-            align-items: center;
-            gap: 14px;
-        }
-        .action-card {
-            background: #141730;
-            border: 2px solid #2c355e;
-            border-radius: 12px;
-            min-width: 100px;
-            height: 140px;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            position: relative;
-            transition: all 0.25s ease;
-        }
+        .stage-layout { display: grid; grid-template-columns: 1fr 180px; gap: 16px; }
+        .arena-box { background: var(--card-bg); border: 2px solid var(--border-dim); border-radius: 16px; padding: 16px 20px; display: flex; flex-direction: column; gap: 14px; }
+        .hud-bar { display: flex; justify-content: space-between; align-items: center; }
+        .combo-badge { font-size: 26px; color: var(--neon-yellow); font-weight: 900; text-shadow: 0 0 12px rgba(255, 230, 0, 0.7); }
+        .score-pill { background: linear-gradient(90deg, #ff007f, #7928ca); padding: 6px 20px; border-radius: 20px; font-size: 20px; font-weight: 900; }
+        .ribbon-track-wrapper { background: #080914; border: 2px solid #202747; border-radius: 14px; padding: 14px; position: relative; overflow: hidden; }
+        .ribbon-track { display: flex; align-items: center; gap: 14px; }
+        .action-card { background: #141730; border: 2px solid #2c355e; border-radius: 12px; min-width: 100px; height: 140px; display: flex; flex-direction: column; align-items: center; justify-content: center; position: relative; transition: all 0.25s ease; }
         .action-card .symbol { font-size: 44px; line-height: 1; margin-bottom: 4px; }
         .action-card .c-name { font-size: 15px; font-weight: 800; }
-        .action-card .sub-num {
-            font-size: 10px;
-            color: #8892b0;
-            background: rgba(255,255,255,0.08);
-            padding: 2px 6px;
-            border-radius: 4px;
-            margin-top: 4px;
-        }
-        .action-card.active-target {
-            min-width: 130px;
-            height: 160px;
-            background: linear-gradient(180deg, #2c164a 0%, #151a3c 100%);
-            border: 3px solid var(--neon-pink);
-            box-shadow: 0 0 20px rgba(255, 0, 127, 0.6);
-            transform: scale(1.05);
-            z-index: 2;
-        }
+        .action-card .sub-num { font-size: 10px; color: #8892b0; background: rgba(255,255,255,0.08); padding: 2px 6px; border-radius: 4px; margin-top: 4px; }
+        .action-card.active-target { min-width: 130px; height: 160px; background: linear-gradient(180deg, #2c164a 0%, #151a3c 100%); border: 3px solid var(--neon-pink); box-shadow: 0 0 20px rgba(255, 0, 127, 0.6); transform: scale(1.05); z-index: 2; }
         .action-card.active-target .symbol { font-size: 58px; }
         .action-card.upcoming { opacity: 0.6; transform: scale(0.92); }
-
-        .timer-bg {
-            height: 7px;
-            background: #181d38;
-            border-radius: 4px;
-            margin-top: 12px;
-            overflow: hidden;
-        }
-        .timer-fill {
-            height: 100%;
-            width: 100%;
-            background: var(--neon-blue);
-            transition: width 0.05s linear;
-        }
-
-        .arena-footer {
-            display: grid;
-            grid-template-columns: 220px 1fr;
-            gap: 14px;
-            align-items: center;
-        }
+        .timer-bg { height: 7px; background: #181d38; border-radius: 4px; margin-top: 12px; overflow: hidden; }
+        .timer-fill { height: 100%; width: 100%; background: var(--neon-blue); transition: width 0.05s linear; }
+        .arena-footer { display: grid; grid-template-columns: 220px 1fr; gap: 14px; align-items: center; }
         .webcam-box { display: flex; flex-direction: column; gap: 4px; }
-        #webcam-container {
-            width: 220px;
-            height: 150px;
-            background: #000;
-            border-radius: 10px;
-            overflow: hidden;
-            border: 1px solid #2e366b;
-            position: relative;
-        }
-        #webcam-container canvas {
-            width: 100%;
-            height: 100%;
-            transform: scaleX(-1);
-        }
-        .gradcam-legend-bar {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            font-size: 9px;
-            color: #8892b0;
-            padding: 0 2px;
-        }
-        .gradcam-spectrum {
-            flex-grow: 1;
-            height: 5px;
-            margin: 0 6px;
-            border-radius: 3px;
-            background: linear-gradient(to right, rgba(0,255,255,0.4) 0%, #00ff00 35%, #ffff00 70%, #ff0000 100%);
-            border: 1px solid #334155;
-        }
-
+        #webcam-container { width: 220px; height: 150px; background: #000; border-radius: 10px; overflow: hidden; border: 1px solid #2e366b; position: relative; }
+        #webcam-container canvas { width: 100%; height: 100%; transform: scaleX(-1); }
+        .gradcam-legend-bar { display: flex; align-items: center; justify-content: space-between; font-size: 9px; color: #8892b0; padding: 0 2px; }
+        .gradcam-spectrum { flex-grow: 1; height: 5px; margin: 0 6px; border-radius: 3px; background: linear-gradient(to right, rgba(0,255,255,0.4) 0%, #00ff00 35%, #ffff00 70%, #ff0000 100%); border: 1px solid #334155; }
         .meters-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
-        .meter-row {
-            background: #0e1124;
-            border: 1px solid #232a50;
-            border-radius: 6px;
-            padding: 5px 8px;
-            font-size: 12px;
-            display: flex;
-            justify-content: space-between;
-        }
-        .meter-row.matched {
-            background: rgba(0, 255, 102, 0.15);
-            border-color: var(--neon-green);
-            color: var(--neon-green);
-            font-weight: bold;
-        }
-
-        .tower-card {
-            background: var(--card-bg);
-            border: 2px solid var(--border-dim);
-            border-radius: 16px;
-            padding: 14px 10px;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-        }
-        .rope-shaft {
-            flex-grow: 1;
-            width: 6px;
-            background: #2b335c;
-            border-radius: 3px;
-            margin: 10px 0;
-            position: relative;
-            min-height: 250px;
-        }
-        .robot-indicator {
-            position: absolute;
-            left: 50%;
-            transform: translateX(-50%);
-            bottom: 0%;
-            font-size: 34px;
-            transition: bottom 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
-            filter: drop-shadow(0 0 6px #00f0ff);
-        }
-        #splash-text {
-            position: absolute;
-            top: 40%;
-            left: 50%;
-            transform: translate(-50%, -50%) scale(0);
-            font-size: 42px;
-            font-weight: 900;
-            letter-spacing: 2px;
-            pointer-events: none;
-            transition: all 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-            z-index: 10;
-        }
+        .meter-row { background: #0e1124; border: 1px solid #232a50; border-radius: 6px; padding: 5px 8px; font-size: 12px; display: flex; justify-content: space-between; }
+        .meter-row.matched { background: rgba(0, 255, 102, 0.15); border-color: var(--neon-green); color: var(--neon-green); font-weight: bold; }
+        .tower-card { background: var(--card-bg); border: 2px solid var(--border-dim); border-radius: 16px; padding: 14px 10px; display: flex; flex-direction: column; align-items: center; }
+        .rope-shaft { flex-grow: 1; width: 6px; background: #2b335c; border-radius: 3px; margin: 10px 0; position: relative; min-height: 250px; }
+        .robot-indicator { position: absolute; left: 50%; transform: translateX(-50%); bottom: 0%; font-size: 34px; transition: bottom 0.4s cubic-bezier(0.34, 1.56, 0.64, 1); filter: drop-shadow(0 0 6px #00f0ff); }
+        #splash-text { position: absolute; top: 40%; left: 50%; transform: translate(-50%, -50%) scale(0); font-size: 42px; font-weight: 900; letter-spacing: 2px; pointer-events: none; transition: all 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275); z-index: 10; }
         #splash-text.show { transform: translate(-50%, -50%) scale(1.15); }
 
-        /* ================= 模式二：地面遙測站 (拉框 ROI + 實體距離與測速) ================= */
-        .telemetry-layout {
-            display: grid;
-            grid-template-columns: 1.4fr 1fr;
-            gap: 16px;
-        }
-        .telemetry-cam-card {
-            background: var(--card-bg);
-            border: 2px solid var(--border-dim);
-            border-radius: 16px;
-            padding: 14px;
-            display: flex;
-            flex-direction: column;
-            gap: 10px;
-        }
-        .cam-feed-wrapper {
-            position: relative;
-            width: 100%;
-            height: 340px;
-            background: #000;
-            border-radius: 12px;
-            overflow: hidden;
-            border: 1px solid #333d6b;
-            user-select: none;
-        }
-        #telemetry-canvas {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-            cursor: crosshair;
-        }
-        .cam-crosshair-hud {
-            position: absolute;
-            top: 10px;
-            left: 10px;
-            background: rgba(0,0,0,0.85);
-            padding: 8px 12px;
-            border-radius: 8px;
-            font-size: 11px;
-            color: #fff;
-            border: 1px solid rgba(0, 240, 255, 0.5);
-            pointer-events: none;
-            line-height: 1.5;
-        }
-
-        .roi-preview-box {
-            background: #090c1e;
-            border: 1px solid #283160;
-            border-radius: 8px;
-            padding: 8px 12px;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-        }
-        .roi-thumb-img {
-            width: 52px;
-            height: 52px;
-            border-radius: 6px;
-            border: 2px solid var(--neon-green);
-            object-fit: cover;
-            background: #000;
-        }
-
-        .telemetry-data-card {
-            display: flex;
-            flex-direction: column;
-            gap: 12px;
-        }
-        .metric-tile {
-            background: var(--card-bg);
-            border: 2px solid var(--border-dim);
-            border-radius: 14px;
-            padding: 14px 18px;
-            display: flex;
-            flex-direction: column;
-            gap: 6px;
-            position: relative;
-        }
-        .metric-title {
-            font-size: 12px;
-            color: #8892b0;
-            font-weight: 800;
-            display: flex;
-            justify-content: space-between;
-        }
-        .metric-val {
-            font-size: 36px;
-            font-weight: 900;
-            line-height: 1;
-        }
+        /* ================= 模式二：地面遙測站 (HC010 專用動態測距 UI) ================= */
+        .telemetry-layout { display: grid; grid-template-columns: 1.4fr 1fr; gap: 16px; }
+        .telemetry-cam-card { background: var(--card-bg); border: 2px solid var(--border-dim); border-radius: 16px; padding: 14px; display: flex; flex-direction: column; gap: 10px; }
+        .cam-feed-wrapper { position: relative; width: 100%; height: 340px; background: #000; border-radius: 12px; overflow: hidden; border: 1px solid #333d6b; user-select: none; }
+        #telemetry-canvas { width: 100%; height: 100%; object-fit: cover; cursor: crosshair; }
+        .cam-crosshair-hud { position: absolute; top: 10px; left: 10px; background: rgba(0,0,0,0.85); padding: 8px 12px; border-radius: 8px; font-size: 11px; color: #fff; border: 1px solid rgba(0, 240, 255, 0.5); pointer-events: none; line-height: 1.5; }
+        .roi-preview-box { background: #090c1e; border: 1px solid #283160; border-radius: 8px; padding: 8px 12px; display: flex; align-items: center; justify-content: space-between; }
+        .roi-thumb-img { width: 52px; height: 52px; border-radius: 6px; border: 2px solid var(--neon-green); object-fit: cover; background: #000; }
+        .telemetry-data-card { display: flex; flex-direction: column; gap: 12px; }
+        .metric-tile { background: var(--card-bg); border: 2px solid var(--border-dim); border-radius: 14px; padding: 14px 18px; display: flex; flex-direction: column; gap: 6px; position: relative; }
+        .metric-title { font-size: 12px; color: #8892b0; font-weight: 800; display: flex; justify-content: space-between; }
+        .metric-val { font-size: 36px; font-weight: 900; line-height: 1; }
         .metric-unit { font-size: 14px; color: #8892b0; font-weight: normal; margin-left: 4px; }
         .val-speed { color: var(--neon-green); text-shadow: 0 0 12px rgba(0, 255, 102, 0.4); }
         .val-dist { color: var(--neon-blue); text-shadow: 0 0 12px rgba(0, 240, 255, 0.4); }
-
-        #speed-chart-canvas {
-            width: 100%;
-            height: 90px;
-            background: #080a18;
-            border-radius: 8px;
-            border: 1px solid #20274c;
-        }
-
-        .slider-box {
-            background: #090c1e;
-            border: 1px solid #283160;
-            border-radius: 8px;
-            padding: 8px 12px;
-            display: flex;
-            flex-direction: column;
-            gap: 4px;
-            font-size: 11px;
-            color: #8892b0;
-        }
-        .slider-row {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-        .slider-box input[type="range"] {
-            width: 100%;
-            accent-color: var(--neon-blue);
-            cursor: pointer;
-        }
-
-        .telemetry-ctrl-strip {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 8px;
-        }
-        .stall-badge {
-            background: rgba(255, 0, 127, 0.15);
-            border: 1px solid var(--neon-pink);
-            color: var(--neon-pink);
-            font-weight: bold;
-            font-size: 12px;
-            padding: 8px 12px;
-            border-radius: 8px;
-            display: none;
-            align-items: center;
-            gap: 6px;
-            animation: pulse-launch 1s infinite alternate;
-        }
+        #speed-chart-canvas { width: 100%; height: 90px; background: #080a18; border-radius: 8px; border: 1px solid #20274c; }
+        .slider-box { background: #090c1e; border: 1px solid #283160; border-radius: 8px; padding: 8px 12px; display: flex; flex-direction: column; gap: 4px; font-size: 11px; color: #8892b0; }
+        .slider-row { display: flex; justify-content: space-between; align-items: center; }
+        .slider-box input[type="range"] { width: 100%; accent-color: var(--neon-blue); cursor: pointer; }
+        .telemetry-ctrl-strip { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+        .stall-badge { background: rgba(255, 0, 127, 0.15); border: 1px solid var(--neon-pink); color: var(--neon-pink); font-weight: bold; font-size: 12px; padding: 8px 12px; border-radius: 8px; display: none; align-items: center; gap: 6px; }
     </style>
 </head>
 <body>
 
 <div class="arena-container">
 
-    <!-- 頂部雙模式切換導航 -->
+    <!-- 頂部雙模式導航 -->
     <div class="mode-nav-bar">
         <button class="mode-tab-btn active" id="tab-mode-1" onclick="switchSystemMode(1)">
             <span>🎮 模式一：駕駛艙</span>
@@ -529,11 +182,11 @@
         </button>
         <button class="mode-tab-btn" id="tab-mode-2" onclick="switchSystemMode(2)">
             <span>📡 模式二：地面遙測站</span>
-            <span style="font-size: 11px; font-weight: normal; opacity: 0.8;">(滑鼠直接拉框 ROI + 測速測距)</span>
+            <span style="font-size: 11px; font-weight: normal; opacity: 0.8;">(HC010 實時動態測距 + 速度追蹤)</span>
         </button>
     </div>
 
-    <!-- 學生分組資料列 -->
+    <!-- 學生分組資料 -->
     <div class="meta-strip">
         <input type="text" id="groupId" placeholder="組別 (例: Group-01)">
         <input type="text" id="studentId" placeholder="學號 (例: S01)">
@@ -546,7 +199,7 @@
         </button>
     </div>
 
-    <!-- ================= 模式一：駕駛艙 ================= -->
+    <!-- ================= 模式一：駕駛艙 (保持完整) ================= -->
     <div class="mode-section active-mode" id="section-mode-1">
         <div class="stepper-board">
             <div class="step-card" id="card-step1">
@@ -555,15 +208,10 @@
                         <span class="step-title">🔌 步驟 1：連接硬件</span>
                         <span class="step-tag" id="tag-step1">未連接 ⚪</span>
                     </div>
-                    <div style="font-size: 11px; color: #8892b0; margin-bottom: 10px;">
-                        將發射端 micro:bit 直插電腦 USB
-                    </div>
+                    <div style="font-size: 11px; color: #8892b0; margin-bottom: 10px;">將發射端 micro:bit 直插電腦 USB</div>
                 </div>
-                <button class="step-btn" id="btn-step1" onclick="connectSerial()">
-                    連接 Tx micro:bit
-                </button>
+                <button class="step-btn" id="btn-step1" onclick="connectSerial()">連接 Tx micro:bit</button>
             </div>
-
             <div class="step-card" id="card-step2">
                 <div>
                     <div class="step-header">
@@ -572,24 +220,17 @@
                     </div>
                     <input type="text" id="modelUrl" placeholder="貼上 Teachable Machine 模型連結" style="background:#090b16; border:1px solid #333d6b; color:#fff; width:100%; padding:6px; font-size:11px; border-radius:4px; margin-bottom: 8px;">
                 </div>
-                <button class="step-btn" id="btn-step2" onclick="initAI()">
-                    啟動模型與鏡頭
-                </button>
+                <button class="step-btn" id="btn-step2" onclick="initAI()">啟動模型與鏡頭</button>
             </div>
-
             <div class="step-card" id="card-step3">
                 <div>
                     <div class="step-header">
                         <span class="step-title">🚀 步驟 3：開始競技</span>
                         <span class="step-tag" id="tag-step3">待解鎖 🔒</span>
                     </div>
-                    <div style="font-size: 11px; color: #8892b0; margin-bottom: 10px;" id="desc-step3">
-                        需先完成步驟 1 及 步驟 2
-                    </div>
+                    <div style="font-size: 11px; color: #8892b0; margin-bottom: 10px;" id="desc-step3">需先完成步驟 1 及 步驟 2</div>
                 </div>
-                <button class="btn-launch" id="btn-launch" onclick="startGame()" disabled>
-                    等待準備...
-                </button>
+                <button class="btn-launch" id="btn-launch" onclick="startGame()" disabled>等待準備...</button>
             </div>
         </div>
 
@@ -599,15 +240,11 @@
                     <div class="combo-badge" id="combo-display">0x COMBO</div>
                     <div class="score-pill">攀爬得分：<span id="score-counter">0</span></div>
                 </div>
-
                 <div class="ribbon-track-wrapper">
                     <div class="ribbon-track" id="queue-ribbon"></div>
-                    <div class="timer-bg">
-                        <div class="timer-fill" id="timer-bar"></div>
-                    </div>
+                    <div class="timer-bg"><div class="timer-fill" id="timer-bar"></div></div>
                     <div id="splash-text">PERFECT!</div>
                 </div>
-
                 <div class="arena-footer">
                     <div class="webcam-box">
                         <div id="webcam-container"></div>
@@ -620,25 +257,22 @@
                     <div class="meters-grid" id="meters-container"></div>
                 </div>
             </div>
-
             <div class="tower-card">
                 <div style="font-size: 26px;">🏆</div>
                 <div style="font-size: 10px; color: #8892b0; font-weight: bold;">FINISH</div>
-                <div class="rope-shaft" id="rope-shaft">
-                    <div class="robot-indicator" id="robot-indicator">🤖</div>
-                </div>
+                <div class="rope-shaft" id="rope-shaft"><div class="robot-indicator" id="robot-indicator">🤖</div></div>
                 <div style="font-size: 10px; color: #8892b0; font-weight: bold;">START</div>
                 <div style="font-size: 20px;">🚩</div>
             </div>
         </div>
     </div>
 
-    <!-- ================= 模式二：地面遙測站 (拉框 ROI + 實體距離與測速) ================= -->
+    <!-- ================= 模式二：地面遙測站 (動態實時測距核心) ================= -->
     <div class="mode-section" id="section-mode-2">
         <div class="telemetry-layout">
             <div class="telemetry-cam-card">
                 <div style="display:flex; justify-content:space-between; align-items:center;">
-                    <span style="font-weight:800; font-size:14px; color:var(--neon-blue);">📡 軌道全局追蹤視野 (Direct Bounding Box ROI Tracker)</span>
+                    <span style="font-weight:800; font-size:14px; color:var(--neon-blue);">📡 軌道全局追蹤視野 (HC010 Dynamic Distance Tracker)</span>
                     <span id="track-status-tag" style="font-size:11px; background:#111428; border:1px solid #333d6b; color:#8892b0; padding:2px 8px; border-radius:10px;">未啟動鏡頭</span>
                 </div>
 
@@ -650,27 +284,31 @@
                     </div>
                 </div>
 
-                <!-- 框選樣本預覽 -->
+                <!-- 框選樣本預覽與 50cm 一鍵校準條 -->
                 <div class="roi-preview-box">
                     <div style="display:flex; align-items:center; gap:10px;">
                         <img id="roi-preview-img" class="roi-thumb-img" src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='52' height='52' viewBox='0 0 52 52'%3E%3Crect width='52' height='52' fill='%23111428'/%3E%3Ctext x='50%25' y='50%25' font-size='10' fill='%2364748b' text-anchor='middle' dy='.3em'%3E待框選%3C/text%3E%3C/svg%3E" alt="ROI Preview">
                         <div style="font-size:11px; line-height:1.4;">
                             <span style="color:#fff; font-weight:bold;" id="roi-info-title">尚未框選目標</span><br>
-                            <span style="color:#8892b0;" id="roi-info-detail">在上方畫面拖曳滑鼠即可鎖定</span>
+                            <span style="color:#8892b0;" id="roi-info-detail">拖曳滑鼠框選椴木板開始測距</span>
                         </div>
                     </div>
-                    <button class="step-btn" style="width:auto; padding:6px 12px; font-size:11px; background:#1e274a; border-color:#3a4b88;" onclick="resetROISelection()">
-                        🎯 重新框選
-                    </button>
+                    <div style="display:flex; gap:6px;">
+                        <button class="step-btn" style="width:auto; padding:6px 10px; font-size:11px; background:#047857; border-color:var(--neon-green);" onclick="calibrate50cmFocalLength()">
+                            📏 校準為 50cm
+                        </button>
+                        <button class="step-btn" style="width:auto; padding:6px 10px; font-size:11px; background:#1e274a; border-color:#3a4b88;" onclick="resetROISelection()">
+                            🎯 重新框選
+                        </button>
+                    </div>
                 </div>
 
-                <!-- 匹配信心度門檻滑桿 -->
                 <div class="slider-box">
                     <div class="slider-row">
-                        <span>🎚️ 匹配靈敏度閾值 (Confidence Threshold): <b id="thresh-val-label" style="color:var(--neon-blue);">50%</b></span>
-                        <span style="font-size:10px; color:#64748b;">(若漏跟可調低至 40%，若誤判可調高至 65%)</span>
+                        <span>🎚️ 匹配靈敏度閾值 (Confidence Threshold): <b id="thresh-val-label" style="color:var(--neon-blue);">40%</b></span>
+                        <span style="font-size:10px; color:#64748b;">(數值越小越靈敏)</span>
                     </div>
-                    <input type="range" id="confidence-slider" min="30" max="85" value="50" oninput="updateConfidenceThreshold(this.value)">
+                    <input type="range" id="confidence-slider" min="20" max="75" value="40" oninput="updateConfidenceThreshold(this.value)">
                 </div>
 
                 <div class="telemetry-ctrl-strip">
@@ -696,17 +334,17 @@
                     <canvas id="speed-chart-canvas" width="300" height="90"></canvas>
                 </div>
 
-                <!-- 鏡頭實體直線距離 (取代 DEPTH) -->
+                <!-- 鏡頭實體直線距離 (隨移動連續動態變化) -->
                 <div class="metric-tile">
                     <div class="metric-title">
                         <span>📏 鏡頭與機械人直線距離 (DISTANCE TO CAMERA)</span>
-                        <span style="font-size:10px; color:#8892b0;">基於 7.0cm 機身寬度針孔光學解算</span>
+                        <span style="font-size:10px; color:var(--neon-blue);" id="focal-status-label">焦距: 350px (HC010 85°廣角預設)</span>
                     </div>
                     <div class="metric-val val-dist">
                         <span id="telemetry-dist-val">--</span><span class="metric-unit">cm</span>
                     </div>
                     <div style="font-size:11px; color:#8892b0; margin-top:2px;">
-                        目標成像寬度：<span id="marker-px-width" style="color:#fff;">0</span> px
+                        實時成像寬度：<span id="marker-px-width" style="color:#fff; font-weight:bold;">0</span> px
                     </div>
                 </div>
 
@@ -715,10 +353,10 @@
                 </div>
 
                 <div style="background:#090b16; border:1px solid #232a50; border-radius:10px; padding:10px 14px; font-size:11px; color:#8892b0; line-height:1.5;">
-                    💡 <b style="color:var(--neon-green);">互動拉框 (Direct Bounding Box) 優勢：</b><br>
-                    • <b>100% 同源特徵：</b> 直接從視訊中截取木紋雕刻與外形拓撲，零光影漂移[cite: 1]！<br>
-                    • <b>徹底免疫背景干擾：</b> 框選僅包含機械人本身，背景紅車與紅色 LED 連一個像素都不會被採樣[cite: 1, 2]！<br>
-                    • <b>精確運動學導出：</b> 透過實體尺寸比例尺換算真實位移 $\Delta s$，配合高精度微秒時鐘微分計算真物理速度。
+                    💡 <b style="color:var(--neon-green);">HC010 測距原理解析：</b><br>
+                    • <b>無紅外/超聲波：</b> HC010 是純 2D 光學鏡頭，距離純粹由畫面像素反比推算[cite: 1]！<br>
+                    • <b>動態連續更新：</b> 機械人爬遠變細，分母 $w(t)$ 變小，距離即時變大[cite: 1]；爬近變大，距離即時變小[cite: 1]！<br>
+                    • <b>10 秒精確校準：</b> 將機身放距鏡頭 50cm，拉框後按「校準為 50cm」，誤差立刻壓到 2cm 內！
                 </div>
             </div>
         </div>
@@ -727,9 +365,6 @@
 </div>
 
 <script>
-    // =========================================================================
-    // 雙模式切換
-    // =========================================================================
     let currentSystemMode = 1;
 
     function switchSystemMode(modeNum) {
@@ -745,7 +380,7 @@
     }
 
     // =========================================================================
-    // 【模式一：駕駛艙】GTM + Grad-CAM (維持完整)
+    // 【模式一：駕駛艙】GTM + Grad-CAM
     // =========================================================================
     const GESTURES = {
         "Class 1": { name: "石頭", symbol: "✊", num: "No. 1" },
@@ -758,9 +393,7 @@
     const DRIVE_FOLDER_ID = "18VTaAPt86z7u4BCevGm96ZDF6uRdoODu";
     const GAS_ENDPOINT = "YOUR_GOOGLE_APPS_SCRIPT_WEB_APP_URL_HERE";
 
-    let step1Ready = false;
-    let step2Ready = false;
-
+    let step1Ready = false, step2Ready = false;
     let audioCtx = null;
     function playSfx(type) {
         try {
@@ -799,24 +432,16 @@
 
     let model, webcam, maxPredictions;
     let serialPort, serialWriter;
-
-    let convSubModel = null;
-    let headLayers = [];
-    let displayCanvas, displayCtx;
-    let offCanvas, offCtx;
-    let gradCamThrottle = 0;
-    let cachedHeatmapCanvas = null;
+    let convSubModel = null, headLayers = [];
+    let displayCanvas, displayCtx, offCanvas, offCtx;
+    let gradCamThrottle = 0, cachedHeatmapCanvas = null;
 
     let actionQueue = [];
     const QUEUE_LENGTH = 5;
-    let isRunning = false;
-    let isLocked = false;
-    let score = 0;
-    let combo = 0;
-    let roundStart = 0;
+    let isRunning = false, isLocked = false;
+    let score = 0, combo = 0, roundStart = 0;
     const TIME_LIMIT_MS = 3000;
-    let timerLoop = null;
-    let eventLogs = [];
+    let timerLoop = null, eventLogs = [];
 
     async function connectSerial() {
         try {
@@ -825,16 +450,13 @@
             const enc = new TextEncoderStream();
             enc.readable.pipeTo(serialPort.writable);
             serialWriter = enc.writable.getWriter();
-
             step1Ready = true;
             document.getElementById("card-step1").classList.add("done");
             document.getElementById("tag-step1").innerText = "已連線 🟢";
             document.getElementById("btn-step1").innerText = "✔ 連線成功";
             document.getElementById("btn-step1").classList.add("ready-btn");
             checkCanUnlockStep3();
-        } catch (e) {
-            alert("Serial 連接取消或失敗: " + e.message);
-        }
+        } catch (e) { alert("Serial 連接取消或失敗: " + e.message); }
     }
 
     async function initAI() {
@@ -856,8 +478,7 @@
             await webcam.play();
 
             displayCanvas = document.createElement("canvas");
-            displayCanvas.width = 220;
-            displayCanvas.height = 150;
+            displayCanvas.width = 220; displayCanvas.height = 150;
             displayCtx = displayCanvas.getContext("2d");
 
             const container = document.getElementById("webcam-container");
@@ -887,7 +508,7 @@
         } catch (e) {
             btn.innerText = "重新載入模型";
             btn.disabled = false;
-            alert("模型載入失敗，請確認網址正確: " + e.message);
+            alert("模型載入失敗: " + e.message);
         }
     }
 
@@ -895,67 +516,35 @@
         if (!tmLayersModel) return;
         headLayers = [];
         let targetConvLayer = null;
-
         try {
             if (tmLayersModel.layers[0] && tmLayersModel.layers[0].layers) {
                 const subLayers = tmLayersModel.layers[0].layers;
                 for (let i = subLayers.length - 1; i >= 0; i--) {
                     const l = subLayers[i];
-                    const shape = l.outputShape;
-                    if (shape && shape.length === 4 && shape[1] > 1) {
+                    if (l.outputShape && l.outputShape.length === 4 && l.outputShape[1] > 1) {
                         targetConvLayer = l;
                         for (let j = i + 1; j < subLayers.length; j++) headLayers.push(subLayers[j]);
                         break;
                     }
                 }
-                for (let k = 1; k < tmLayersModel.layers.length; k++) {
-                    headLayers.push(tmLayersModel.layers[k]);
-                }
+                for (let k = 1; k < tmLayersModel.layers.length; k++) headLayers.push(tmLayersModel.layers[k]);
                 if (targetConvLayer) {
-                    convSubModel = tf.model({
-                        inputs: tmLayersModel.layers[0].inputs,
-                        outputs: targetConvLayer.output
-                    });
-                }
-            } else {
-                for (let i = tmLayersModel.layers.length - 1; i >= 0; i--) {
-                    const l = tmLayersModel.layers[i];
-                    const shape = l.outputShape;
-                    if (shape && shape.length === 4 && shape[1] > 1) {
-                        targetConvLayer = l;
-                        for (let j = i + 1; j < tmLayersModel.layers.length; j++) headLayers.push(tmLayersModel.layers[j]);
-                        break;
-                    }
-                }
-                if (targetConvLayer) {
-                    convSubModel = tf.model({
-                        inputs: tmLayersModel.inputs,
-                        outputs: targetConvLayer.output
-                    });
+                    convSubModel = tf.model({ inputs: tmLayersModel.layers[0].inputs, outputs: targetConvLayer.output });
                 }
             }
-        } catch(err) {
-            console.warn("Grad-CAM 綁定提示:", err);
-        }
+        } catch(err) {}
     }
 
     function getJetColorAndAlpha(val) {
         val = Math.max(0, Math.min(1, val));
         if (val < 0.15) return [0, 0, 0, 0];
-
         const norm = (val - 0.15) / 0.85;
         let r = 0, g = 0, b = 0;
-        if (norm < 0.25) {
-            r = 0; g = Math.round(255 * (norm / 0.25)); b = 255;
-        } else if (norm < 0.5) {
-            r = 0; g = 255; b = Math.round(255 * (1 - (norm - 0.25) / 0.25));
-        } else if (norm < 0.75) {
-            r = Math.round(255 * ((norm - 0.5) / 0.25)); g = 255; b = 0;
-        } else {
-            r = 255; g = Math.round(255 * (1 - (norm - 0.75) / 0.25)); b = 0;
-        }
-        const a = Math.round(70 + norm * 130);
-        return [r, g, b, a];
+        if (norm < 0.25) { r = 0; g = Math.round(255 * (norm / 0.25)); b = 255; }
+        else if (norm < 0.5) { r = 0; g = 255; b = Math.round(255 * (1 - (norm - 0.25) / 0.25)); }
+        else if (norm < 0.75) { r = Math.round(255 * ((norm - 0.5) / 0.25)); g = 255; b = 0; }
+        else { r = 255; g = Math.round(255 * (1 - (norm - 0.75) / 0.25)); b = 0; }
+        return [r, g, b, Math.round(70 + norm * 130)];
     }
 
     async function computeGradCAM(inputTensor, targetClassIdx) {
@@ -972,9 +561,7 @@
             const weights = grads.mean([0, 1, 2]);
             const cam = convOutput.squeeze(0).mul(weights).sum(-1);
             const reluCam = tf.relu(cam);
-            const maxVal = reluCam.max();
-            const minVal = reluCam.min();
-            return reluCam.sub(minVal).div(maxVal.sub(minVal).add(1e-8));
+            return reluCam.sub(reluCam.min()).div(reluCam.max().sub(reluCam.min()).add(1e-8));
         });
     }
 
@@ -983,7 +570,6 @@
             document.getElementById("card-step3").classList.add("done");
             document.getElementById("tag-step3").innerText = "準備就緒 ✨";
             document.getElementById("desc-step3").innerText = "一切就緒！點擊下方按鈕出發";
-
             const launchBtn = document.getElementById("btn-launch");
             launchBtn.disabled = false;
             launchBtn.innerText = "🚀 開始攀爬競技！";
@@ -1001,69 +587,49 @@
 
     async function evaluateTarget() {
         if (!model) return;
-
         const predictions = await model.predict(webcam.canvas);
-        let topCls = "";
-        let topProb = 0;
-        let topIdx = 0;
+        let topCls = "", topProb = 0, topIdx = 0;
 
         for (let i = 0; i < maxPredictions; i++) {
             const name = predictions[i].className;
             const prob = predictions[i].probability;
             const row = document.getElementById("meter-row-" + i);
             const g = GESTURES[name] || { symbol: "", name: name, num: "" };
-
             row.innerHTML = `<span>${g.symbol} ${g.name}</span><span>${(prob*100).toFixed(0)}%</span>`;
-
-            if (prob > topProb) {
-                topProb = prob;
-                topCls = name;
-                topIdx = i;
-            }
+            if (prob > topProb) { topProb = prob; topCls = name; topIdx = i; }
             if (prob > 0.75) row.classList.add("matched");
             else row.classList.remove("matched");
         }
 
         let explainIdx = topIdx;
         if (isRunning && actionQueue.length > 0) {
-            const targetName = actionQueue[0];
-            const foundIdx = predictions.findIndex(p => p.className === targetName);
+            const foundIdx = predictions.findIndex(p => p.className === actionQueue[0]);
             if (foundIdx !== -1) explainIdx = foundIdx;
         }
 
         gradCamThrottle++;
         const isXAI = document.getElementById("conditionType").value === "XAI_GradCAM";
-
         if (isXAI && convSubModel && gradCamThrottle % 3 === 0) {
             try {
                 const inputTensor = tf.tidy(() => {
                     let img = tf.browser.fromPixels(webcam.canvas);
-                    img = tf.image.resizeBilinear(img, [224, 224]);
-                    return img.toFloat().div(127.5).sub(1.0).expandDims(0);
+                    return tf.image.resizeBilinear(img, [224, 224]).toFloat().div(127.5).sub(1.0).expandDims(0);
                 });
-
                 const heatmapTensor = await computeGradCAM(inputTensor, explainIdx);
                 inputTensor.dispose();
-
                 if (heatmapTensor) {
                     const [h, w] = heatmapTensor.shape;
                     const data = await heatmapTensor.data();
                     heatmapTensor.dispose();
-
                     if (!offCanvas) {
                         offCanvas = document.createElement("canvas");
-                        offCanvas.width = w;
-                        offCanvas.height = h;
+                        offCanvas.width = w; offCanvas.height = h;
                         offCtx = offCanvas.getContext("2d");
                     }
-
                     const imgData = offCtx.createImageData(w, h);
                     for (let i = 0; i < data.length; i++) {
                         const [r, g, b, a] = getJetColorAndAlpha(data[i]);
-                        imgData.data[i * 4 + 0] = r;
-                        imgData.data[i * 4 + 1] = g;
-                        imgData.data[i * 4 + 2] = b;
-                        imgData.data[i * 4 + 3] = a;
+                        imgData.data[i*4] = r; imgData.data[i*4+1] = g; imgData.data[i*4+2] = b; imgData.data[i*4+3] = a;
                     }
                     offCtx.putImageData(imgData, 0, 0);
                     cachedHeatmapCanvas = offCanvas;
@@ -1075,57 +641,36 @@
             displayCtx.drawImage(webcam.canvas, 0, 0, displayCanvas.width, displayCanvas.height);
             if (isXAI && cachedHeatmapCanvas) {
                 displayCtx.save();
-                displayCtx.imageSmoothingEnabled = true;
-                displayCtx.imageSmoothingQuality = "high";
                 displayCtx.drawImage(cachedHeatmapCanvas, 0, 0, displayCanvas.width, displayCanvas.height);
                 displayCtx.restore();
             }
         }
 
         if (isRunning && !isLocked && actionQueue.length > 0) {
-            const currentTarget = actionQueue[0];
-            if (topCls === currentTarget && topProb > 0.75) {
-                handleSuccess(topCls, topProb);
-            }
+            if (topCls === actionQueue[0] && topProb > 0.75) handleSuccess(topCls, topProb);
         }
     }
 
     function startGame() {
-        isRunning = true;
-        isLocked = false;
-        score = 0;
-        combo = 0;
-        eventLogs = [];
+        isRunning = true; isLocked = false; score = 0; combo = 0; eventLogs = [];
         updateHUD();
-
         const launchBtn = document.getElementById("btn-launch");
         launchBtn.innerText = "🎮 競技進行中...";
-        launchBtn.classList.remove("unlocked");
         launchBtn.disabled = true;
-
         actionQueue = [];
-        for (let i = 0; i < QUEUE_LENGTH; i++) actionQueue.push(getRandomGesture());
+        for (let i = 0; i < QUEUE_LENGTH; i++) actionQueue.push(ACTIVE_TARGETS[Math.floor(Math.random() * ACTIVE_TARGETS.length)]);
         renderQueue();
         startTimer();
-    }
-
-    function getRandomGesture() {
-        return ACTIVE_TARGETS[Math.floor(Math.random() * ACTIVE_TARGETS.length)];
     }
 
     function renderQueue() {
         const ribbon = document.getElementById("queue-ribbon");
         ribbon.innerHTML = "";
-
         actionQueue.forEach((clsKey, index) => {
             const g = GESTURES[clsKey];
             const card = document.createElement("div");
             card.className = "action-card " + (index === 0 ? "active-target" : "upcoming");
-            card.innerHTML = `
-                <div class="symbol">${g.symbol}</div>
-                <div class="c-name">${g.name}</div>
-                <div class="sub-num">${g.num}</div>
-            `;
+            card.innerHTML = `<div class="symbol">${g.symbol}</div><div class="c-name">${g.name}</div><div class="sub-num">${g.num}</div>`;
             ribbon.appendChild(card);
         });
     }
@@ -1134,156 +679,101 @@
         clearInterval(timerLoop);
         roundStart = performance.now();
         const bar = document.getElementById("timer-bar");
-
         timerLoop = setInterval(() => {
             const elapsed = performance.now() - roundStart;
             const remaining = Math.max(0, TIME_LIMIT_MS - elapsed);
             const pct = (remaining / TIME_LIMIT_MS) * 100;
-
             bar.style.width = pct + "%";
-            if (pct > 40) bar.style.background = "var(--neon-blue)";
-            else bar.style.background = "var(--neon-pink)";
-
-            if (remaining <= 0) {
-                clearInterval(timerLoop);
-                handleTimeout();
-            }
+            bar.style.background = pct > 40 ? "var(--neon-blue)" : "var(--neon-pink)";
+            if (remaining <= 0) { clearInterval(timerLoop); handleTimeout(); }
         }, 30);
     }
 
     async function handleSuccess(matchedCls, prob) {
         isLocked = true;
         clearInterval(timerLoop);
-
         const duration = Math.round(performance.now() - roundStart);
-        score++;
-        combo++;
-
+        score++; combo++;
         if (combo >= 3) {
-            playSfx("combo");
-            popSplash("🔥 " + combo + "x COMBO!", "var(--neon-yellow)");
+            playSfx("combo"); popSplash("🔥 " + combo + "x COMBO!", "var(--neon-yellow)");
             if (typeof confetti === "function") confetti({ particleCount: 25, spread: 60, origin: { y: 0.6 } });
         } else {
-            playSfx("hit");
-            popSplash("PERFECT! ⚡", "var(--neon-green)");
+            playSfx("hit"); popSplash("PERFECT! ⚡", "var(--neon-green)");
         }
-
         updateHUD();
-
-        eventLogs.push({
-            timestamp: new Date().toISOString(),
-            target: actionQueue[0],
-            matched: matchedCls,
-            durationMs: duration,
-            status: "HIT"
-        });
-
-        if (serialWriter) {
-            try { await serialWriter.write("1\n"); } catch(e) {}
-        }
-
+        eventLogs.push({ timestamp: new Date().toISOString(), target: actionQueue[0], matched: matchedCls, durationMs: duration, status: "HIT" });
+        if (serialWriter) { try { await serialWriter.write("1\n"); } catch(e) {} }
         actionQueue.shift();
-        actionQueue.push(getRandomGesture());
+        actionQueue.push(ACTIVE_TARGETS[Math.floor(Math.random() * ACTIVE_TARGETS.length)]);
         renderQueue();
-
-        setTimeout(() => {
-            isLocked = false;
-            if (isRunning) startTimer();
-        }, 800);
+        setTimeout(() => { isLocked = false; if (isRunning) startTimer(); }, 800);
     }
 
     function handleTimeout() {
-        combo = 0;
-        playSfx("miss");
-        popSplash("MISS! ✖", "var(--neon-pink)");
+        combo = 0; playSfx("miss"); popSplash("MISS! ✖", "var(--neon-pink)");
         updateHUD();
-
-        eventLogs.push({
-            timestamp: new Date().toISOString(),
-            target: actionQueue[0],
-            matched: "NONE",
-            durationMs: TIME_LIMIT_MS,
-            status: "TIMEOUT"
-        });
-
+        eventLogs.push({ timestamp: new Date().toISOString(), target: actionQueue[0], matched: "NONE", durationMs: TIME_LIMIT_MS, status: "TIMEOUT" });
         actionQueue.shift();
-        actionQueue.push(getRandomGesture());
+        actionQueue.push(ACTIVE_TARGETS[Math.floor(Math.random() * ACTIVE_TARGETS.length)]);
         renderQueue();
         if (isRunning) startTimer();
     }
 
     function popSplash(text, color) {
         const el = document.getElementById("splash-text");
-        el.innerText = text;
-        el.style.color = color;
-        el.classList.add("show");
+        el.innerText = text; el.style.color = color; el.classList.add("show");
         setTimeout(() => el.classList.remove("show"), 450);
     }
 
     function updateHUD() {
         document.getElementById("score-counter").innerText = score;
         const comboEl = document.getElementById("combo-display");
-        comboEl.innerText = combo + "x COMBO";
-        comboEl.classList.add("pop");
+        comboEl.innerText = combo + "x COMBO"; comboEl.classList.add("pop");
         setTimeout(() => comboEl.classList.remove("pop"), 120);
-
-        const climbPct = Math.min(92, (score / 15) * 92);
-        document.getElementById("robot-indicator").style.bottom = climbPct + "%";
+        document.getElementById("robot-indicator").style.bottom = Math.min(92, (score / 15) * 92) + "%";
     }
 
     async function uploadDataToDrive() {
         if (!GAS_ENDPOINT || GAS_ENDPOINT.includes("YOUR_GOOGLE_APPS_SCRIPT")) {
-            alert("請先填寫 Google Apps Script 網址！");
-            return;
+            alert("請先填寫 Google Apps Script 網址！"); return;
         }
-
         const payload = {
             folderId: DRIVE_FOLDER_ID,
             groupId: document.getElementById("groupId").value || "G_Unknown",
             studentId: document.getElementById("studentId").value || "S_Unknown",
             condition: document.getElementById("conditionType").value,
-            score: score,
-            comments: "",
-            logs: eventLogs
+            score: score, logs: eventLogs
         };
-
         try {
-            await fetch(GAS_ENDPOINT, {
-                method: "POST",
-                mode: "no-cors",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify(payload)
-            });
+            await fetch(GAS_ENDPOINT, { method: "POST", mode: "no-cors", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) });
             alert("比賽日誌已成功儲存至 Google Drive！");
-        } catch (err) {
-            alert("上傳失敗: " + err.message);
-        }
+        } catch (err) { alert("上傳失敗: " + err.message); }
     }
 
     // =========================================================================
-    // 【模式二：地面遙測站】直接拉框 ROI 追蹤 + 實體直線距離與運動學測速
+    // 【模式二：地面遙測站】HC010 專用動態連續實時測距 + 速度解算
     // =========================================================================
     let telemetryVideo = null;
     let telemetryCanvas = document.getElementById("telemetry-canvas");
     let telemetryCtx = telemetryCanvas.getContext("2d");
     let isTelemetryRunning = false;
 
-    // 實體機身寬度 (7.0 cm) 與焦距校準常數[cite: 1]
+    // 實體機身寬度 (7.0 cm)[cite: 1]
     const ROBOT_REAL_WIDTH_CM = 7.0; 
-    const CAMERA_FOCAL_LENGTH_PX = 580.0;
+    
+    // ★ 關鍵修正：HC010 85° 廣角鏡頭在 640x480 的標準等效焦距 (~349px)
+    let cameraFocalLengthPx = 350.0;
 
-    // 滑鼠拉框互動狀態
     let isDrawingBox = false;
     let dragStartX = 0, dragStartY = 0;
     let dragCurrX = 0, dragCurrY = 0;
 
-    // 目標模板數據 (灰階歸一化特徵)
-    let roiTemplate = null; // { gray: Float32Array, origW, origH }
-    const T_STD_SIZE = 40; // 統一縮放為 40x40 矩陣比對
-    let matchThreshold = 0.50; // 50% 閾值
+    let roiTemplate = null; 
+    const T_STD_SIZE = 36;
+    let matchThreshold = 0.40;
 
-    // 運動學計算
-    let targetBox = null; // 當前追蹤到的 { x, y, w, h }
+    // 動態追蹤框 (寬度 w 與高度 h 隨真實遠近連續縮放)
+    let targetBox = null; // { x, y, w, h }
     let prevPosition = null;
     let currentSpeed = 0.0;
     let speedHistory = [];
@@ -1304,15 +794,13 @@
             await new Promise(resolve => telemetryVideo.onloadedmetadata = resolve);
 
             isTelemetryRunning = true;
-            document.getElementById("track-status-tag").innerText = "鏡頭就緒 🟢";
+            document.getElementById("track-status-tag").innerText = "HC010 就緒 🟢";
             document.getElementById("track-status-tag").style.borderColor = "var(--neon-green)";
             document.getElementById("track-status-tag").style.color = "var(--neon-green)";
             document.getElementById("btn-telemetry-cam").innerText = "⏹ 停止鏡頭";
 
             requestAnimationFrame(telemetryProcessLoop);
-        } catch (err) {
-            alert("遙測鏡頭啟動失敗: " + err.message);
-        }
+        } catch (err) { alert("鏡頭啟動失敗: " + err.message); }
     }
 
     function toggleTelemetryCamera() {
@@ -1323,7 +811,6 @@
             }
             isTelemetryRunning = false;
             document.getElementById("track-status-tag").innerText = "已暫停 ⚪";
-            document.getElementById("track-status-tag").style.color = "#8892b0";
             document.getElementById("btn-telemetry-cam").innerText = "📷 開啟鏡頭";
         } else {
             initTelemetryCamera();
@@ -1335,7 +822,20 @@
         document.getElementById("thresh-val-label").innerText = val + "%";
     }
 
-    // --- 畫布滑鼠 / 觸摸拉框互動監聽 ---
+    // --- 一鍵 50cm 焦距自動校準 ---
+    function calibrate50cmFocalLength() {
+        if (!targetBox || targetBox.w < 20) {
+            alert("⚠️ 請先在畫面上用滑鼠拉框框住機械人！\n請用尺將機械人放在鏡頭前方剛好 50cm 處。");
+            return;
+        }
+        // 逆向計算焦距：f = (當前像素寬度 * 50cm) / 7.0cm
+        cameraFocalLengthPx = (targetBox.w * 50.0) / ROBOT_REAL_WIDTH_CM;
+        document.getElementById("focal-status-label").innerText = `校準焦距: ${cameraFocalLengthPx.toFixed(0)}px (精確 50cm 基準)`;
+        document.getElementById("focal-status-label").style.color = "var(--neon-green)";
+        alert(`✔ 校準成功！\n檢測到 50cm 處寬度為 ${targetBox.w.toFixed(0)}px\nHC010 焦距已鎖定為 ${cameraFocalLengthPx.toFixed(1)}px！`);
+    }
+
+    // --- 滑鼠拉框互動監聽 ---
     function getCanvasCoords(e) {
         const rect = telemetryCanvas.getBoundingClientRect();
         const clientX = e.touches ? e.touches[0].clientX : e.clientX;
@@ -1368,20 +868,15 @@
         finalizeROISelection();
     });
 
-    // 觸控支援
     telemetryCanvas.addEventListener("touchstart", (e) => {
         if (!telemetryVideo) return;
         const p = getCanvasCoords(e);
-        isDrawingBox = true;
-        dragStartX = p.x; dragStartY = p.y;
-        dragCurrX = p.x; dragCurrY = p.y;
+        isDrawingBox = true; dragStartX = p.x; dragStartY = p.y; dragCurrX = p.x; dragCurrY = p.y;
     }, { passive: false });
 
     telemetryCanvas.addEventListener("touchmove", (e) => {
         if (!isDrawingBox) return;
-        const p = getCanvasCoords(e);
-        dragCurrX = p.x; dragCurrY = p.y;
-        e.preventDefault();
+        const p = getCanvasCoords(e); dragCurrX = p.x; dragCurrY = p.y; e.preventDefault();
     }, { passive: false });
 
     window.addEventListener("touchend", () => {
@@ -1390,33 +885,25 @@
         finalizeROISelection();
     });
 
-    // 完成拉框：提取當前區域為特徵核
     function finalizeROISelection() {
         const x1 = Math.min(dragStartX, dragCurrX);
         const y1 = Math.min(dragStartY, dragCurrY);
         const bw = Math.abs(dragCurrX - dragStartX);
         const bh = Math.abs(dragCurrY - dragStartY);
 
-        // 防誤觸：小於 18x18 像素視為無效點擊
         if (bw < 18 || bh < 18) return;
 
-        // 截取 ROI 圖像
         const tempCanvas = document.createElement("canvas");
-        tempCanvas.width = bw;
-        tempCanvas.height = bh;
+        tempCanvas.width = bw; tempCanvas.height = bh;
         const tCtx = tempCanvas.getContext("2d");
         tCtx.drawImage(telemetryVideo, x1, y1, bw, bh, 0, 0, bw, bh);
 
-        // 產生縮圖預覽
-        const thumbUrl = tempCanvas.toDataURL();
-        document.getElementById("roi-preview-img").src = thumbUrl;
+        document.getElementById("roi-preview-img").src = tempCanvas.toDataURL();
         document.getElementById("roi-info-title").innerText = `已鎖定目標 (${bw}×${bh} px)`;
-        document.getElementById("roi-info-detail").innerText = `以原生結構紋理開始追蹤`;
+        document.getElementById("roi-info-detail").innerText = `實時連續測距進行中`;
 
-        // 建立歸一化特徵矩陣 (標準化為 T_STD_SIZE x T_STD_SIZE)
         const stdCanvas = document.createElement("canvas");
-        stdCanvas.width = T_STD_SIZE;
-        stdCanvas.height = T_STD_SIZE;
+        stdCanvas.width = T_STD_SIZE; stdCanvas.height = T_STD_SIZE;
         const sCtx = stdCanvas.getContext("2d");
         sCtx.drawImage(tempCanvas, 0, 0, T_STD_SIZE, T_STD_SIZE);
 
@@ -1425,37 +912,26 @@
         let sum = 0;
         for (let i = 0; i < gray.length; i++) {
             const gVal = 0.299 * imgData[i*4] + 0.587 * imgData[i*4+1] + 0.114 * imgData[i*4+2];
-            gray[i] = gVal;
-            sum += gVal;
+            gray[i] = gVal; sum += gVal;
         }
         const mean = sum / gray.length;
         let varSum = 0;
         for (let i = 0; i < gray.length; i++) {
-            gray[i] -= mean;
-            varSum += gray[i] * gray[i];
+            gray[i] -= mean; varSum += gray[i] * gray[i];
         }
         const std = Math.sqrt(varSum) + 1e-5;
-        for (let i = 0; i < gray.length; i++) {
-            gray[i] /= std; // 單位方差歸一化
-        }
+        for (let i = 0; i < gray.length; i++) gray[i] /= std;
 
-        roiTemplate = {
-            gray: gray,
-            origW: bw,
-            origH: bh
-        };
-
+        roiTemplate = { gray: gray, aspectRatio: bh / bw };
         targetBox = { x: x1 + bw/2, y: y1 + bh/2, w: bw, h: bh };
         prevPosition = null;
 
-        document.getElementById("tracking-status-text").innerText = "🟢 正在鎖定追蹤中...";
+        document.getElementById("tracking-status-text").innerText = "🟢 實時動態測距中...";
         document.getElementById("tracking-status-text").style.color = "var(--neon-green)";
     }
 
     function resetROISelection() {
-        roiTemplate = null;
-        targetBox = null;
-        prevPosition = null;
+        roiTemplate = null; targetBox = null; prevPosition = null;
         document.getElementById("roi-preview-img").src = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='52' height='52' viewBox='0 0 52 52'%3E%3Crect width='52' height='52' fill='%23111428'/%3E%3Ctext x='50%25' y='50%25' font-size='10' fill='%2364748b' text-anchor='middle' dy='.3em'%3E待框選%3C/text%3E%3C/svg%3E";
         document.getElementById("roi-info-title").innerText = "尚未框選目標";
         document.getElementById("roi-info-detail").innerText = "在上方畫面拖曳滑鼠即可鎖定";
@@ -1466,21 +942,22 @@
         document.getElementById("marker-px-width").innerText = "0";
     }
 
-    function clearROITracker() {
-        resetROISelection();
-    }
+    function clearROITracker() { resetROISelection(); }
 
-    // --- 模式二主循環：特徵比對與運動學遙測 ---
+    // --- 模式二主循環：多尺度動態尺寸追蹤與連續實時距離解算 ---
     let frameThrottle = 0;
     const searchCanvas = document.createElement("canvas");
     const sCtx = searchCanvas.getContext("2d");
+    const testPatchCanvas = document.createElement("canvas");
+    testPatchCanvas.width = T_STD_SIZE; testPatchCanvas.height = T_STD_SIZE;
+    const tPatchCtx = testPatchCanvas.getContext("2d");
+    let lastScorePct = 0;
 
     function telemetryProcessLoop() {
         if (!isTelemetryRunning || !telemetryVideo) return;
 
         telemetryCtx.drawImage(telemetryVideo, 0, 0, telemetryCanvas.width, telemetryCanvas.height);
 
-        // 1. 若使用者正在拖曳滑鼠拉框：繪製即時輔助虛線框
         if (isDrawingBox) {
             const bx = Math.min(dragStartX, dragCurrX);
             const by = Math.min(dragStartY, dragCurrY);
@@ -1492,61 +969,43 @@
             telemetryCtx.setLineDash([6, 6]);
             telemetryCtx.strokeRect(bx, by, bw, bh);
             telemetryCtx.setLineDash([]);
-
             telemetryCtx.fillStyle = "rgba(255, 230, 0, 0.2)";
             telemetryCtx.fillRect(bx, by, bw, bh);
-
-            telemetryCtx.fillStyle = "#ffffff";
-            telemetryCtx.font = "bold 12px sans-serif";
-            telemetryCtx.fillText(`框選中: ${bw}×${bh}`, bx, Math.max(16, by - 6));
-        }
-        // 2. 若已有目標模板：執行局部 ZNCC 結構比對
-        else if (roiTemplate) {
+        } else if (roiTemplate) {
             frameThrottle++;
-            if (frameThrottle % 2 === 0) { // 節流維持流暢度
-                trackROIWithZNCC();
+            if (frameThrottle % 2 === 0) {
+                trackScaleAdaptiveZNCC();
             } else if (targetBox) {
                 renderTrackingOverlay(targetBox.x, targetBox.y, targetBox.w, targetBox.h, lastScorePct);
             }
         }
-
         requestAnimationFrame(telemetryProcessLoop);
     }
 
-    let lastScorePct = 0;
-
-    function trackROIWithZNCC() {
-        const bw = targetBox.w;
-        const bh = targetBox.h;
-
-        // 局部搜尋窗口 (上一幀位置周圍 ±75px)
+    // 多尺度動態比對 (Multi-Scale ZNCC)
+    function trackScaleAdaptiveZNCC() {
+        const curW = targetBox.w;
+        const curH = targetBox.h;
         const searchMargin = 75;
-        const sX1 = Math.max(0, targetBox.x - bw/2 - searchMargin);
-        const sY1 = Math.max(0, targetBox.y - bh/2 - searchMargin);
-        const sX2 = Math.min(telemetryCanvas.width, targetBox.x + bw/2 + searchMargin);
-        const sY2 = Math.min(telemetryCanvas.height, targetBox.y + bh/2 + searchMargin);
-        const sW = sX2 - sX1;
-        const sH = sY2 - sY1;
+        const sX1 = Math.max(0, targetBox.x - curW/2 - searchMargin);
+        const sY1 = Math.max(0, targetBox.y - curH/2 - searchMargin);
+        const sX2 = Math.min(telemetryCanvas.width, targetBox.x + curW/2 + searchMargin);
+        const sY2 = Math.min(telemetryCanvas.height, targetBox.y + curH/2 + searchMargin);
+        const sW = sX2 - sX1, sH = sY2 - sY1;
 
-        if (sW < bw || sH < bh) return;
+        if (sW < curW || sH < curH) return;
 
-        searchCanvas.width = sW;
-        searchCanvas.height = sH;
+        searchCanvas.width = sW; searchCanvas.height = sH;
         sCtx.drawImage(telemetryVideo, sX1, sY1, sW, sH, 0, 0, sW, sH);
 
-        let bestScore = -1;
-        let bestOffsetX = 0, bestOffsetY = 0;
-        const step = 4; // 搜尋步長
+        // 階段 1：在當前尺度粗定位
+        let bestScore = -1, bestOffsetX = 0, bestOffsetY = 0;
+        const step = 4;
 
-        const testCanvas = document.createElement("canvas");
-        testCanvas.width = T_STD_SIZE;
-        testCanvas.height = T_STD_SIZE;
-        const tctx = testCanvas.getContext("2d");
-
-        for (let y = 0; y <= sH - bh; y += step) {
-            for (let x = 0; x <= sW - bw; x += step) {
-                tctx.drawImage(searchCanvas, x, y, bw, bh, 0, 0, T_STD_SIZE, T_STD_SIZE);
-                const patchData = tctx.getImageData(0, 0, T_STD_SIZE, T_STD_SIZE).data;
+        for (let y = 0; y <= sH - curH; y += step) {
+            for (let x = 0; x <= sW - curW; x += step) {
+                tPatchCtx.drawImage(searchCanvas, x, y, curW, curH, 0, 0, T_STD_SIZE, T_STD_SIZE);
+                const patchData = tPatchCtx.getImageData(0, 0, T_STD_SIZE, T_STD_SIZE).data;
 
                 let pSum = 0;
                 for (let i = 0; i < T_STD_SIZE * T_STD_SIZE; i++) {
@@ -1557,32 +1016,58 @@
                 let pVar = 0, cross = 0;
                 for (let i = 0; i < T_STD_SIZE * T_STD_SIZE; i++) {
                     const val = (0.299 * patchData[i*4] + 0.587 * patchData[i*4+1] + 0.114 * patchData[i*4+2]) - pMean;
-                    pVar += val * val;
-                    cross += val * roiTemplate.gray[i];
+                    pVar += val * val; cross += val * roiTemplate.gray[i];
                 }
                 const score = cross / (Math.sqrt(pVar) + 1e-5);
-
-                if (score > bestScore) {
-                    bestScore = score;
-                    bestOffsetX = x;
-                    bestOffsetY = y;
-                }
+                if (score > bestScore) { bestScore = score; bestOffsetX = x; bestOffsetY = y; }
             }
         }
 
-        lastScorePct = Math.max(0, Math.min(100, Math.round(bestScore * 100)));
+        // 階段 2：多尺度自適應縮放 (讓框隨機械人爬遠爬近主動縮放)
+        const candidateScales = [0.90, 0.95, 1.0, 1.05, 1.10];
+        let optimalScale = 1.0, scaleMaxScore = bestScore;
+        const foundCenterX = bestOffsetX + curW / 2;
+        const foundCenterY = bestOffsetY + curH / 2;
+
+        for (let s of candidateScales) {
+            const testW = curW * s, testH = curH * s;
+            const testX = foundCenterX - testW / 2, testY = foundCenterY - testH / 2;
+            if (testX >= 0 && testY >= 0 && (testX + testW) <= sW && (testY + testH) <= sH) {
+                tPatchCtx.drawImage(searchCanvas, testX, testY, testW, testH, 0, 0, T_STD_SIZE, T_STD_SIZE);
+                const patchData = tPatchCtx.getImageData(0, 0, T_STD_SIZE, T_STD_SIZE).data;
+
+                let pSum = 0;
+                for (let i = 0; i < T_STD_SIZE * T_STD_SIZE; i++) {
+                    pSum += (0.299 * patchData[i*4] + 0.587 * patchData[i*4+1] + 0.114 * patchData[i*4+2]);
+                }
+                const pMean = pSum / (T_STD_SIZE * T_STD_SIZE);
+
+                let pVar = 0, cross = 0;
+                for (let i = 0; i < T_STD_SIZE * T_STD_SIZE; i++) {
+                    const val = (0.299 * patchData[i*4] + 0.587 * patchData[i*4+1] + 0.114 * patchData[i*4+2]) - pMean;
+                    pVar += val * val; cross += val * roiTemplate.gray[i];
+                }
+                const sScore = cross / (Math.sqrt(pVar) + 1e-5);
+                if (sScore > scaleMaxScore) { scaleMaxScore = sScore; optimalScale = s; }
+            }
+        }
+
+        lastScorePct = Math.max(0, Math.min(100, Math.round(scaleMaxScore * 100)));
         document.getElementById("match-score-hud").innerText = `${lastScorePct}%`;
 
-        // 若大於信心度閾值：確認鎖定！
-        if (bestScore >= matchThreshold) {
-            const newCenterX = sX1 + bestOffsetX + bw/2;
-            const newCenterY = sY1 + bestOffsetY + bh/2;
+        if (scaleMaxScore >= matchThreshold) {
+            targetBox.x = targetBox.x * 0.35 + (sX1 + foundCenterX) * 0.65;
+            targetBox.y = targetBox.y * 0.35 + (sY1 + foundCenterY) * 0.65;
 
-            targetBox.x = targetBox.x * 0.35 + newCenterX * 0.65;
-            targetBox.y = targetBox.y * 0.35 + newCenterY * 0.65;
+            // ★ 核心所在：動態更新寬度 w(t)，不再鎖定！
+            const targetWidth = curW * optimalScale;
+            if (targetWidth >= 20 && targetWidth <= 350) {
+                targetBox.w = targetBox.w * 0.8 + targetWidth * 0.2;
+                targetBox.h = targetBox.w * roiTemplate.aspectRatio;
+            }
 
-            handleExactKinematics(targetBox.x, targetBox.y, bw);
-            renderTrackingOverlay(targetBox.x, targetBox.y, bw, bh, lastScorePct);
+            handleDynamicKinematics(targetBox.x, targetBox.y, targetBox.w);
+            renderTrackingOverlay(targetBox.x, targetBox.y, targetBox.w, targetBox.h, lastScorePct);
         } else {
             document.getElementById("telemetry-dist-val").innerText = "--";
             document.getElementById("marker-px-width").innerText = "0";
@@ -1590,39 +1075,29 @@
         }
     }
 
-    // --- 真實物理速度與實體直線距離解算 ---
-    function handleExactKinematics(cx, cy, currentBoxWidth) {
-        const now = performance.now(); // 高精度微秒時間戳
+    // 連續實時距離與物理速度運算
+    function handleDynamicKinematics(cx, cy, currentBoxWidth) {
+        const now = performance.now();
 
-        // 1. 直線實體距離：基於針孔模型 (Distance = 7.0cm * f / pixelWidth)[cite: 1]
-        const distanceToCamCm = (ROBOT_REAL_WIDTH_CM * CAMERA_FOCAL_LENGTH_PX) / currentBoxWidth;
+        // 1. 直線實體距離：隨實時像素寬度動態變化！[cite: 1]
+        const distanceToCamCm = (ROBOT_REAL_WIDTH_CM * cameraFocalLengthPx) / currentBoxWidth;
         document.getElementById("telemetry-dist-val").innerText = distanceToCamCm.toFixed(1);
         document.getElementById("marker-px-width").innerText = Math.round(currentBoxWidth);
 
-        // 2. 精確攀爬速度計算 (v = Δs / Δt)
+        // 2. 物理攀爬速度 (v = Δs / Δt)
         if (prevPosition) {
-            const dt = (now - prevPosition.timestamp) / 1000.0; // 秒
-
-            if (dt > 0.035) { // 每 35ms 更新一次以保證微分穩定性
-                // 動態比例尺：每像素代表多少實體厘米 (cm/pixel)
+            const dt = (now - prevPosition.timestamp) / 1000.0;
+            if (dt > 0.035) {
                 const cmPerPixel = ROBOT_REAL_WIDTH_CM / currentBoxWidth;
-
-                // 前後幀真實物理歐氏位移 (cm)
                 const deltaPx = Math.hypot(cx - prevPosition.x, cy - prevPosition.y);
                 const deltaCm = deltaPx * cmPerPixel;
-
-                // 瞬時物理速度
                 const rawSpeed = deltaCm / dt;
 
-                // EMA 平滑低通濾波，消除採樣抖動噪聲
                 currentSpeed = (currentSpeed * 0.72) + (rawSpeed * 0.28);
 
-                // 停滯檢測
                 if (currentSpeed < 0.8) {
                     zeroSpeedDuration += (dt * 1000);
-                    if (zeroSpeedDuration > 1500) {
-                        document.getElementById("stall-warning-box").style.display = "flex";
-                    }
+                    if (zeroSpeedDuration > 1500) document.getElementById("stall-warning-box").style.display = "flex";
                 } else {
                     zeroSpeedDuration = 0;
                     document.getElementById("stall-warning-box").style.display = "none";
@@ -1643,15 +1118,11 @@
     }
 
     function renderTrackingOverlay(cx, cy, bw, bh, scorePct) {
-        const minX = cx - bw/2;
-        const minY = cy - bh/2;
-
-        // 綠色高亮追蹤框
+        const minX = cx - bw/2, minY = cy - bh/2;
         telemetryCtx.strokeStyle = "var(--neon-green)";
         telemetryCtx.lineWidth = 3;
         telemetryCtx.strokeRect(minX, minY, bw, bh);
 
-        // 黃色質心準星
         telemetryCtx.strokeStyle = "var(--neon-yellow)";
         telemetryCtx.beginPath();
         telemetryCtx.arc(cx, cy, 7, 0, Math.PI * 2);
@@ -1659,39 +1130,27 @@
         telemetryCtx.moveTo(cx, cy - 15); telemetryCtx.lineTo(cx, cy + 15);
         telemetryCtx.stroke();
 
-        // 標示實時 HUD (顯示直線距離而非 Depth)
         const distVal = document.getElementById("telemetry-dist-val").innerText;
         telemetryCtx.fillStyle = "#ffffff";
         telemetryCtx.font = "bold 13px sans-serif";
-        telemetryCtx.fillText(`[TRACKING ${scorePct}%] 距離: ${distVal}cm | 速度: ${currentSpeed.toFixed(1)}cm/s`, minX, Math.max(20, minY - 8));
+        telemetryCtx.fillText(`[HC010 ${scorePct}%] 距離: ${distVal}cm | 速度: ${currentSpeed.toFixed(1)}cm/s`, minX, Math.max(20, minY - 8));
     }
 
     const chartCanvas = document.getElementById("speed-chart-canvas");
     const chartCtx = chartCanvas.getContext("2d");
 
     function drawSpeedChart() {
-        const w = chartCanvas.width;
-        const h = chartCanvas.height;
+        const w = chartCanvas.width, h = chartCanvas.height;
         chartCtx.clearRect(0, 0, w, h);
-
-        chartCtx.strokeStyle = "#161b36";
-        chartCtx.lineWidth = 1;
-        chartCtx.beginPath();
-        chartCtx.moveTo(0, h * 0.5); chartCtx.lineTo(w, h * 0.5);
-        chartCtx.stroke();
-
+        chartCtx.strokeStyle = "#161b36"; chartCtx.lineWidth = 1;
+        chartCtx.beginPath(); chartCtx.moveTo(0, h * 0.5); chartCtx.lineTo(w, h * 0.5); chartCtx.stroke();
         if (speedHistory.length < 2) return;
-
-        chartCtx.strokeStyle = "#00ff66";
-        chartCtx.lineWidth = 2.5;
-        chartCtx.beginPath();
+        chartCtx.strokeStyle = "#00ff66"; chartCtx.lineWidth = 2.5; chartCtx.beginPath();
         const maxVal = 25.0;
-
         for (let i = 0; i < speedHistory.length; i++) {
             const x = (i / (MAX_HISTORY - 1)) * w;
             const y = h - (Math.min(maxVal, speedHistory[i]) / maxVal) * (h - 10) - 5;
-            if (i === 0) chartCtx.moveTo(x, y);
-            else chartCtx.lineTo(x, y);
+            if (i === 0) chartCtx.moveTo(x, y); else chartCtx.lineTo(x, y);
         }
         chartCtx.stroke();
     }
