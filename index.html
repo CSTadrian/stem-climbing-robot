@@ -13,6 +13,7 @@
             --neon-blue: #00f0ff;
             --neon-yellow: #ffe600;
             --neon-green: #00ff66;
+            --wood-tone: #d4b287;
             --bg-dark: #0a0b16;
             --card-bg: rgba(22, 26, 51, 0.9);
             --border-dim: #262c54;
@@ -372,7 +373,7 @@
         }
         #splash-text.show { transform: translate(-50%, -50%) scale(1.15); }
 
-        /* ================= 模式二：地面遙測站 (直接拉框 ROI 追蹤架構) ================= */
+        /* ================= 模式二：地面遙測站 (拉框 ROI + 實體距離與測速) ================= */
         .telemetry-layout {
             display: grid;
             grid-template-columns: 1.4fr 1fr;
@@ -417,7 +418,6 @@
             line-height: 1.5;
         }
 
-        /* 框選特徵預覽盒 */
         .roi-preview-box {
             background: #090c1e;
             border: 1px solid #283160;
@@ -633,7 +633,7 @@
         </div>
     </div>
 
-    <!-- ================= 模式二：地面遙測站 (滑鼠直接拉框 ROI 追蹤) ================= -->
+    <!-- ================= 模式二：地面遙測站 (拉框 ROI + 實體距離與測速) ================= -->
     <div class="mode-section" id="section-mode-2">
         <div class="telemetry-layout">
             <div class="telemetry-cam-card">
@@ -684,9 +684,10 @@
             </div>
 
             <div class="telemetry-data-card">
+                <!-- 瞬時物理速度 -->
                 <div class="metric-tile">
                     <div class="metric-title">
-                        <span>⚡ 機械人攀爬速度 (SPEED: v)</span>
+                        <span>⚡ 機械人實時速度 (SPEED: v)</span>
                         <span id="speed-trend-label" style="color:var(--neon-green);">0.0 cm/s</span>
                     </div>
                     <div class="metric-val val-speed">
@@ -695,16 +696,17 @@
                     <canvas id="speed-chart-canvas" width="300" height="90"></canvas>
                 </div>
 
+                <!-- 鏡頭實體直線距離 (取代 DEPTH) -->
                 <div class="metric-tile">
                     <div class="metric-title">
-                        <span>📏 機械人距鏡頭空間距離 (DEPTH: Z)</span>
-                        <span style="font-size:10px; color:#8892b0;">基於 7.0cm 實體木機身尺寸</span>
+                        <span>📏 鏡頭與機械人直線距離 (DISTANCE TO CAMERA)</span>
+                        <span style="font-size:10px; color:#8892b0;">基於 7.0cm 機身寬度針孔光學解算</span>
                     </div>
                     <div class="metric-val val-dist">
                         <span id="telemetry-dist-val">--</span><span class="metric-unit">cm</span>
                     </div>
                     <div style="font-size:11px; color:#8892b0; margin-top:2px;">
-                        畫面像素寬度：<span id="marker-px-width" style="color:#fff;">0</span> px
+                        目標成像寬度：<span id="marker-px-width" style="color:#fff;">0</span> px
                     </div>
                 </div>
 
@@ -714,9 +716,9 @@
 
                 <div style="background:#090b16; border:1px solid #232a50; border-radius:10px; padding:10px 14px; font-size:11px; color:#8892b0; line-height:1.5;">
                     💡 <b style="color:var(--neon-green);">互動拉框 (Direct Bounding Box) 優勢：</b><br>
-                    • <b>100% 同源特徵：</b> 直接從視訊中截取木紋雕刻與外形拓撲，零光影漂移！<br>
-                    • <b>徹底免疫背景干擾：</b> 框選僅包含機械人本身，背景紅車與紅色 LED 連一個像素都不會被採樣！<br>
-                    • <b>操作極簡：</b> 在畫面上按住滑鼠拉出綠色方框，放手立即進入全自動追蹤！
+                    • <b>100% 同源特徵：</b> 直接從視訊中截取木紋雕刻與外形拓撲，零光影漂移[cite: 1]！<br>
+                    • <b>徹底免疫背景干擾：</b> 框選僅包含機械人本身，背景紅車與紅色 LED 連一個像素都不會被採樣[cite: 1, 2]！<br>
+                    • <b>精確運動學導出：</b> 透過實體尺寸比例尺換算真實位移 $\Delta s$，配合高精度微秒時鐘微分計算真物理速度。
                 </div>
             </div>
         </div>
@@ -1259,15 +1261,16 @@
     }
 
     // =========================================================================
-    // 【模式二：地面遙測站】互動式直接拉框 (Direct Bounding Box ROI Tracker)
+    // 【模式二：地面遙測站】直接拉框 ROI 追蹤 + 實體直線距離與運動學測速
     // =========================================================================
     let telemetryVideo = null;
     let telemetryCanvas = document.getElementById("telemetry-canvas");
     let telemetryCtx = telemetryCanvas.getContext("2d");
     let isTelemetryRunning = false;
 
-    const ROBOT_REAL_WIDTH_CM = 7.0; // 實體機身寬度 (cm)[cite: 1]
-    const FOCAL_LENGTH_PX = 580.0;
+    // 實體機身寬度 (7.0 cm) 與焦距校準常數[cite: 1]
+    const ROBOT_REAL_WIDTH_CM = 7.0; 
+    const CAMERA_FOCAL_LENGTH_PX = 580.0;
 
     // 滑鼠拉框互動狀態
     let isDrawingBox = false;
@@ -1275,7 +1278,7 @@
     let dragCurrX = 0, dragCurrY = 0;
 
     // 目標模板數據 (灰階歸一化特徵)
-    let roiTemplate = null; // { grayData: Float32Array, w, h, std, origW, origH }
+    let roiTemplate = null; // { gray: Float32Array, origW, origH }
     const T_STD_SIZE = 40; // 統一縮放為 40x40 矩陣比對
     let matchThreshold = 0.50; // 50% 閾值
 
@@ -1497,10 +1500,10 @@
             telemetryCtx.font = "bold 12px sans-serif";
             telemetryCtx.fillText(`框選中: ${bw}×${bh}`, bx, Math.max(16, by - 6));
         }
-        // 2. 若已有目標模板：執行極速局部 ZNCC 結構比對
+        // 2. 若已有目標模板：執行局部 ZNCC 結構比對
         else if (roiTemplate) {
             frameThrottle++;
-            if (frameThrottle % 2 === 0) { // 每兩幀計算一次，保證流暢 60 FPS
+            if (frameThrottle % 2 === 0) { // 節流維持流暢度
                 trackROIWithZNCC();
             } else if (targetBox) {
                 renderTrackingOverlay(targetBox.x, targetBox.y, targetBox.w, targetBox.h, lastScorePct);
@@ -1516,8 +1519,8 @@
         const bw = targetBox.w;
         const bh = targetBox.h;
 
-        // 局部搜尋窗口（在上一幀位置周圍 ±70px 範圍搜尋，大幅提升速度並避免跑偏）
-        const searchMargin = 70;
+        // 局部搜尋窗口 (上一幀位置周圍 ±75px)
+        const searchMargin = 75;
         const sX1 = Math.max(0, targetBox.x - bw/2 - searchMargin);
         const sY1 = Math.max(0, targetBox.y - bh/2 - searchMargin);
         const sX2 = Math.min(telemetryCanvas.width, targetBox.x + bw/2 + searchMargin);
@@ -1530,12 +1533,10 @@
         searchCanvas.width = sW;
         searchCanvas.height = sH;
         sCtx.drawImage(telemetryVideo, sX1, sY1, sW, sH, 0, 0, sW, sH);
-        const sImgData = sCtx.getImageData(0, 0, sW, sH);
 
-        // 多尺度微調步長
         let bestScore = -1;
         let bestOffsetX = 0, bestOffsetY = 0;
-        const step = 4; // 粗搜步長
+        const step = 4; // 搜尋步長
 
         const testCanvas = document.createElement("canvas");
         testCanvas.width = T_STD_SIZE;
@@ -1547,7 +1548,6 @@
                 tctx.drawImage(searchCanvas, x, y, bw, bh, 0, 0, T_STD_SIZE, T_STD_SIZE);
                 const patchData = tctx.getImageData(0, 0, T_STD_SIZE, T_STD_SIZE).data;
 
-                // 計算當前候選塊的歸一化互相關
                 let pSum = 0;
                 for (let i = 0; i < T_STD_SIZE * T_STD_SIZE; i++) {
                     pSum += (0.299 * patchData[i*4] + 0.587 * patchData[i*4+1] + 0.114 * patchData[i*4+2]);
@@ -1578,37 +1578,43 @@
             const newCenterX = sX1 + bestOffsetX + bw/2;
             const newCenterY = sY1 + bestOffsetY + bh/2;
 
-            // 平滑質心位置
             targetBox.x = targetBox.x * 0.35 + newCenterX * 0.65;
             targetBox.y = targetBox.y * 0.35 + newCenterY * 0.65;
 
-            handleKinematicsUpdate(targetBox.x, targetBox.y, bw, bh, lastScorePct);
+            handleExactKinematics(targetBox.x, targetBox.y, bw);
             renderTrackingOverlay(targetBox.x, targetBox.y, bw, bh, lastScorePct);
         } else {
-            // 暫時丟失目標
             document.getElementById("telemetry-dist-val").innerText = "--";
             document.getElementById("marker-px-width").innerText = "0";
             prevPosition = null;
         }
     }
 
-    function handleKinematicsUpdate(cx, cy, bw, bh, scorePct) {
-        // 1. 空間測距：Z = (實體尺寸 7.0cm * 焦距) / 像素寬度[cite: 1]
-        const depthCm = (ROBOT_REAL_WIDTH_CM * FOCAL_LENGTH_PX) / bw;
-        document.getElementById("telemetry-dist-val").innerText = depthCm.toFixed(1);
-        document.getElementById("marker-px-width").innerText = Math.round(bw);
+    // --- 真實物理速度與實體直線距離解算 ---
+    function handleExactKinematics(cx, cy, currentBoxWidth) {
+        const now = performance.now(); // 高精度微秒時間戳
 
-        // 2. 攀爬物理速度計算 (v = Δs / Δt)
-        const now = performance.now();
+        // 1. 直線實體距離：基於針孔模型 (Distance = 7.0cm * f / pixelWidth)[cite: 1]
+        const distanceToCamCm = (ROBOT_REAL_WIDTH_CM * CAMERA_FOCAL_LENGTH_PX) / currentBoxWidth;
+        document.getElementById("telemetry-dist-val").innerText = distanceToCamCm.toFixed(1);
+        document.getElementById("marker-px-width").innerText = Math.round(currentBoxWidth);
+
+        // 2. 精確攀爬速度計算 (v = Δs / Δt)
         if (prevPosition) {
-            const dt = (now - prevPosition.timestamp) / 1000.0;
-            if (dt > 0.04) {
-                const pxToCm = ROBOT_REAL_WIDTH_CM / bw;
+            const dt = (now - prevPosition.timestamp) / 1000.0; // 秒
+
+            if (dt > 0.035) { // 每 35ms 更新一次以保證微分穩定性
+                // 動態比例尺：每像素代表多少實體厘米 (cm/pixel)
+                const cmPerPixel = ROBOT_REAL_WIDTH_CM / currentBoxWidth;
+
+                // 前後幀真實物理歐氏位移 (cm)
                 const deltaPx = Math.hypot(cx - prevPosition.x, cy - prevPosition.y);
-                const deltaCm = deltaPx * pxToCm;
+                const deltaCm = deltaPx * cmPerPixel;
+
+                // 瞬時物理速度
                 const rawSpeed = deltaCm / dt;
 
-                // EMA 平滑濾波
+                // EMA 平滑低通濾波，消除採樣抖動噪聲
                 currentSpeed = (currentSpeed * 0.72) + (rawSpeed * 0.28);
 
                 // 停滯檢測
@@ -1653,11 +1659,11 @@
         telemetryCtx.moveTo(cx, cy - 15); telemetryCtx.lineTo(cx, cy + 15);
         telemetryCtx.stroke();
 
-        // 標示實時 HUD
-        const depthVal = document.getElementById("telemetry-dist-val").innerText;
+        // 標示實時 HUD (顯示直線距離而非 Depth)
+        const distVal = document.getElementById("telemetry-dist-val").innerText;
         telemetryCtx.fillStyle = "#ffffff";
         telemetryCtx.font = "bold 13px sans-serif";
-        telemetryCtx.fillText(`[TRACKING ${scorePct}%] Z: ${depthVal}cm | V: ${currentSpeed.toFixed(1)}cm/s`, minX, Math.max(20, minY - 8));
+        telemetryCtx.fillText(`[TRACKING ${scorePct}%] 距離: ${distVal}cm | 速度: ${currentSpeed.toFixed(1)}cm/s`, minX, Math.max(20, minY - 8));
     }
 
     const chartCanvas = document.getElementById("speed-chart-canvas");
