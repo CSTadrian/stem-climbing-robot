@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AI Robot Gesture Arena & Telemetry Hub (Tri-Mode Edition)</title>
+    <title>AI Robot Gesture Arena & Telemetry Hub (Tri-Mode Softmax Edition)</title>
     <!-- TensorFlow.js & Teachable Machine (模式一) -->
     <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@latest/dist/tf.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@teachablemachine/image@latest/dist/teachablemachine-image.min.js"></script>
@@ -41,7 +41,7 @@
             gap: 14px;
         }
 
-        /* 頂部三模式切換導航欄 */
+        /* 頂部三模式導航欄 */
         .mode-nav-bar {
             display: grid;
             grid-template-columns: 1fr 1fr 1fr;
@@ -140,7 +140,7 @@
         .arena-footer { display: grid; grid-template-columns: 220px 1fr; gap: 14px; align-items: center; }
         .webcam-box { display: flex; flex-direction: column; gap: 4px; }
         .meters-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
-        .meter-row { background: #0e1124; border: 1px solid #232a50; border-radius: 6px; padding: 5px 8px; font-size: 12px; display: flex; justify-content: space-between; }
+        .meter-row { background: #0e1124; border: 1px solid #232a50; border-radius: 6px; padding: 5px 8px; font-size: 12px; display: flex; justify-content: space-between; transition: all 0.2s ease; }
         .meter-row.matched { background: rgba(0, 255, 102, 0.15); border-color: var(--neon-green); color: var(--neon-green); font-weight: bold; }
         .tower-card { background: var(--card-bg); border: 2px solid var(--border-dim); border-radius: 16px; padding: 14px 10px; display: flex; flex-direction: column; align-items: center; }
         .rope-shaft { flex-grow: 1; width: 6px; background: #2b335c; border-radius: 3px; margin: 10px 0; position: relative; min-height: 250px; }
@@ -183,7 +183,7 @@
         </button>
         <button class="mode-tab-btn" id="tab-mode-2" onclick="switchSystemMode(2)">
             <span>🖐️ 模式二：MediaPipe 駕駛艙</span>
-            <span style="font-size: 11px; font-weight: normal; opacity: 0.8;">(21 骨骼關鍵點特徵工程)</span>
+            <span style="font-size: 11px; font-weight: normal; opacity: 0.8;">(21 骨骼點 + Softmax 互斥)</span>
         </button>
         <button class="mode-tab-btn" id="tab-mode-3" onclick="switchSystemMode(3)">
             <span>📡 模式三：地面遙測站</span>
@@ -191,7 +191,7 @@
         </button>
     </div>
 
-    <!-- 學生分組資料 (三模式共用) -->
+    <!-- 學生分組資料 -->
     <div class="meta-strip">
         <input type="text" id="groupId" placeholder="組別 (例: Group-01)">
         <input type="text" id="studentId" placeholder="學號 (例: S01)">
@@ -205,7 +205,7 @@
     </div>
 
     <!-- =========================================================================
-         【模式一：GTM 駕駛艙 (Teachable Machine + Grad-CAM)】
+         【模式一：GTM 駕駛艙】
          ========================================================================= -->
     <div class="mode-section active-mode" id="section-mode-1">
         <div class="stepper-board">
@@ -275,7 +275,7 @@
     </div>
 
     <!-- =========================================================================
-         【模式二：MediaPipe 駕駛艙 (21 骨骼關鍵點特徵工程)】
+         【模式二：MediaPipe 駕駛艙 (Softmax 互斥多類別分類)】
          ========================================================================= -->
     <div class="mode-section" id="section-mode-2">
         <div class="stepper-board">
@@ -305,7 +305,7 @@
                         <span class="step-title">🚀 骨骼競技擂台</span>
                         <span class="step-tag" id="tag-mp-launch">待解鎖 🔒</span>
                     </div>
-                    <div style="font-size: 11px; color: #8892b0; margin-bottom: 10px;">完全脫離背景顏色，純骨骼幾何判定</div>
+                    <div style="font-size: 11px; color: #8892b0; margin-bottom: 10px;">Softmax 概率互斥分類 (總和嚴格為 100%)</div>
                 </div>
                 <button class="btn-launch" id="btn-launch-mp" onclick="startMediaPipeGame()" disabled>等待鏡頭啟動...</button>
             </div>
@@ -318,7 +318,6 @@
                     <div class="score-pill">攀爬得分：<span id="score-counter-mp">0</span></div>
                 </div>
 
-                <!-- 動作預告流動軌道 (MediaPipe) -->
                 <div class="ribbon-track-wrapper">
                     <div class="ribbon-track" id="queue-ribbon-mp"></div>
                     <div class="timer-bg"><div class="timer-fill" id="timer-bar-mp"></div></div>
@@ -337,24 +336,24 @@
                         </div>
                     </div>
 
-                    <!-- 4 類手勢幾何辨識儀表板 -->
+                    <!-- 4 類互斥手勢儀表板 (四項概率總和永遠 100%) -->
                     <div style="display:flex; flex-direction:column; gap:8px;">
                         <div class="meters-grid">
-                            <div class="meter-row" id="mp-row-rock"><span>✊ 石頭 (全握拳)</span><span id="mp-pct-rock">--</span></div>
-                            <div class="meter-row" id="mp-row-scissors"><span>✌️ 剪刀 (食中指伸展)</span><span id="mp-pct-scissors">--</span></div>
-                            <div class="meter-row" id="mp-row-paper"><span>🖐️ 布 (五指張開)</span><span id="mp-pct-paper">--</span></div>
-                            <div class="meter-row" id="mp-row-thumbsup"><span>👍 讚好 (拇指豎起)</span><span id="mp-pct-thumbsup">--</span></div>
+                            <div class="meter-row" id="mp-row-rock"><span>✊ 石頭 (全握拳)</span><span id="mp-pct-rock">25%</span></div>
+                            <div class="meter-row" id="mp-row-scissors"><span>✌️ 剪刀 (食中指伸展)</span><span id="mp-pct-scissors">25%</span></div>
+                            <div class="meter-row" id="mp-row-paper"><span>🖐️ 布 (五指張開)</span><span id="mp-pct-paper">25%</span></div>
+                            <div class="meter-row" id="mp-row-thumbsup"><span>👍 讚好 (四指扣緊+拇指豎直)</span><span id="mp-pct-thumbsup">25%</span></div>
                         </div>
                         <div style="background:#090b16; border:1px solid #232a50; border-radius:8px; padding:8px 12px; font-size:11px; color:#8892b0; line-height:1.4;">
-                            💡 <b style="color:var(--neon-blue);">MediaPipe 特徵工程教學亮點：</b><br>
-                            • <b>徹底剝離背景顏色：</b> 不看 RGB 像素，只計算手指關節歐氏距離與伸展角度[cite: 1]！<br>
-                            • <b>無懼環境干擾：</b> 即使身穿黃色校服或背景有人經過，判定依然精確[cite: 1]！
+                            💡 <b style="color:var(--neon-blue);">Softmax 互斥多類別分類原理：</b><br>
+                            • <b>概率守恆：</b> 4 個類別的概率總和<b>嚴格等於 100%</b>，徹底消滅雙重判定[cite: 1]！<br>
+                            • <b>幾何正交解耦：</b> 石頭要求「拇指扣緊在拳頭旁」，讚好要求「拇指獨立展開向上」，兩者不再打架！
                         </div>
                     </div>
                 </div>
             </div>
 
-            <!-- 右側高度塔 (MediaPipe) -->
+            <!-- 右側高度塔 -->
             <div class="tower-card">
                 <div style="font-size: 26px;">🏆</div>
                 <div style="font-size: 10px; color: #8892b0; font-weight: bold;">FINISH</div>
@@ -384,7 +383,6 @@
                     </div>
                 </div>
 
-                <!-- 框選樣本預覽與 50cm 一鍵校準條 -->
                 <div class="roi-preview-box">
                     <div style="display:flex; align-items:center; gap:10px;">
                         <img id="roi-preview-img" class="roi-thumb-img" src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='52' height='52' viewBox='0 0 52 52'%3E%3Crect width='52' height='52' fill='%23111428'/%3E%3Ctext x='50%25' y='50%25' font-size='10' fill='%2364748b' text-anchor='middle' dy='.3em'%3E待框選%3C/text%3E%3C/svg%3E" alt="ROI Preview">
@@ -502,14 +500,12 @@
             serialWriter = enc.writable.getWriter();
 
             step1Ready = true;
-            // 更新模式一狀態
             document.getElementById("card-step1").classList.add("done");
             document.getElementById("tag-step1").innerText = "已連線 🟢";
             document.getElementById("btn-step1").innerText = "✔ 連線成功";
             document.getElementById("btn-step1").classList.add("ready-btn");
             checkCanUnlockStep3();
 
-            // 更新模式二狀態
             document.getElementById("card-mp-step1").classList.add("done");
             document.getElementById("tag-mp-serial").innerText = "已連線 🟢";
             document.getElementById("btn-mp-serial").innerText = "✔ 連線成功";
@@ -556,7 +552,6 @@
         } catch(e) {}
     }
 
-    // Google Drive 日誌上傳
     const DRIVE_FOLDER_ID = "18VTaAPt86z7u4BCevGm96ZDF6uRdoODu";
     const GAS_ENDPOINT = "YOUR_GOOGLE_APPS_SCRIPT_WEB_APP_URL_HERE";
     let eventLogs = [];
@@ -878,7 +873,7 @@
     }
 
     // =========================================================================
-    // 【模式二：MediaPipe 駕駛艙 (21 骨骼關鍵點特徵工程)】邏輯
+    // 【模式二：MediaPipe 駕駛艙】真正的 Softmax 互斥多類別分類
     // =========================================================================
     let mpHands = null, mpCamera = null;
     let isMediaPipeRunning = false;
@@ -899,7 +894,6 @@
     let mpActionQueue = [];
     let mpTimerLoop = null;
 
-    // MediaPipe 骨骼連接拓撲
     const HAND_CONNECTIONS = [
         [0,1],[1,2],[2,3],[3,4],
         [0,5],[5,6],[6,7],[7,8],
@@ -962,26 +956,18 @@
         }
     }
 
-    // =========================================================================
-    // 【模式二升級】Softmax 多類別互斥分類 (總和嚴格為 100%，單一標籤輸出)
-    // =========================================================================
+    // ★ 關鍵修復：結合幾何特徵向量與 Softmax 歸一化 (四類概率總和 = 100%)
     function onMediaPipeResults(results) {
         mpCtx.clearRect(0, 0, mpCanvas.width, mpCanvas.height);
         mpCtx.drawImage(results.image, 0, 0, mpCanvas.width, mpCanvas.height);
 
-        // 預設概率全為 0
-        let probabilities = {
-            "Rock": 0.0,
-            "Scissors": 0.0,
-            "Paper": 0.0,
-            "ThumbsUp": 0.0
-        };
+        let probabilities = { "Rock": 0.25, "Scissors": 0.25, "Paper": 0.25, "ThumbsUp": 0.25 };
         let detectedGesture = "None";
 
         if (results.multiHandLandmarks && results.multiHandLandmarks.length > 0) {
             const lm = results.multiHandLandmarks[0];
 
-            // 1. 繪製骨骼拓撲線 (Neon Blue)
+            // 1. 繪製骨骼線與關鍵點
             mpCtx.strokeStyle = "var(--neon-blue)";
             mpCtx.lineWidth = 2.5;
             for (let c of HAND_CONNECTIONS) {
@@ -992,7 +978,6 @@
                 mpCtx.stroke();
             }
 
-            // 2. 繪製 21 個關鍵點 (Neon Pink)
             mpCtx.fillStyle = "var(--neon-pink)";
             for (let p of lm) {
                 mpCtx.beginPath();
@@ -1000,44 +985,50 @@
                 mpCtx.fill();
             }
 
-            // 3. 幾何特徵提取
+            // 2. 幾何特徵提取
             const dist = (i, j) => Math.hypot(lm[i].x - lm[j].x, lm[i].y - lm[j].y);
-            const palmBase = dist(0, 9) + 1e-5; // 個體手掌比例尺基準
+            const palmScale = dist(0, 9) + 1e-5; // 手掌個體比例尺 (手腕點 0 到 中指根部點 9)
 
-            // 五指伸展系數 (0.0: 完全握緊, 1.0: 完全伸直)
+            // 五指伸展度評分 (0.0: 完全彎曲, 1.0: 完全伸展)
             const getExtension = (tip, pip) => {
-                const ratio = dist(tip, 0) / (dist(pip, 0) + 1e-5);
-                return Math.max(0.0, Math.min(1.0, (ratio - 0.85) / 0.45));
+                const r = dist(tip, 0) / (dist(pip, 0) + 1e-5);
+                return Math.max(0.0, Math.min(1.0, (r - 0.85) / 0.45));
             };
 
-            const extThumb = Math.max(0.0, Math.min(1.0, (dist(4, 17) / palmBase - 0.7) / 0.5));
             const extIndex = getExtension(8, 6);
             const extMiddle = getExtension(12, 10);
             const extRing = getExtension(16, 14);
             const extPinky = getExtension(20, 18);
 
-            // 拇指朝上幾何權重 (點 4 必須高於點 2)
-            const thumbUpFactor = Math.max(0.0, Math.min(1.0, (lm[2].y - lm[4].y) / (palmBase * 0.4)));
+            // 拇指伸展度：大拇指尖點 4 到小指根部點 17 的相對跨度
+            const thumbSpread = Math.max(0.0, Math.min(1.0, (dist(4, 17) / palmScale - 0.75) / 0.45));
+            // 拇指朝向評分 (點 4 高於點 2 越多，得分越高)
+            const thumbUpward = Math.max(0.0, Math.min(1.0, (lm[2].y - lm[4].y) / (palmScale * 0.35)));
 
-            // 4. 計算各類別未歸一化得分 (Raw Logits z)
-            // 布: 五指伸展
-            const zPaper = (extIndex + extMiddle + extRing + extPinky) * 1.5;
-            // 石頭: 四指全部收緊且拇指未豎起
-            const zRock = ((1.0 - extIndex) + (1.0 - extMiddle) + (1.0 - extRing) + (1.0 - extPinky) + (1.0 - thumbUpFactor)) * 1.3;
-            // 剪刀: 食中伸直，無名尾指收攏
-            const zScissors = (extIndex * 2.0 + extMiddle * 2.0 + (1.0 - extRing) * 1.5 + (1.0 - extPinky) * 1.5);
-            // 讚好: 四指收攏，拇指獨立展開並向上
-            const zThumbsUp = ((1.0 - extIndex) + (1.0 - extMiddle) + (1.0 - extRing) + (1.0 - extPinky)) * 0.8 + extThumb * 2.2 + thumbUpFactor * 2.5;
+            // 3. 計算未歸一化得分 (Raw Logits z)
+            // 布: 四指全部極限伸展
+            const zPaper = (extIndex + extMiddle + extRing + extPinky) * 2.2;
+
+            // 剪刀: 食指與中指伸展，無名指與小指緊緊收扣
+            const zScissors = (extIndex * 2.5 + extMiddle * 2.5 + (1.0 - extRing) * 2.2 + (1.0 - extPinky) * 2.2);
+
+            // 讚好: 四指全部收緊 + 拇指極限張開 + 拇指垂直朝上！
+            const zThumbsUp = ((1.0 - extIndex) + (1.0 - extMiddle) + (1.0 - extRing) + (1.0 - extPinky)) * 1.5 
+                              + thumbSpread * 3.5 + thumbUpward * 4.0;
+
+            // 石頭: 四指全部收緊 + 拇指也緊貼拳頭（thumbSpread 越低，石頭越真）！
+            const zRock = ((1.0 - extIndex) + (1.0 - extMiddle) + (1.0 - extRing) + (1.0 - extPinky)) * 2.2 
+                          + (1.0 - thumbSpread) * 3.0 + (1.0 - thumbUpward) * 1.8;
 
             const logits = {
                 "Paper": zPaper,
-                "Rock": zRock,
                 "Scissors": zScissors,
+                "Rock": zRock,
                 "ThumbsUp": zThumbsUp
             };
 
-            // 5. Softmax 運算 (溫度系數 T = 1.0，保證概率總和剛好為 1.0，即 100%)
-            const T = 1.0;
+            // 4. Softmax 互斥運算 (溫度系數 T = 1.2 保證合理動態區間)
+            const T = 1.2;
             let expSum = 0;
             const expVals = {};
             for (let k in logits) {
@@ -1050,23 +1041,23 @@
                 probabilities[k] = expVals[k] / expSum;
                 if (probabilities[k] > maxProb) {
                     maxProb = probabilities[k];
-                    detectedGesture = k; // 互斥多類別：只輸出唯一最高概率標籤
+                    detectedGesture = k;
                 }
             }
 
-            // 設置置信度門檻 (最高類別若低於 55% 視為未決 None)
-            if (maxProb < 0.55) {
+            // 信心度門檻：若最高項未超過 50%，視為模糊狀態 (None)
+            if (maxProb < 0.50) {
                 detectedGesture = "None";
             }
         }
 
-        // 更新介面 (四類加起來剛好 100%)
+        // 即時更新儀表板百分比 (四項加起來永遠 100%)
         updateMediaPipeMeters(detectedGesture, probabilities);
 
-        // 節奏判定
+        // 命中判定
         if (isMPGameRunning && !isMPLocked && mpActionQueue.length > 0) {
             const currentTarget = mpActionQueue[0];
-            if (detectedGesture === currentTarget && probabilities[detectedGesture] >= 0.65) {
+            if (detectedGesture === currentTarget && probabilities[detectedGesture] >= 0.60) {
                 handleMPSuccess(detectedGesture);
             }
         }
@@ -1086,13 +1077,13 @@
             "ThumbsUp": document.getElementById("mp-pct-thumbsup")
         };
 
-        // 四個類別概率相加剛好為 100%
+        // 四個類別概率相加嚴格為 100%
         for (let k in rows) {
             const pctVal = Math.round((probabilities[k] || 0) * 100);
             pcts[k].innerText = `${pctVal}%`;
 
-            // 只有被選中的單一勝出標籤高亮
-            if (k === detected && pctVal >= 55) {
+            // 只有當前唯一勝出的標籤高亮！
+            if (k === detected && pctVal >= 50) {
                 rows[k].classList.add("matched");
             } else {
                 rows[k].classList.remove("matched");
@@ -1165,7 +1156,6 @@
 
         updateMPHUD();
 
-        // 驅動 micro:bit
         if (serialWriter) {
             try { await serialWriter.write("1\n"); } catch(e) {}
         }
@@ -1210,14 +1200,13 @@
     }
 
     // =========================================================================
-    // 【模式三：地面遙測站】HC010 專用動態實時測距 + 速度解算 (原模式二)
+    // 【模式三：地面遙測站】HC010 專用動態實時測距 + 速度解算
     // =========================================================================
     let telemetryVideo = null;
     let telemetryCanvas = document.getElementById("telemetry-canvas");
     let telemetryCtx = telemetryCanvas.getContext("2d");
     let isTelemetryRunning = false;
 
-    // 實體機身寬度 (7.0 cm) 與光學焦距常數[cite: 1]
     const ROBOT_REAL_WIDTH_CM = 7.0; 
     let cameraFocalLengthPx = 350.0; // HC010 85° 廣角預設焦距
 
@@ -1526,12 +1515,10 @@
     function handleDynamicKinematics(cx, cy, currentBoxWidth) {
         const now = performance.now();
 
-        // 1. 直線實體距離：隨實時像素寬度動態變化[cite: 1]
         const distanceToCamCm = (ROBOT_REAL_WIDTH_CM * cameraFocalLengthPx) / currentBoxWidth;
         document.getElementById("telemetry-dist-val").innerText = distanceToCamCm.toFixed(1);
         document.getElementById("marker-px-width").innerText = Math.round(currentBoxWidth);
 
-        // 2. 物理攀爬速度 (v = Δs / Δt)
         if (prevPosition) {
             const dt = (now - prevPosition.timestamp) / 1000.0;
             if (dt > 0.035) {
@@ -1574,7 +1561,7 @@
         telemetryCtx.beginPath();
         telemetryCtx.arc(cx, cy, 7, 0, Math.PI * 2);
         telemetryCtx.moveTo(cx - 15, cy); telemetryCtx.lineTo(cx + 15, cy);
-        telemetryCtx.moveTo(cx, cy - 15); telemetryCtx.lineTo(cx, cy + 15);
+        telemetryCtx.moveTo(cx, cy - 15); telemetryCtx.lineTo(cx + 15, cy);
         telemetryCtx.stroke();
 
         const distVal = document.getElementById("telemetry-dist-val").innerText;
