@@ -37,7 +37,6 @@
             gap: 14px;
         }
 
-        /* 模式切換導航欄 */
         .mode-nav-bar {
             display: grid;
             grid-template-columns: 1fr 1fr;
@@ -70,7 +69,6 @@
             box-shadow: 0 0 16px rgba(0, 240, 255, 0.35);
         }
 
-        /* 學生基本資訊膠囊條 */
         .meta-strip {
             display: grid;
             grid-template-columns: 140px 140px 1.5fr auto;
@@ -373,7 +371,7 @@
         }
         #splash-text.show { transform: translate(-50%, -50%) scale(1.15); }
 
-        /* ================= 模式二：地面遙測站 UI (適配原色木質機身) ================= */
+        /* ================= 模式二：地面遙測站 (強效木質機身追蹤) ================= */
         .telemetry-layout {
             display: grid;
             grid-template-columns: 1.4fr 1fr;
@@ -407,14 +405,14 @@
             position: absolute;
             top: 10px;
             left: 10px;
-            background: rgba(0,0,0,0.75);
+            background: rgba(0,0,0,0.8);
             padding: 8px 12px;
             border-radius: 6px;
             font-size: 11px;
             color: #fff;
-            border: 1px solid rgba(0, 240, 255, 0.3);
+            border: 1px solid rgba(0, 240, 255, 0.4);
             pointer-events: none;
-            line-height: 1.4;
+            line-height: 1.5;
         }
 
         .telemetry-data-card {
@@ -458,8 +456,8 @@
 
         .telemetry-ctrl-strip {
             display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 10px;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 8px;
         }
         .stall-badge {
             background: rgba(255, 0, 127, 0.15);
@@ -488,7 +486,7 @@
         </button>
         <button class="mode-tab-btn" id="tab-mode-2" onclick="switchSystemMode(2)">
             <span>📡 模式二：地面遙測站</span>
-            <span style="font-size: 11px; font-weight: normal; opacity: 0.8;">(木質機身追蹤 + 空間深度測距)</span>
+            <span style="font-size: 11px; font-weight: normal; opacity: 0.8;">(椴木機身追蹤 + 空間深度測距)</span>
         </button>
     </div>
 
@@ -505,7 +503,7 @@
         </button>
     </div>
 
-    <!-- ================= 模式一：駕駛艙 (保持完整) ================= -->
+    <!-- ================= 模式一：駕駛艙 ================= -->
     <div class="mode-section active-mode" id="section-mode-1">
         <div class="stepper-board">
             <div class="step-card" id="card-step1">
@@ -592,27 +590,31 @@
         </div>
     </div>
 
-    <!-- ================= 模式二：地面遙測站 (木質機械人追蹤與測速) ================= -->
+    <!-- ================= 模式二：地面遙測站 (加入抗紅/抗LED木質濾波器) ================= -->
     <div class="mode-section" id="section-mode-2">
         <div class="telemetry-layout">
             <div class="telemetry-cam-card">
                 <div style="display:flex; justify-content:space-between; align-items:center;">
-                    <span style="font-weight:800; font-size:14px; color:var(--neon-blue);">📡 軌道全局追蹤視野 (Wood Body Tracker)</span>
+                    <span style="font-weight:800; font-size:14px; color:var(--neon-blue);">📡 軌道全局追蹤視野 (Anti-Red Plywood Tracker)</span>
                     <span id="track-status-tag" style="font-size:11px; background:#111428; border:1px solid #333d6b; color:#8892b0; padding:2px 8px; border-radius:10px;">未啟動鏡頭</span>
                 </div>
                 <div class="cam-feed-wrapper">
                     <canvas id="telemetry-canvas" width="640" height="480"></canvas>
                     <div class="cam-crosshair-hud">
-                        點擊畫面中機械人木板可重新校準取色 🎯<br>
-                        追蹤目標：<span id="target-rgb-preview" style="color:var(--wood-tone); font-weight:bold;">椴木面板 (RGB: 212, 178, 135)</span>
+                        點擊機械人木板即可精確採樣取色 🎯<br>
+                        基準色：<span id="target-rgb-preview" style="color:var(--wood-tone); font-weight:bold;">椴木板 (H: 33°, S: 32%)</span><br>
+                        <span id="pixel-count-hud" style="color:#8892b0;">匹配像素簇：0 px</span>
                     </div>
                 </div>
                 <div class="telemetry-ctrl-strip">
                     <button class="step-btn" id="btn-telemetry-cam" onclick="toggleTelemetryCamera()">
-                        📷 開啟/重啟遙測鏡頭
+                        📷 開啟鏡頭
                     </button>
-                    <button class="step-btn" style="background:#1e274a; border-color:#3a4b88;" onclick="resetTelemetryCalibration()">
-                        🔄 恢復預設椴木板取色
+                    <button class="step-btn" id="btn-toggle-mask" style="background:#1e274a; border-color:#3a4b88;" onclick="toggleDebugMask()">
+                        👀 顯示辨識遮罩: 關
+                    </button>
+                    <button class="step-btn" style="background:#161d36; border-color:#2a3463;" onclick="resetTelemetryCalibration()">
+                        🔄 恢復預設木色
                     </button>
                 </div>
             </div>
@@ -632,7 +634,7 @@
                 <div class="metric-tile">
                     <div class="metric-title">
                         <span>📏 機械人距鏡頭空間距離 (DEPTH: Z)</span>
-                        <span style="font-size:10px; color:#8892b0;">基於 7.0cm 實體木機身幾何投影</span>
+                        <span style="font-size:10px; color:#8892b0;">基於 7.0cm 椴木面板幾何寬度</span>
                     </div>
                     <div class="metric-val val-dist">
                         <span id="telemetry-dist-val">--</span><span class="metric-unit">cm</span>
@@ -647,9 +649,10 @@
                 </div>
 
                 <div style="background:#090b16; border:1px solid #232a50; border-radius:10px; padding:10px 14px; font-size:11px; color:#8892b0; line-height:1.5;">
-                    🪵 <b style="color:var(--wood-tone);">椴木機身追蹤演算法：</b><br>
-                    • 針對原色雷射切片採用 <b>HSV 暖色域過濾（Hue 25°–45°）</b>，避免誤判背景木桌。<br>
-                    • 空間距離公式：$Z = \frac{7.0\text{ cm} \times f}{w_{\text{pixel}}}$，隨機械人遠離鏡頭動態縮減。
+                    🛡️ <b style="color:var(--neon-blue);">抗紅光與 LED 抑制機制：</b><br>
+                    • <b>嚴格飽和度上限（$S \le 0.48$）：</b> 紅色 LED 與紅車飽和度通常極高（$S > 0.70$），直接被物理濾除。<br>
+                    • <b>通道差值約束（$R - G \le 55$）：</b> 木質反光中紅綠通道非常接近；強紅光（$R - G > 75$）會被強制拋棄。<br>
+                    • <b>像素聚類閘門（$\text{count} \ge 80$）：</b> 避免孤立的 LED 點亮形成虛假檢測框。
                 </div>
             </div>
         </div>
@@ -1192,19 +1195,21 @@
     }
 
     // =========================================================================
-    // 【模式二：地面遙測站】專門適配「原色椴木雷射切片」追蹤
+    // 【模式二：地面遙測站】強效抗紅光/LED 木質機身追蹤演算法
     // =========================================================================
     let telemetryVideo = null;
     let telemetryCanvas = document.getElementById("telemetry-canvas");
     let telemetryCtx = telemetryCanvas.getContext("2d");
     let isTelemetryRunning = false;
+    let showDebugMask = false; // 是否開啟遮罩檢視
 
-    // 依據照片實體機身：椴木面板真實寬度約為 7.0 cm[cite: 1]
-    const ROBOT_REAL_WIDTH_CM = 7.0; 
-    const FOCAL_LENGTH_PX = 580.0; // 640x480 相機標準等效焦距
+    const ROBOT_REAL_WIDTH_CM = 7.0; // 實體椴木板寬度
+    const FOCAL_LENGTH_PX = 580.0;
 
-    // 預設為雷射切片原色椴木板 (Warm Plywood: R:212, G:178, B:135)[cite: 1]
-    let targetRGB = { r: 212, g: 178, b: 135 };
+    // 基準色採樣參數（預設為椴木暖棕色）[cite: 1]
+    let calibH = 33;      // 色相目標 (24° - 42°)
+    let calibS = 0.32;    // 飽和度目標 (0.15 - 0.45)
+    let calibV = 0.78;    // 明度目標 (0.40 - 0.95)
 
     let prevPosition = null;
     let currentSpeed = 0.0;
@@ -1229,7 +1234,7 @@
             document.getElementById("track-status-tag").innerText = "追蹤中 🟢";
             document.getElementById("track-status-tag").style.borderColor = "var(--neon-green)";
             document.getElementById("track-status-tag").style.color = "var(--neon-green)";
-            document.getElementById("btn-telemetry-cam").innerText = "⏹ 停止遙測鏡頭";
+            document.getElementById("btn-telemetry-cam").innerText = "⏹ 停止鏡頭";
 
             requestAnimationFrame(telemetryProcessLoop);
         } catch (err) {
@@ -1246,13 +1251,21 @@
             isTelemetryRunning = false;
             document.getElementById("track-status-tag").innerText = "已暫停 ⚪";
             document.getElementById("track-status-tag").style.color = "#8892b0";
-            document.getElementById("btn-telemetry-cam").innerText = "📷 開啟遙測鏡頭";
+            document.getElementById("btn-telemetry-cam").innerText = "📷 開啟鏡頭";
         } else {
             initTelemetryCamera();
         }
     }
 
-    // 點擊畫面任意處，以該點像素作為木板顏色基準
+    function toggleDebugMask() {
+        showDebugMask = !showDebugMask;
+        const btn = document.getElementById("btn-toggle-mask");
+        btn.innerText = showDebugMask ? "👀 顯示辨識遮罩: 開" : "👀 顯示辨識遮罩: 關";
+        btn.style.borderColor = showDebugMask ? "var(--neon-yellow)" : "#3a4b88";
+        btn.style.color = showDebugMask ? "var(--neon-yellow)" : "#fff";
+    }
+
+    // 點擊畫面重新採樣（取周圍 7x7 像素平均，避免單點噪聲）
     telemetryCanvas.addEventListener("click", function(e) {
         if (!telemetryVideo) return;
         const rect = telemetryCanvas.getBoundingClientRect();
@@ -1261,91 +1274,159 @@
         const clickX = Math.floor((e.clientX - rect.left) * scaleX);
         const clickY = Math.floor((e.clientY - rect.top) * scaleY);
 
-        const p = telemetryCtx.getImageData(clickX, clickY, 1, 1).data;
-        targetRGB = { r: p[0], g: p[1], b: p[2] };
-        document.getElementById("target-rgb-preview").innerText = `已校準木紋 (RGB: ${p[0]}, ${p[1]}, ${p[2]})`;
-        document.getElementById("target-rgb-preview").style.color = `rgb(${p[0]}, ${p[1]}, ${p[2]})`;
+        // 取周圍 7x7 區域中位數/均值
+        let sumR = 0, sumG = 0, sumB = 0, ptCount = 0;
+        for (let dx = -3; dx <= 3; dx++) {
+            for (let dy = -3; dy <= 3; dy++) {
+                const px = Math.min(639, Math.max(0, clickX + dx));
+                const py = Math.min(479, Math.max(0, clickY + dy));
+                const p = telemetryCtx.getImageData(px, py, 1, 1).data;
+                sumR += p[0]; sumG += p[1]; sumB += p[2];
+                ptCount++;
+            }
+        }
+        const avgR = Math.round(sumR / ptCount);
+        const avgG = Math.round(sumG / ptCount);
+        const avgB = Math.round(sumB / ptCount);
+
+        const hsv = rgbToHsv(avgR, avgG, avgB);
+
+        // 防呆校驗：若學生誤點擊紅色 LED 或高飽和度紅車，強制拒絕取色！
+        if (hsv.s > 0.55 || (avgR - avgG > 70)) {
+            alert("⚠️ 採樣點過於偏紅或飽和度過高（疑似紅色 LED 或紅車）！請直接點擊淡米黃色的椴木板表面。");
+            return;
+        }
+
+        calibH = hsv.h;
+        calibS = hsv.s;
+        calibV = hsv.v;
+
+        document.getElementById("target-rgb-preview").innerText = `自訂木色 (H: ${calibH}°, S: ${(calibS*100).toFixed(0)}%)`;
+        document.getElementById("target-rgb-preview").style.color = `rgb(${avgR}, ${avgG}, ${avgB})`;
     });
 
     function resetTelemetryCalibration() {
-        targetRGB = { r: 212, g: 178, b: 135 }; // 恢復預設椴木板標準色[cite: 1]
-        document.getElementById("target-rgb-preview").innerText = `椴木面板 (RGB: 212, 178, 135)`;
+        calibH = 33;
+        calibS = 0.32;
+        calibV = 0.78;
+        document.getElementById("target-rgb-preview").innerText = `椴木板 (H: 33°, S: 32%)`;
         document.getElementById("target-rgb-preview").style.color = "var(--wood-tone)";
     }
 
-    // 判定像素是否屬於「椴木層板」：RGB 與 HSV 雙重濾波[cite: 1]
-    function isWoodColor(r, g, b) {
-        // 1. 天然木質特徵：R > G 且 G > B[cite: 1]
-        if (r <= g || g <= b) return false;
-
-        // 2. 轉換為 HSV 色相判定
-        const max = Math.max(r, g, b), min = Math.min(r, g, b);
+    // 快速 RGB 轉 HSV
+    function rgbToHsv(r, g, b) {
+        const rNorm = r / 255, gNorm = g / 255, bNorm = b / 255;
+        const max = Math.max(rNorm, gNorm, bNorm);
+        const min = Math.min(rNorm, gNorm, bNorm);
         const d = max - min;
-        if (max === 0 || d === 0) return false;
 
         let h = 0;
-        if (max === r) h = ((g - b) / d) % 6;
-        else if (max === g) h = (b - r) / d + 2;
-        else h = (r - g) / d + 4;
-        h = Math.round(h * 60);
-        if (h < 0) h += 360;
-
-        const s = d / max;
-        const v = max / 255;
-
-        // 3. 椴木色相帶：Hue 22°–48°，飽和度適中 (0.16–0.58)，明度較高 (0.45–0.96)[cite: 1]
-        const isHueMatch = (h >= 22 && h <= 48);
-        const isSatMatch = (s >= 0.16 && s <= 0.58);
-        const isValMatch = (v >= 0.45 && v <= 0.96);
-
-        // 4. 與目標基準色彩的歐氏距離
-        const colorDiff = Math.hypot(r - targetRGB.r, g - targetRGB.g, b - targetRGB.b);
-
-        return isHueMatch && isSatMatch && isValMatch && (colorDiff < 75);
+        if (d !== 0) {
+            if (max === rNorm) h = ((gNorm - bNorm) / d) % 6;
+            else if (max === gNorm) h = (bNorm - rNorm) / d + 2;
+            else h = (rNorm - gNorm) / d + 4;
+            h = Math.round(h * 60);
+            if (h < 0) h += 360;
+        }
+        const s = max === 0 ? 0 : d / max;
+        const v = max;
+        return { h, s, v };
     }
 
-    // 模式二主循環：空間深度測距與瞬時運動學解算
+    // 判定是否屬於椴木機身：加入強效「抗紅光、抗LED」特徵約束[cite: 1]
+    function isWoodPlywood(r, g, b) {
+        // 【第一道防線：通道差值物理過濾】
+        // 1. 天然木質必為暖色：R > G 且 G > B[cite: 1]
+        if (r <= g || g <= b) return false;
+
+        // 2. 嚴格抗紅/抗LED過濾：
+        // 紅色 LED、紅線、紅色車身的 (R - G) 通常大於 75，甚至高達 150+！
+        // 椴木面板在正常光線下的 (R - G) 穩定在 15 至 55 之間[cite: 1]。
+        const rgDiff = r - g;
+        if (rgDiff > 58 || rgDiff < 10) return false;
+
+        // 3. 綠藍差值：木質黃色調中 G 必定大於 B 至少 10
+        if ((g - b) < 8) return false;
+
+        // 【第二道防線：HSV 空間精確幾何約束】
+        const hsv = rgbToHsv(r, g, b);
+
+        // 4. 嚴格飽和度抑制 (Anti-Red Saturation Filter)：
+        // 紅色 LED / 玩具紅車 S 普遍在 0.70 - 1.00，椴木板極限飽和度不超過 0.48[cite: 1]！
+        if (hsv.s > 0.48 || hsv.s < 0.12) return false;
+
+        // 5. 明度範圍：過濾極黑死角與鏡面眩光
+        if (hsv.v < 0.35 || hsv.v > 0.96) return false;
+
+        // 6. 色相角度：椴木黃橙波段鎖定在 24° 至 44°[cite: 1] (紅色 LED 通常在 0° - 15° 或 350° - 360°)
+        if (hsv.h < 23 || hsv.h > 46) return false;
+
+        // 7. 與當前校準點進行動態容差匹配
+        const hDiff = Math.abs(hsv.h - calibH);
+        const sDiff = Math.abs(hsv.s - calibS);
+        return (hDiff <= 14) && (sDiff <= 0.22);
+    }
+
+    // 模式二主循環：特徵過濾、空間深度、測速解算
     function telemetryProcessLoop() {
         if (!isTelemetryRunning || !telemetryVideo) return;
 
         telemetryCtx.drawImage(telemetryVideo, 0, 0, telemetryCanvas.width, telemetryCanvas.height);
-        const frameData = telemetryCtx.getImageData(0, 0, telemetryCanvas.width, telemetryCanvas.height);
-        const d = frameData.data;
+        const frame = telemetryCtx.getImageData(0, 0, telemetryCanvas.width, telemetryCanvas.height);
+        const d = frame.data;
 
-        let sumX = 0, sumY = 0, count = 0;
+        let sumX = 0, sumY = 0, matchCount = 0;
         let minX = telemetryCanvas.width, maxX = 0;
         let minY = telemetryCanvas.height, maxY = 0;
 
+        // 步長 4 像素（快速取樣保證 60FPS）
         for (let i = 0; i < d.length; i += 16) {
             const r = d[i], g = d[i+1], b = d[i+2];
 
-            if (isWoodColor(r, g, b)) {
+            if (isWoodPlywood(r, g, b)) {
                 const pixelIndex = i / 4;
                 const px = pixelIndex % telemetryCanvas.width;
                 const py = Math.floor(pixelIndex / telemetryCanvas.width);
 
-                sumX += px; sumY += py; count++;
+                sumX += px; sumY += py; matchCount++;
                 if (px < minX) minX = px;
                 if (px > maxX) maxX = px;
                 if (py < minY) minY = py;
                 if (py > maxY) maxY = py;
+
+                // 若開啟遮罩檢視：將匹配像素直接染成青藍色
+                if (showDebugMask) {
+                    d[i] = 0; d[i+1] = 255; d[i+2] = 255;
+                }
+            } else if (showDebugMask) {
+                // 未匹配像素全部壓暗
+                d[i] = Math.floor(r * 0.25);
+                d[i+1] = Math.floor(g * 0.25);
+                d[i+2] = Math.floor(b * 0.25);
             }
         }
 
-        // 檢測到木質機身像素簇[cite: 1]
-        if (count > 30) {
-            const cx = sumX / count;
-            const cy = sumY / count;
-            const markerWidthPx = Math.max(1, maxX - minX);
-            const markerHeightPx = Math.max(1, maxY - minY);
-            const apparentPxWidth = markerWidthPx;
+        if (showDebugMask) {
+            telemetryCtx.putImageData(frame, 0, 0);
+        }
 
-            // 1. 空間深度測距：Z = (實體木機身 7.0cm * 焦距) / 像素寬度[cite: 1]
+        document.getElementById("pixel-count-hud").innerText = `匹配像素簇：${matchCount} px`;
+
+        // 聚類門檻：機械人機身面積大，至少需匹配 80 個像素點（徹底淘汰 LED 零星亮點）[cite: 1]
+        const boxWidth = maxX - minX;
+        const boxHeight = maxY - minY;
+
+        if (matchCount >= 80 && boxWidth >= 18 && boxHeight >= 18) {
+            const cx = sumX / matchCount;
+            const cy = sumY / matchCount;
+            const apparentPxWidth = Math.max(boxWidth, boxHeight * 0.55); // 椴木板長寬幾何投影估算[cite: 1]
+
+            // 1. 空間深度測距公式：Z = (實體木機身 7.0cm * 焦距) / 像素尺寸[cite: 1]
             const depthCm = (ROBOT_REAL_WIDTH_CM * FOCAL_LENGTH_PX) / apparentPxWidth;
             document.getElementById("telemetry-dist-val").innerText = depthCm.toFixed(1);
-            document.getElementById("marker-px-width").innerText = apparentPxWidth;
+            document.getElementById("marker-px-width").innerText = Math.round(apparentPxWidth);
 
-            // 2. 運動學瞬時速度計算 (cm/s)
+            // 2. 攀爬物理速度計算 (v = Δs / Δt)
             const now = performance.now();
             if (prevPosition) {
                 const dt = (now - prevPosition.timestamp) / 1000.0;
@@ -1355,9 +1436,9 @@
                     const deltaCm = deltaPx * pxToCm;
                     const rawSpeed = deltaCm / dt;
 
-                    currentSpeed = (currentSpeed * 0.7) + (rawSpeed * 0.3); // 低通平滑濾波
+                    // 低通平滑濾波 (EMA)
+                    currentSpeed = (currentSpeed * 0.72) + (rawSpeed * 0.28);
 
-                    // 停滯警報
                     if (currentSpeed < 0.8) {
                         zeroSpeedDuration += (dt * 1000);
                         if (zeroSpeedDuration > 1500) {
@@ -1381,23 +1462,22 @@
                 prevPosition = { x: cx, y: cy, timestamp: now };
             }
 
-            // 繪製螢光青藍色追蹤框（避免與木質機身混色）[cite: 1]
+            // 繪製高對比度螢光青藍追蹤框與黃色質心準星[cite: 1]
             telemetryCtx.strokeStyle = "var(--neon-blue)";
             telemetryCtx.lineWidth = 3;
-            telemetryCtx.strokeRect(minX, minY, markerWidthPx, markerHeightPx);
+            telemetryCtx.strokeRect(minX, minY, boxWidth, boxHeight);
 
-            // 標示質心準星
             telemetryCtx.strokeStyle = "var(--neon-yellow)";
             telemetryCtx.beginPath();
-            telemetryCtx.arc(cx, cy, 7, 0, Math.PI * 2);
-            telemetryCtx.moveTo(cx - 14, cy); telemetryCtx.lineTo(cx + 14, cy);
-            telemetryCtx.moveTo(cx, cy - 14); telemetryCtx.lineTo(cx, cy + 14);
+            telemetryCtx.arc(cx, cy, 8, 0, Math.PI * 2);
+            telemetryCtx.moveTo(cx - 16, cy); telemetryCtx.lineTo(cx + 16, cy);
+            telemetryCtx.moveTo(cx, cy - 16); telemetryCtx.lineTo(cx, cy + 16);
             telemetryCtx.stroke();
 
-            // 繪製實時 HUD 資訊
+            // 標示實時 HUD
             telemetryCtx.fillStyle = "#ffffff";
             telemetryCtx.font = "bold 13px sans-serif";
-            telemetryCtx.fillText(`[WOOD BODY] Z: ${depthCm.toFixed(1)}cm | V: ${currentSpeed.toFixed(1)}cm/s`, minX, Math.max(20, minY - 8));
+            telemetryCtx.fillText(`[WOOD ROBOT] Z: ${depthCm.toFixed(1)}cm | V: ${currentSpeed.toFixed(1)}cm/s`, minX, Math.max(20, minY - 8));
         } else {
             document.getElementById("telemetry-dist-val").innerText = "--";
             document.getElementById("marker-px-width").innerText = "0";
