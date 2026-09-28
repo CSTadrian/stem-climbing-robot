@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AI Robot Gesture Arena - Arcade Edition (Grad-CAM XAI)</title>
+    <title>AI Robot Gesture Arena & Telemetry Hub</title>
     <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@latest/dist/tf.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@teachablemachine/image@latest/dist/teachablemachine-image.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
@@ -33,10 +33,43 @@
             margin: 0 auto;
             display: flex;
             flex-direction: column;
-            gap: 16px;
+            gap: 14px;
         }
 
-        /* 學生基本資訊膠囊條 */
+        /* 模式切換頂欄導航 */
+        .mode-nav-bar {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+            background: rgba(14, 17, 36, 0.85);
+            padding: 8px;
+            border-radius: 12px;
+            border: 1px solid var(--border-dim);
+        }
+        .mode-tab-btn {
+            background: #11152e;
+            border: 2px solid #283160;
+            color: #8c97ba;
+            padding: 10px;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 800;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            transition: all 0.25s ease;
+        }
+        .mode-tab-btn:hover { border-color: var(--neon-blue); color: #fff; }
+        .mode-tab-btn.active {
+            background: linear-gradient(135deg, rgba(0, 240, 255, 0.15), rgba(255, 0, 127, 0.15));
+            border-color: var(--neon-blue);
+            color: #fff;
+            box-shadow: 0 0 16px rgba(0, 240, 255, 0.35);
+        }
+
+        /* 學生基本資訊條 */
         .meta-strip {
             display: grid;
             grid-template-columns: 140px 140px 1.5fr auto;
@@ -56,7 +89,10 @@
             font-size: 13px;
         }
 
-        /* ================= 核心：1-2-3 步驟結構看板 ================= */
+        /* ================= 模式一：街機看板與任務卡 ================= */
+        .mode-section { display: none; flex-direction: column; gap: 14px; }
+        .mode-section.active-mode { display: flex; }
+
         .stepper-board {
             display: grid;
             grid-template-columns: 1fr 1.3fr 1fr;
@@ -73,7 +109,6 @@
             position: relative;
             transition: all 0.3s ease;
         }
-        /* 步驟狀態樣式 */
         .step-card.done {
             border-color: var(--neon-green);
             box-shadow: 0 0 15px rgba(0, 255, 102, 0.2);
@@ -87,7 +122,6 @@
         .step-title {
             font-weight: 800;
             font-size: 14px;
-            letter-spacing: 0.5px;
             display: flex;
             align-items: center;
             gap: 6px;
@@ -115,16 +149,13 @@
             font-weight: bold;
             font-size: 13px;
             cursor: pointer;
-            transition: all 0.2s;
             width: 100%;
         }
-        .step-btn:hover { filter: brightness(1.15); }
         .step-btn.ready-btn {
             background: linear-gradient(135deg, #059669, #10b981);
             border-color: var(--neon-green);
         }
 
-        /* 步驟 3 大按鈕 (就緒前灰色鎖定，就緒後超亮脈衝) */
         .btn-launch {
             background: #1a2035;
             color: #64748b;
@@ -134,9 +165,7 @@
             font-size: 16px;
             font-weight: 900;
             cursor: not-allowed;
-            letter-spacing: 1px;
             width: 100%;
-            height: 100%;
             min-height: 48px;
         }
         .btn-launch.unlocked {
@@ -152,7 +181,6 @@
             100% { transform: scale(1.02); box-shadow: 0 0 25px rgba(0, 255, 102, 0.8); }
         }
 
-        /* ================= 遊戲擂台與軌道 ================= */
         .stage-layout {
             display: grid;
             grid-template-columns: 1fr 180px;
@@ -177,9 +205,7 @@
             color: var(--neon-yellow);
             font-weight: 900;
             text-shadow: 0 0 12px rgba(255, 230, 0, 0.7);
-            transition: transform 0.1s;
         }
-        .combo-badge.pop { transform: scale(1.3) rotate(-3deg); }
         .score-pill {
             background: linear-gradient(90deg, #ff007f, #7928ca);
             padding: 6px 20px;
@@ -188,7 +214,6 @@
             font-weight: 900;
         }
 
-        /* 動作流動軌道 (Rhythm Ribbon) */
         .ribbon-track-wrapper {
             background: #080914;
             border: 2px solid #202747;
@@ -213,20 +238,18 @@
             align-items: center;
             justify-content: center;
             position: relative;
-            transition: all 0.25s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            transition: all 0.25s ease;
         }
         .action-card .symbol { font-size: 44px; line-height: 1; margin-bottom: 4px; }
         .action-card .c-name { font-size: 15px; font-weight: 800; }
         .action-card .sub-num {
             font-size: 10px;
-            font-weight: bold;
             color: #8892b0;
             background: rgba(255,255,255,0.08);
             padding: 2px 6px;
             border-radius: 4px;
             margin-top: 4px;
         }
-        /* 當前需要匹配的 HIT ZONE */
         .action-card.active-target {
             min-width: 130px;
             height: 160px;
@@ -237,20 +260,8 @@
             z-index: 2;
         }
         .action-card.active-target .symbol { font-size: 58px; }
-        .action-card.active-target::before {
-            content: "⚡ HIT NOW";
-            position: absolute;
-            top: -12px;
-            background: var(--neon-pink);
-            color: #fff;
-            font-size: 10px;
-            font-weight: 900;
-            padding: 2px 10px;
-            border-radius: 12px;
-        }
         .action-card.upcoming { opacity: 0.6; transform: scale(0.92); }
 
-        /* 計時倒數條 */
         .timer-bg {
             height: 7px;
             background: #181d38;
@@ -265,18 +276,13 @@
             transition: width 0.05s linear;
         }
 
-        /* 視訊預覽與信心度 */
         .arena-footer {
             display: grid;
             grid-template-columns: 220px 1fr;
             gap: 14px;
             align-items: center;
         }
-        .webcam-box {
-            display: flex;
-            flex-direction: column;
-            gap: 4px;
-        }
+        .webcam-box { display: flex; flex-direction: column; gap: 4px; }
         #webcam-container {
             width: 220px;
             height: 150px;
@@ -289,7 +295,7 @@
         #webcam-container canvas {
             width: 100%;
             height: 100%;
-            transform: scaleX(-1); /* 鏡像顯示 */
+            transform: scaleX(-1);
         }
         .gradcam-legend-bar {
             display: flex;
@@ -308,11 +314,7 @@
             border: 1px solid #334155;
         }
 
-        .meters-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 6px;
-        }
+        .meters-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
         .meter-row {
             background: #0e1124;
             border: 1px solid #232a50;
@@ -329,7 +331,6 @@
             font-weight: bold;
         }
 
-        /* 攀爬高度塔 */
         .tower-card {
             background: var(--card-bg);
             border: 2px solid var(--border-dim);
@@ -357,8 +358,6 @@
             transition: bottom 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
             filter: drop-shadow(0 0 6px #00f0ff);
         }
-
-        /* 命中動畫 */
         #splash-text {
             position: absolute;
             top: 40%;
@@ -372,12 +371,128 @@
             z-index: 10;
         }
         #splash-text.show { transform: translate(-50%, -50%) scale(1.15); }
+
+        /* ================= 模式二：地面遙測站視覺面板 ================= */
+        .telemetry-layout {
+            display: grid;
+            grid-template-columns: 1.4fr 1fr;
+            gap: 16px;
+        }
+        .telemetry-cam-card {
+            background: var(--card-bg);
+            border: 2px solid var(--border-dim);
+            border-radius: 16px;
+            padding: 14px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        .cam-feed-wrapper {
+            position: relative;
+            width: 100%;
+            height: 340px;
+            background: #000;
+            border-radius: 12px;
+            overflow: hidden;
+            border: 1px solid #333d6b;
+        }
+        #telemetry-canvas {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            cursor: crosshair;
+        }
+        .cam-crosshair-hud {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            background: rgba(0,0,0,0.65);
+            padding: 6px 12px;
+            border-radius: 6px;
+            font-size: 11px;
+            color: var(--neon-blue);
+            border: 1px solid rgba(0, 240, 255, 0.3);
+            pointer-events: none;
+        }
+
+        .telemetry-data-card {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+        .metric-tile {
+            background: var(--card-bg);
+            border: 2px solid var(--border-dim);
+            border-radius: 14px;
+            padding: 14px 18px;
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            position: relative;
+        }
+        .metric-title {
+            font-size: 12px;
+            color: #8892b0;
+            font-weight: 800;
+            letter-spacing: 0.5px;
+            display: flex;
+            justify-content: space-between;
+        }
+        .metric-val {
+            font-size: 36px;
+            font-weight: 900;
+            line-height: 1;
+        }
+        .metric-unit { font-size: 14px; color: #8892b0; font-weight: normal; margin-left: 4px; }
+        .val-speed { color: var(--neon-green); text-shadow: 0 0 12px rgba(0, 255, 102, 0.4); }
+        .val-dist { color: var(--neon-blue); text-shadow: 0 0 12px rgba(0, 240, 255, 0.4); }
+
+        /* 實時速度折線圖 Canvas */
+        #speed-chart-canvas {
+            width: 100%;
+            height: 90px;
+            background: #080a18;
+            border-radius: 8px;
+            border: 1px solid #20274c;
+        }
+
+        .telemetry-ctrl-strip {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+        }
+        .stall-badge {
+            background: rgba(255, 0, 127, 0.15);
+            border: 1px solid var(--neon-pink);
+            color: var(--neon-pink);
+            font-weight: bold;
+            font-size: 12px;
+            padding: 8px 12px;
+            border-radius: 8px;
+            display: none;
+            align-items: center;
+            gap: 6px;
+            animation: pulse-launch 1s infinite alternate;
+        }
     </style>
 </head>
 <body>
 
 <div class="arena-container">
-    <!-- 學生分組資料列 -->
+
+    <!-- 頂部：雙模式切換導航欄 -->
+    <div class="mode-nav-bar">
+        <button class="mode-tab-btn active" id="tab-mode-1" onclick="switchSystemMode(1)">
+            <span>🎮 模式一：駕駛艙</span>
+            <span style="font-size: 11px; font-weight: normal; opacity: 0.8;">(GTM 手勢操控 + Grad-CAM)</span>
+        </button>
+        <button class="mode-tab-btn" id="tab-mode-2" onclick="switchSystemMode(2)">
+            <span>📡 模式二：地面遙測站</span>
+            <span style="font-size: 11px; font-weight: normal; opacity: 0.8;">(視覺測速 + 鏡頭空間測距)</span>
+        </button>
+    </div>
+
+    <!-- 學生分組資料列 (兩模式共用) -->
     <div class="meta-strip">
         <input type="text" id="groupId" placeholder="組別 (例: Group-01)">
         <input type="text" id="studentId" placeholder="學號 (例: S01)">
@@ -390,103 +505,199 @@
         </button>
     </div>
 
-    <!-- ================= 核心 1-2-3 任務看板 ================= -->
-    <div class="stepper-board">
-        <!-- 步驟 1: 硬件串口連接 -->
-        <div class="step-card" id="card-step1">
-            <div>
-                <div class="step-header">
-                    <span class="step-title">🔌 步驟 1：連接硬件</span>
-                    <span class="step-tag" id="tag-step1">未連接 ⚪</span>
-                </div>
-                <div style="font-size: 11px; color: #8892b0; margin-bottom: 10px;">
-                    將發射端 micro:bit 直插電腦 USB
-                </div>
-            </div>
-            <button class="step-btn" id="btn-step1" onclick="connectSerial()">
-                連接 Tx micro:bit
-            </button>
-        </div>
-
-        <!-- 步驟 2: AI 模型與視訊鏡頭 -->
-        <div class="step-card" id="card-step2">
-            <div>
-                <div class="step-header">
-                    <span class="step-title">📷 步驟 2：載入模型</span>
-                    <span class="step-tag" id="tag-step2">未載入 ⚪</span>
-                </div>
-                <input type="text" id="modelUrl" placeholder="貼上 Teachable Machine 模型連結" style="background:#090b16; border:1px solid #333d6b; color:#fff; width:100%; padding:6px; font-size:11px; border-radius:4px; margin-bottom: 8px;">
-            </div>
-            <button class="step-btn" id="btn-step2" onclick="initAI()">
-                啟動模型與鏡頭
-            </button>
-        </div>
-
-        <!-- 步驟 3: 啟動對戰競技 -->
-        <div class="step-card" id="card-step3">
-            <div>
-                <div class="step-header">
-                    <span class="step-title">🚀 步驟 3：開始競技</span>
-                    <span class="step-tag" id="tag-step3">待解鎖 🔒</span>
-                </div>
-                <div style="font-size: 11px; color: #8892b0; margin-bottom: 10px;" id="desc-step3">
-                    需先完成步驟 1 及 步驟 2
-                </div>
-            </div>
-            <button class="btn-launch" id="btn-launch" onclick="startGame()" disabled>
-                等待準備...
-            </button>
-        </div>
-    </div>
-
-    <!-- 主遊戲擂台 -->
-    <div class="stage-layout">
-        <div class="arena-box">
-            <div class="hud-bar">
-                <div class="combo-badge" id="combo-display">0x COMBO</div>
-                <div class="score-pill">攀爬得分：<span id="score-counter">0</span></div>
-            </div>
-
-            <!-- 動作預告流動軌道 -->
-            <div class="ribbon-track-wrapper">
-                <div class="ribbon-track" id="queue-ribbon">
-                    <!-- 動態生成 1 個 Active + 4 個 Upcoming -->
-                </div>
-                <div class="timer-bg">
-                    <div class="timer-fill" id="timer-bar"></div>
-                </div>
-                <div id="splash-text">PERFECT!</div>
-            </div>
-
-            <!-- 鏡頭與類別判定比率 -->
-            <div class="arena-footer">
-                <div class="webcam-box">
-                    <div id="webcam-container"></div>
-                    <div class="gradcam-legend-bar">
-                        <span>透明(無關)</span>
-                        <div class="gradcam-spectrum"></div>
-                        <span>🔥 核心特徵(紅)</span>
+    <!-- =========================================================================
+         【模式一：駕駛艙 UI (原功能完整保留)】
+         ========================================================================= -->
+    <div class="mode-section active-mode" id="section-mode-1">
+        <!-- 1-2-3 步驟看板 -->
+        <div class="stepper-board">
+            <!-- 步驟 1: 硬件串口連接 -->
+            <div class="step-card" id="card-step1">
+                <div>
+                    <div class="step-header">
+                        <span class="step-title">🔌 步驟 1：連接硬件</span>
+                        <span class="step-tag" id="tag-step1">未連接 ⚪</span>
+                    </div>
+                    <div style="font-size: 11px; color: #8892b0; margin-bottom: 10px;">
+                        將發射端 micro:bit 直插電腦 USB
                     </div>
                 </div>
-                <div class="meters-grid" id="meters-container"></div>
+                <button class="step-btn" id="btn-step1" onclick="connectSerial()">
+                    連接 Tx micro:bit
+                </button>
+            </div>
+
+            <!-- 步驟 2: AI 模型與鏡頭 -->
+            <div class="step-card" id="card-step2">
+                <div>
+                    <div class="step-header">
+                        <span class="step-title">📷 步驟 2：載入模型</span>
+                        <span class="step-tag" id="tag-step2">未載入 ⚪</span>
+                    </div>
+                    <input type="text" id="modelUrl" placeholder="貼上 Teachable Machine 模型連結" style="background:#090b16; border:1px solid #333d6b; color:#fff; width:100%; padding:6px; font-size:11px; border-radius:4px; margin-bottom: 8px;">
+                </div>
+                <button class="step-btn" id="btn-step2" onclick="initAI()">
+                    啟動模型與鏡頭
+                </button>
+            </div>
+
+            <!-- 步驟 3: 啟動對戰競技 -->
+            <div class="step-card" id="card-step3">
+                <div>
+                    <div class="step-header">
+                        <span class="step-title">🚀 步驟 3：開始競技</span>
+                        <span class="step-tag" id="tag-step3">待解鎖 🔒</span>
+                    </div>
+                    <div style="font-size: 11px; color: #8892b0; margin-bottom: 10px;" id="desc-step3">
+                        需先完成步驟 1 及 步驟 2
+                    </div>
+                </div>
+                <button class="btn-launch" id="btn-launch" onclick="startGame()" disabled>
+                    等待準備...
+                </button>
             </div>
         </div>
 
-        <!-- 右側攀爬高度塔 -->
-        <div class="tower-card">
-            <div style="font-size: 26px;">🏆</div>
-            <div style="font-size: 10px; color: #8892b0; font-weight: bold;">FINISH</div>
-            <div class="rope-shaft" id="rope-shaft">
-                <div class="robot-indicator" id="robot-indicator">🤖</div>
+        <!-- 主遊戲擂台 -->
+        <div class="stage-layout">
+            <div class="arena-box">
+                <div class="hud-bar">
+                    <div class="combo-badge" id="combo-display">0x COMBO</div>
+                    <div class="score-pill">攀爬得分：<span id="score-counter">0</span></div>
+                </div>
+
+                <!-- 動作預告流動軌道 -->
+                <div class="ribbon-track-wrapper">
+                    <div class="ribbon-track" id="queue-ribbon"></div>
+                    <div class="timer-bg">
+                        <div class="timer-fill" id="timer-bar"></div>
+                    </div>
+                    <div id="splash-text">PERFECT!</div>
+                </div>
+
+                <!-- 鏡頭與類別判定比率 -->
+                <div class="arena-footer">
+                    <div class="webcam-box">
+                        <div id="webcam-container"></div>
+                        <div class="gradcam-legend-bar">
+                            <span>透明(無關)</span>
+                            <div class="gradcam-spectrum"></div>
+                            <span>🔥 核心特徵(紅)</span>
+                        </div>
+                    </div>
+                    <div class="meters-grid" id="meters-container"></div>
+                </div>
             </div>
-            <div style="font-size: 10px; color: #8892b0; font-weight: bold;">START</div>
-            <div style="font-size: 20px;">🚩</div>
+
+            <!-- 右側攀爬高度塔 -->
+            <div class="tower-card">
+                <div style="font-size: 26px;">🏆</div>
+                <div style="font-size: 10px; color: #8892b0; font-weight: bold;">FINISH</div>
+                <div class="rope-shaft" id="rope-shaft">
+                    <div class="robot-indicator" id="robot-indicator">🤖</div>
+                </div>
+                <div style="font-size: 10px; color: #8892b0; font-weight: bold;">START</div>
+                <div style="font-size: 20px;">🚩</div>
+            </div>
         </div>
     </div>
+
+    <!-- =========================================================================
+         【模式二：地面遙測站 UI (新增：速度與鏡頭空間距離監控)】
+         ========================================================================= -->
+    <div class="mode-section" id="section-mode-2">
+        <div class="telemetry-layout">
+            <!-- 視訊追蹤與 HUD 畫布 -->
+            <div class="telemetry-cam-card">
+                <div style="display:flex; justify-content:space-between; align-items:center;">
+                    <span style="font-weight:800; font-size:14px; color:var(--neon-blue);">📡 軌道全局追蹤視野 (Global Tracker)</span>
+                    <span id="track-status-tag" style="font-size:11px; background:#111428; border:1px solid #333d6b; color:#8892b0; padding:2px 8px; border-radius:10px;">未啟動鏡頭</span>
+                </div>
+                <div class="cam-feed-wrapper">
+                    <canvas id="telemetry-canvas" width="640" height="480"></canvas>
+                    <div class="cam-crosshair-hud">
+                        點擊畫面中機械人色塊可重新校準取色 🎯<br>
+                        目標錨點：<span id="target-rgb-preview" style="color:var(--neon-pink); font-weight:bold;">螢光標記 (RGB: 255, 0, 128)</span>
+                    </div>
+                </div>
+                <div class="telemetry-ctrl-strip">
+                    <button class="step-btn" id="btn-telemetry-cam" onclick="toggleTelemetryCamera()">
+                        📷 開啟/重啟遙測鏡頭
+                    </button>
+                    <button class="step-btn" style="background:#1e274a; border-color:#3a4b88;" onclick="resetTelemetryCalibration()">
+                        🔄 恢復預設螢光粉紅標記
+                    </button>
+                </div>
+            </div>
+
+            <!-- 數據儀表板與運動學折線圖 -->
+            <div class="telemetry-data-card">
+                <!-- 瞬時速度瓦片 -->
+                <div class="metric-tile">
+                    <div class="metric-title">
+                        <span>⚡ 機械人攀爬速度 (SPEED: v)</span>
+                        <span id="speed-trend-label" style="color:var(--neon-green);">0.0 cm/s</span>
+                    </div>
+                    <div class="metric-val val-speed">
+                        <span id="telemetry-speed-val">0.0</span><span class="metric-unit">cm/s</span>
+                    </div>
+                    <!-- 即時速度動態折線圖 -->
+                    <canvas id="speed-chart-canvas" width="300" height="90"></canvas>
+                </div>
+
+                <!-- 鏡頭三維空間距離瓦片 -->
+                <div class="metric-tile">
+                    <div class="metric-title">
+                        <span>📏 機械人距鏡頭空間距離 (DEPTH: Z)</span>
+                        <span style="font-size:10px; color:#8892b0;">基於 5cm 實體標記針孔模型</span>
+                    </div>
+                    <div class="metric-val val-dist">
+                        <span id="telemetry-dist-val">--</span><span class="metric-unit">cm</span>
+                    </div>
+                    <div style="font-size:11px; color:#8892b0; margin-top:2px;">
+                        畫面像素寬度：<span id="marker-px-width" style="color:#fff;">0</span> px
+                    </div>
+                </div>
+
+                <!-- 異常警報盒 -->
+                <div class="stall-badge" id="stall-warning-box">
+                    ⚠️ 偵測到機械堵轉或停滯！(速度接近 0 cm/s 超過 1.5 秒)
+                </div>
+
+                <!-- 遙測輔助資訊 -->
+                <div style="background:#090b16; border:1px solid #232a50; border-radius:10px; padding:10px 14px; font-size:11px; color:#8892b0; line-height:1.5;">
+                    💡 <b style="color:#fff;">遙測工程原理說明：</b><br>
+                    • <b>空間距離 $Z = \frac{W_{\text{real}} \times f}{w_{\text{pixel}}}$</b>：機械人離鏡頭越遠，標記像素越小。<br>
+                    • <b>物理速度 $v(t) = \frac{\Delta s}{\Delta t}$</b>：透過前後幀質心坐標歐氏位移解算瞬時速度。
+                </div>
+            </div>
+        </div>
+    </div>
+
 </div>
 
 <script>
-    // 固定的 5 類定義
+    // =========================================================================
+    // 雙模式全域切換邏輯
+    // =========================================================================
+    let currentSystemMode = 1; // 1: 駕駛艙 (GTM), 2: 地面遙測站 (視覺測速/測距)
+
+    function switchSystemMode(modeNum) {
+        currentSystemMode = modeNum;
+        document.getElementById("tab-mode-1").classList.toggle("active", modeNum === 1);
+        document.getElementById("tab-mode-2").classList.toggle("active", modeNum === 2);
+        document.getElementById("section-mode-1").classList.toggle("active-mode", modeNum === 1);
+        document.getElementById("section-mode-2").classList.toggle("active-mode", modeNum === 2);
+
+        if (modeNum === 2) {
+            // 切換至遙測模式時，自動確保遙測鏡頭運作
+            if (!telemetryVideo) initTelemetryCamera();
+        }
+    }
+
+    // =========================================================================
+    // 【模式一核心邏輯】GTM 手勢識別 + Grad-CAM + 街機遊戲
+    // =========================================================================
     const GESTURES = {
         "Class 1": { name: "石頭", symbol: "✊", num: "No. 1" },
         "Class 2": { name: "剪刀", symbol: "✌️", num: "No. 2" },
@@ -498,7 +709,6 @@
     const DRIVE_FOLDER_ID = "18VTaAPt86z7u4BCevGm96ZDF6uRdoODu";
     const GAS_ENDPOINT = "YOUR_GOOGLE_APPS_SCRIPT_WEB_APP_URL_HERE";
 
-    // 步驟完成狀態旗標
     let step1Ready = false;
     let step2Ready = false;
 
@@ -562,7 +772,7 @@
     let timerLoop = null;
     let eventLogs = [];
 
-    // ================= 步驟 1：WebSerial 連接 =================
+    // 步驟 1：WebSerial 連接
     async function connectSerial() {
         try {
             serialPort = await navigator.serial.requestPort();
@@ -571,7 +781,6 @@
             enc.readable.pipeTo(serialPort.writable);
             serialWriter = enc.writable.getWriter();
 
-            // 更新步驟 1 UI
             step1Ready = true;
             document.getElementById("card-step1").classList.add("done");
             document.getElementById("tag-step1").innerText = "已連線 🟢";
@@ -583,7 +792,7 @@
         }
     }
 
-    // ================= 步驟 2：AI 模型與鏡頭 (整合 Grad-CAM 特徵圖解構) =================
+    // 步驟 2：AI 模型與鏡頭
     async function initAI() {
         let url = document.getElementById("modelUrl").value.trim();
         if (!url) { alert("請先填寫 Teachable Machine 網址！"); return; }
@@ -595,7 +804,6 @@
         btn.disabled = true;
 
         try {
-            // 載入學生匯入的 GTM 模型
             model = await tmImage.load(url + "model.json", url + "metadata.json");
             maxPredictions = model.getTotalClasses();
 
@@ -603,7 +811,6 @@
             await webcam.setup();
             await webcam.play();
 
-            // 建立支援 Grad-CAM 疊加渲染的展示畫布
             displayCanvas = document.createElement("canvas");
             displayCanvas.width = 220;
             displayCanvas.height = 150;
@@ -613,7 +820,6 @@
             container.innerHTML = "";
             container.appendChild(displayCanvas);
 
-            // 自動解構 GTM 卷積特徵層與分類頭以支援求導
             setupGradCAMComponents(model.model);
 
             const mBox = document.getElementById("meters-container");
@@ -625,7 +831,6 @@
                 mBox.appendChild(row);
             }
 
-            // 更新步驟 2 UI
             step2Ready = true;
             document.getElementById("card-step2").classList.add("done");
             document.getElementById("tag-step2").innerText = "已就緒 🟢";
@@ -642,14 +847,12 @@
         }
     }
 
-    // 動態綁定 GTM 底層 MobileNet 的最後一層卷積層
     function setupGradCAMComponents(tmLayersModel) {
         if (!tmLayersModel) return;
         headLayers = [];
         let targetConvLayer = null;
 
         try {
-            // 處理 GTM 的標準結構 (Layer 0 為 MobileNet, Layer 1+ 為學生訓練的 Dense 層)
             if (tmLayersModel.layers[0] && tmLayersModel.layers[0].layers) {
                 const subLayers = tmLayersModel.layers[0].layers;
                 for (let i = subLayers.length - 1; i >= 0; i--) {
@@ -671,7 +874,6 @@
                     });
                 }
             } else {
-                // 平鋪結構
                 for (let i = tmLayersModel.layers.length - 1; i >= 0; i--) {
                     const l = tmLayersModel.layers[i];
                     const shape = l.outputShape;
@@ -694,76 +896,45 @@
         }
     }
 
-    // 全彩光譜 Jet Colormap：無關背景透明，特徵區域青藍 -> 亮綠 -> 金黃 -> 鮮紅
     function getJetColorAndAlpha(val) {
         val = Math.max(0, Math.min(1, val));
-        
-        // 低於 0.15 視為背景雜訊，完全透明保留視訊畫面
-        if (val < 0.15) {
-            return [0, 0, 0, 0];
-        }
+        if (val < 0.15) return [0, 0, 0, 0];
 
-        const norm = (val - 0.15) / 0.85; // 0.0 ~ 1.0 歸一化
+        const norm = (val - 0.15) / 0.85;
         let r = 0, g = 0, b = 0;
-
         if (norm < 0.25) {
-            // 亮藍到青藍 (Blue -> Cyan)
-            r = 0;
-            g = Math.round(255 * (norm / 0.25));
-            b = 255;
+            r = 0; g = Math.round(255 * (norm / 0.25)); b = 255;
         } else if (norm < 0.5) {
-            // 青藍到純綠 (Cyan -> Green)
-            r = 0;
-            g = 255;
-            b = Math.round(255 * (1 - (norm - 0.25) / 0.25));
+            r = 0; g = 255; b = Math.round(255 * (1 - (norm - 0.25) / 0.25));
         } else if (norm < 0.75) {
-            // 純綠到亮黃 (Green -> Yellow)
-            r = Math.round(255 * ((norm - 0.5) / 0.25));
-            g = 255;
-            b = 0;
+            r = Math.round(255 * ((norm - 0.5) / 0.25)); g = 255; b = 0;
         } else {
-            // 亮黃到鮮紅 (Yellow -> Crimson Red)
-            r = 255;
-            g = Math.round(255 * (1 - (norm - 0.75) / 0.25));
-            b = 0;
+            r = 255; g = Math.round(255 * (1 - (norm - 0.75) / 0.25)); b = 0;
         }
-
-        const a = Math.round(70 + norm * 130); // 隨重要性平滑增加不透明度
+        const a = Math.round(70 + norm * 130);
         return [r, g, b, a];
     }
 
-    // 計算 Grad-CAM 熱力圖張量
     async function computeGradCAM(inputTensor, targetClassIdx) {
         if (!convSubModel || headLayers.length === 0) return null;
-
         return tf.tidy(() => {
-            const convOutput = convSubModel.predict(inputTensor); // [1, 7, 7, Depth]
-
+            const convOutput = convSubModel.predict(inputTensor);
             const scoreFn = (act) => {
                 let x = act;
-                for (let l of headLayers) {
-                    x = l.apply(x);
-                }
+                for (let l of headLayers) x = l.apply(x);
                 return x.as1D().gather([targetClassIdx]);
             };
-
             const gradFn = tf.grad(scoreFn);
-            const grads = gradFn(convOutput); // [1, 7, 7, Depth]
-
-            // 全局平均池化 (GAP) 求特徵通道權重
+            const grads = gradFn(convOutput);
             const weights = grads.mean([0, 1, 2]);
-
-            // 加權求和與 ReLU
             const cam = convOutput.squeeze(0).mul(weights).sum(-1);
             const reluCam = tf.relu(cam);
-
             const maxVal = reluCam.max();
             const minVal = reluCam.min();
             return reluCam.sub(minVal).div(maxVal.sub(minVal).add(1e-8));
         });
     }
 
-    // ================= 檢查並解鎖步驟 3 =================
     function checkCanUnlockStep3() {
         if (step1Ready && step2Ready) {
             document.getElementById("card-step3").classList.add("done");
@@ -778,16 +949,16 @@
     }
 
     async function predictLoop() {
-        webcam.update();
-        await evaluateTarget();
+        if (currentSystemMode === 1 && webcam) {
+            webcam.update();
+            await evaluateTarget();
+        }
         window.requestAnimationFrame(predictLoop);
     }
 
-    // 實時推論比對與 Grad-CAM 熱力圖渲染
     async function evaluateTarget() {
         if (!model) return;
 
-        // 1. 原生 GTM 概率預測
         const predictions = await model.predict(webcam.canvas);
         let topCls = "";
         let topProb = 0;
@@ -806,14 +977,10 @@
                 topCls = name;
                 topIdx = i;
             }
-            if (prob > 0.75) {
-                row.classList.add("matched");
-            } else {
-                row.classList.remove("matched");
-            }
+            if (prob > 0.75) row.classList.add("matched");
+            else row.classList.remove("matched");
         }
 
-        // 2. 決定 Grad-CAM 解釋目標
         let explainIdx = topIdx;
         if (isRunning && actionQueue.length > 0) {
             const targetName = actionQueue[0];
@@ -821,7 +988,6 @@
             if (foundIdx !== -1) explainIdx = foundIdx;
         }
 
-        // 3. 節流運算 Grad-CAM (每 3 幀計算一次維持流暢度)
         gradCamThrottle++;
         const isXAI = document.getElementById("conditionType").value === "XAI_GradCAM";
 
@@ -859,12 +1025,9 @@
                     offCtx.putImageData(imgData, 0, 0);
                     cachedHeatmapCanvas = offCanvas;
                 }
-            } catch(e) {
-                console.error("Grad-CAM 略過:", e);
-            }
+            } catch(e) {}
         }
 
-        // 4. 畫布渲染：底層相機畫面 + 疊加全彩平滑熱力圖
         if (displayCtx) {
             displayCtx.drawImage(webcam.canvas, 0, 0, displayCanvas.width, displayCanvas.height);
             if (isXAI && cachedHeatmapCanvas) {
@@ -876,7 +1039,6 @@
             }
         }
 
-        // 5. 命中判定
         if (isRunning && !isLocked && actionQueue.length > 0) {
             const currentTarget = actionQueue[0];
             if (topCls === currentTarget && topProb > 0.75) {
@@ -885,7 +1047,6 @@
         }
     }
 
-    // ================= 步驟 3：開始遊戲 =================
     function startGame() {
         isRunning = true;
         isLocked = false;
@@ -900,9 +1061,7 @@
         launchBtn.disabled = true;
 
         actionQueue = [];
-        for (let i = 0; i < QUEUE_LENGTH; i++) {
-            actionQueue.push(getRandomGesture());
-        }
+        for (let i = 0; i < QUEUE_LENGTH; i++) actionQueue.push(getRandomGesture());
         renderQueue();
         startTimer();
     }
@@ -960,9 +1119,7 @@
         if (combo >= 3) {
             playSfx("combo");
             popSplash("🔥 " + combo + "x COMBO!", "var(--neon-yellow)");
-            if (typeof confetti === "function") {
-                confetti({ particleCount: 25, spread: 60, origin: { y: 0.6 } });
-            }
+            if (typeof confetti === "function") confetti({ particleCount: 25, spread: 60, origin: { y: 0.6 } });
         } else {
             playSfx("hit");
             popSplash("PERFECT! ⚡", "var(--neon-green)");
@@ -978,7 +1135,6 @@
             status: "HIT"
         });
 
-        // 經 WebSerial 送 1\n 讓 Tx 驅動機械人推進
         if (serialWriter) {
             try { await serialWriter.write("1\n"); } catch(e) {}
         }
@@ -1032,7 +1188,6 @@
         document.getElementById("robot-indicator").style.bottom = climbPct + "%";
     }
 
-    // 上傳成績至 Google Drive
     async function uploadDataToDrive() {
         if (!GAS_ENDPOINT || GAS_ENDPOINT.includes("YOUR_GOOGLE_APPS_SCRIPT")) {
             alert("請先填寫 Google Apps Script 網址！");
@@ -1060,6 +1215,235 @@
         } catch (err) {
             alert("上傳失敗: " + err.message);
         }
+    }
+
+    // =========================================================================
+    // 【模式二核心邏輯】地面遙測站：視覺測速 + 鏡頭三維空間測距
+    // =========================================================================
+    let telemetryVideo = null;
+    let telemetryCanvas = document.getElementById("telemetry-canvas");
+    let telemetryCtx = telemetryCanvas.getContext("2d");
+    let isTelemetryRunning = false;
+
+    // 針孔相機模型參數 (Pinhole Depth Model)
+    // 假設機械人身上貼有寬度 W_real = 5.0 cm 的實體標記
+    const MARKER_REAL_WIDTH_CM = 5.0; 
+    // 標準 Webcam 焦距常數 (Focal length in pixels, 640x480 下約為 580)
+    const FOCAL_LENGTH_PX = 580.0; 
+
+    // 目標色塊追蹤閥值 (預設為螢光粉紅色)
+    let targetRGB = { r: 255, g: 20, b: 147 };
+    let colorTolerance = 75; // 色彩歐氏距離容差
+
+    // 運動學計算歷史緩存
+    let prevPosition = null; // { x, y, timestamp }
+    let currentSpeed = 0.0;   // cm/s
+    let speedHistory = [];   // 用於折線圖繪製
+    const MAX_HISTORY = 40;
+    let zeroSpeedDuration = 0; // 停滯累計時間 (ms)
+
+    // 啟動遙測鏡頭
+    async function initTelemetryCamera() {
+        try {
+            if (!telemetryVideo) {
+                telemetryVideo = document.createElement("video");
+                telemetryVideo.autoplay = true;
+                telemetryVideo.playsInline = true;
+            }
+            const stream = await navigator.mediaDevices.getUserMedia({
+                video: { width: 640, height: 480 }
+            });
+            telemetryVideo.srcObject = stream;
+            await new Promise(resolve => telemetryVideo.onloadedmetadata = resolve);
+
+            isTelemetryRunning = true;
+            document.getElementById("track-status-tag").innerText = "追蹤中 🟢";
+            document.getElementById("track-status-tag").style.borderColor = "var(--neon-green)";
+            document.getElementById("track-status-tag").style.color = "var(--neon-green)";
+            document.getElementById("btn-telemetry-cam").innerText = "⏹ 停止遙測鏡頭";
+
+            requestAnimationFrame(telemetryProcessLoop);
+        } catch (err) {
+            alert("遙測鏡頭啟動失敗: " + err.message);
+        }
+    }
+
+    function toggleTelemetryCamera() {
+        if (isTelemetryRunning) {
+            if (telemetryVideo && telemetryVideo.srcObject) {
+                telemetryVideo.srcObject.getTracks().forEach(t => t.stop());
+                telemetryVideo = null;
+            }
+            isTelemetryRunning = false;
+            document.getElementById("track-status-tag").innerText = "已暫停 ⚪";
+            document.getElementById("track-status-tag").style.color = "#8892b0";
+            document.getElementById("btn-telemetry-cam").innerText = "📷 開啟遙測鏡頭";
+        } else {
+            initTelemetryCamera();
+        }
+    }
+
+    // 點擊畫面重新採樣標記顏色 (Click-to-Calibrate)
+    telemetryCanvas.addEventListener("click", function(e) {
+        if (!telemetryVideo) return;
+        const rect = telemetryCanvas.getBoundingClientRect();
+        const scaleX = telemetryCanvas.width / rect.width;
+        const scaleY = telemetryCanvas.height / rect.height;
+        const clickX = Math.floor((e.clientX - rect.left) * scaleX);
+        const clickY = Math.floor((e.clientY - rect.top) * scaleY);
+
+        const p = telemetryCtx.getImageData(clickX, clickY, 1, 1).data;
+        targetRGB = { r: p[0], g: p[1], b: p[2] };
+        document.getElementById("target-rgb-preview").innerText = `自訂標記 (RGB: ${p[0]}, ${p[1]}, ${p[2]})`;
+        document.getElementById("target-rgb-preview").style.color = `rgb(${p[0]}, ${p[1]}, ${p[2]})`;
+    });
+
+    function resetTelemetryCalibration() {
+        targetRGB = { r: 255, g: 20, b: 147 }; // 恢復預設鮮艷粉紅
+        document.getElementById("target-rgb-preview").innerText = `螢光標記 (RGB: 255, 20, 147)`;
+        document.getElementById("target-rgb-preview").style.color = "var(--neon-pink)";
+    }
+
+    // 模式二主循環：特徵提取、距離解算、運動學微分
+    function telemetryProcessLoop(timestamp) {
+        if (!isTelemetryRunning || !telemetryVideo) return;
+
+        telemetryCtx.drawImage(telemetryVideo, 0, 0, telemetryCanvas.width, telemetryCanvas.height);
+        const frameData = telemetryCtx.getImageData(0, 0, telemetryCanvas.width, telemetryCanvas.height);
+        const d = frameData.data;
+
+        let sumX = 0, sumY = 0, count = 0;
+        let minX = telemetryCanvas.width, maxX = 0;
+        let minY = telemetryCanvas.height, maxY = 0;
+
+        // 色彩歐氏距離快速取樣過濾 (步長 4 像素以保證 60 FPS)
+        for (let i = 0; i < d.length; i += 16) {
+            const r = d[i], g = d[i+1], b = d[i+2];
+            const dist = Math.hypot(r - targetRGB.r, g - targetRGB.g, b - targetRGB.b);
+
+            if (dist < colorTolerance) {
+                const pixelIndex = i / 4;
+                const px = pixelIndex % telemetryCanvas.width;
+                const py = Math.floor(pixelIndex / telemetryCanvas.width);
+
+                sumX += px; sumY += py; count++;
+                if (px < minX) minX = px;
+                if (px > maxX) maxX = px;
+                if (py < minY) minY = py;
+                if (py > maxY) maxY = py;
+            }
+        }
+
+        // 成功辨識並追蹤到實體標記
+        if (count > 25) {
+            const cx = sumX / count;
+            const cy = sumY / count;
+            const markerWidthPx = Math.max(1, maxX - minX);
+            const markerHeightPx = Math.max(1, maxY - minY);
+            const apparentPxSize = Math.max(markerWidthPx, markerHeightPx);
+
+            // ================= 1. 鏡頭三維空間深度測距 (Depth Z) =================
+            // 針孔相機模型公式：Z = (實體尺寸 W * 焦距 F) / 成像像素尺寸 w_p
+            const depthCm = (MARKER_REAL_WIDTH_CM * FOCAL_LENGTH_PX) / apparentPxSize;
+            document.getElementById("telemetry-dist-val").innerText = depthCm.toFixed(1);
+            document.getElementById("marker-px-width").innerText = apparentPxSize;
+
+            // ================= 2. 攀爬物理速度計算 (Speed v = Δs / Δt) =================
+            const now = performance.now();
+            if (prevPosition) {
+                const dt = (now - prevPosition.timestamp) / 1000.0; // 秒
+                if (dt > 0.04) { // 每 40ms 更新一次速度
+                    // 像素位移轉公分比例尺：1 pixel = (MARKER_REAL_WIDTH_CM / apparentPxSize) cm
+                    const pxToCm = MARKER_REAL_WIDTH_CM / apparentPxSize;
+                    const deltaPx = Math.hypot(cx - prevPosition.x, cy - prevPosition.y);
+                    const deltaCm = deltaPx * pxToCm;
+                    const rawSpeed = deltaCm / dt;
+
+                    // 低通濾波 (EMA)，濾除相機採樣像素微小毛刺抖動
+                    currentSpeed = (currentSpeed * 0.7) + (rawSpeed * 0.3);
+
+                    // 停滯/卡死檢測邏輯
+                    if (currentSpeed < 0.8) {
+                        zeroSpeedDuration += (dt * 1000);
+                        if (zeroSpeedDuration > 1500) {
+                            document.getElementById("stall-warning-box").style.display = "flex";
+                        }
+                    } else {
+                        zeroSpeedDuration = 0;
+                        document.getElementById("stall-warning-box").style.display = "none";
+                    }
+
+                    document.getElementById("telemetry-speed-val").innerText = currentSpeed.toFixed(1);
+                    document.getElementById("speed-trend-label").innerText = currentSpeed.toFixed(1) + " cm/s";
+
+                    // 記錄折線圖數據
+                    speedHistory.push(currentSpeed);
+                    if (speedHistory.length > MAX_HISTORY) speedHistory.shift();
+                    drawSpeedChart();
+
+                    prevPosition = { x: cx, y: cy, timestamp: now };
+                }
+            } else {
+                prevPosition = { x: cx, y: cy, timestamp: now };
+            }
+
+            // 繪製目標十字準星與邊界追蹤框 (Target Reticle)
+            telemetryCtx.strokeStyle = "var(--neon-green)";
+            telemetryCtx.lineWidth = 3;
+            telemetryCtx.strokeRect(minX, minY, markerWidthPx, markerHeightPx);
+
+            telemetryCtx.strokeStyle = "var(--neon-yellow)";
+            telemetryCtx.beginPath();
+            telemetryCtx.arc(cx, cy, 8, 0, Math.PI * 2);
+            telemetryCtx.moveTo(cx - 15, cy); telemetryCtx.lineTo(cx + 15, cy);
+            telemetryCtx.moveTo(cx, cy - 15); telemetryCtx.lineTo(cx, cy + 15);
+            telemetryCtx.stroke();
+
+            // 標註 HUD 數值至畫面
+            telemetryCtx.fillStyle = "#ffffff";
+            telemetryCtx.font = "bold 13px sans-serif";
+            telemetryCtx.fillText(`Z: ${depthCm.toFixed(1)}cm | V: ${currentSpeed.toFixed(1)}cm/s`, minX, Math.max(20, minY - 8));
+        } else {
+            // 丟失目標
+            document.getElementById("telemetry-dist-val").innerText = "--";
+            document.getElementById("marker-px-width").innerText = "0";
+            prevPosition = null;
+        }
+
+        requestAnimationFrame(telemetryProcessLoop);
+    }
+
+    // 繪製即時速度折線圖
+    const chartCanvas = document.getElementById("speed-chart-canvas");
+    const chartCtx = chartCanvas.getContext("2d");
+
+    function drawSpeedChart() {
+        const w = chartCanvas.width;
+        const h = chartCanvas.height;
+        chartCtx.clearRect(0, 0, w, h);
+
+        // 繪製網格線
+        chartCtx.strokeStyle = "#161b36";
+        chartCtx.lineWidth = 1;
+        chartCtx.beginPath();
+        chartCtx.moveTo(0, h * 0.5); chartCtx.lineTo(w, h * 0.5);
+        chartCtx.stroke();
+
+        if (speedHistory.length < 2) return;
+
+        // 繪製速度曲線
+        chartCtx.strokeStyle = "#00ff66";
+        chartCtx.lineWidth = 2.5;
+        chartCtx.beginPath();
+        const maxVal = 25.0; // 假定最高速度 25 cm/s
+
+        for (let i = 0; i < speedHistory.length; i++) {
+            const x = (i / (MAX_HISTORY - 1)) * w;
+            const y = h - (Math.min(maxVal, speedHistory[i]) / maxVal) * (h - 10) - 5;
+            if (i === 0) chartCtx.moveTo(x, y);
+            else chartCtx.lineTo(x, y);
+        }
+        chartCtx.stroke();
     }
 </script>
 </body>
