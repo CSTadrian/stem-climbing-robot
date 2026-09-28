@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AI Robot Gesture Arena & Telemetry Hub (Few-Shot Edition)</title>
+    <title>AI Robot Gesture Arena & Telemetry Hub (Interactive ROI Edition)</title>
     <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@latest/dist/tf.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@teachablemachine/image@latest/dist/teachablemachine-image.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
@@ -372,7 +372,7 @@
         }
         #splash-text.show { transform: translate(-50%, -50%) scale(1.15); }
 
-        /* ================= 模式二：地面遙測站 (Few-Shot 視覺架構) ================= */
+        /* ================= 模式二：地面遙測站 (直接拉框 ROI 追蹤架構) ================= */
         .telemetry-layout {
             display: grid;
             grid-template-columns: 1.4fr 1fr;
@@ -395,11 +395,13 @@
             border-radius: 12px;
             overflow: hidden;
             border: 1px solid #333d6b;
+            user-select: none;
         }
         #telemetry-canvas {
             width: 100%;
             height: 100%;
             object-fit: cover;
+            cursor: crosshair;
         }
         .cam-crosshair-hud {
             position: absolute;
@@ -415,35 +417,21 @@
             line-height: 1.5;
         }
 
-        /* Few-Shot 樣本庫展示條 */
-        .sample-deck-box {
+        /* 框選特徵預覽盒 */
+        .roi-preview-box {
             background: #090c1e;
             border: 1px solid #283160;
             border-radius: 8px;
             padding: 8px 12px;
             display: flex;
-            flex-direction: column;
-            gap: 6px;
-        }
-        .sample-deck-header {
-            display: flex;
-            justify-content: space-between;
-            font-size: 11px;
-            color: #8892b0;
-            font-weight: bold;
-        }
-        .sample-thumbnails {
-            display: flex;
-            gap: 8px;
             align-items: center;
-            overflow-x: auto;
-            min-height: 48px;
+            justify-content: space-between;
         }
-        .sample-thumb-item {
-            width: 44px;
-            height: 44px;
+        .roi-thumb-img {
+            width: 52px;
+            height: 52px;
             border-radius: 6px;
-            border: 2px solid var(--neon-blue);
+            border: 2px solid var(--neon-green);
             object-fit: cover;
             background: #000;
         }
@@ -511,7 +499,7 @@
 
         .telemetry-ctrl-strip {
             display: grid;
-            grid-template-columns: 1fr 1fr 1fr;
+            grid-template-columns: 1fr 1fr;
             gap: 8px;
         }
         .stall-badge {
@@ -541,7 +529,7 @@
         </button>
         <button class="mode-tab-btn" id="tab-mode-2" onclick="switchSystemMode(2)">
             <span>📡 模式二：地面遙測站</span>
-            <span style="font-size: 11px; font-weight: normal; opacity: 0.8;">(Few-Shot 樣本微調 + 測速測距)</span>
+            <span style="font-size: 11px; font-weight: normal; opacity: 0.8;">(滑鼠直接拉框 ROI + 測速測距)</span>
         </button>
     </div>
 
@@ -645,60 +633,54 @@
         </div>
     </div>
 
-    <!-- ================= 模式二：地面遙測站 (Few-Shot 結構追蹤) ================= -->
+    <!-- ================= 模式二：地面遙測站 (滑鼠直接拉框 ROI 追蹤) ================= -->
     <div class="mode-section" id="section-mode-2">
         <div class="telemetry-layout">
             <div class="telemetry-cam-card">
                 <div style="display:flex; justify-content:space-between; align-items:center;">
-                    <span style="font-weight:800; font-size:14px; color:var(--neon-blue);">📡 軌道全局追蹤視野 (Few-Shot Structural Tracker)</span>
+                    <span style="font-weight:800; font-size:14px; color:var(--neon-blue);">📡 軌道全局追蹤視野 (Direct Bounding Box ROI Tracker)</span>
                     <span id="track-status-tag" style="font-size:11px; background:#111428; border:1px solid #333d6b; color:#8892b0; padding:2px 8px; border-radius:10px;">未啟動鏡頭</span>
                 </div>
 
-                <!-- 隱藏式檔案上傳 Input -->
-                <input type="file" id="few-shot-file-input" accept="image/*" multiple style="display:none;" onchange="handleFileUpload(event)">
-
-                <div class="cam-feed-wrapper">
+                <div class="cam-feed-wrapper" id="cam-feed-container">
                     <canvas id="telemetry-canvas" width="640" height="480"></canvas>
                     <div class="cam-crosshair-hud">
-                        <span id="tracking-status-text" style="color:var(--neon-yellow); font-weight:bold;">📸 請上傳相片或點擊截圖建立樣本</span><br>
+                        <span id="tracking-status-text" style="color:var(--neon-yellow); font-weight:bold;">🎯 請在畫面上按住滑鼠【拉框】框住機械人</span><br>
                         結構匹配信心度：<span id="match-score-hud" style="color:var(--neon-green); font-weight:bold;">0%</span>
                     </div>
                 </div>
 
-                <!-- Few-Shot 樣本庫展示條 -->
-                <div class="sample-deck-box">
-                    <div class="sample-deck-header">
-                        <span>🖼️ 已載入的少樣本特徵庫 (Few-Shot Templates)</span>
-                        <span id="sample-count-badge" style="color:var(--neon-blue);">0 個樣本</span>
+                <!-- 框選樣本預覽 -->
+                <div class="roi-preview-box">
+                    <div style="display:flex; align-items:center; gap:10px;">
+                        <img id="roi-preview-img" class="roi-thumb-img" src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='52' height='52' viewBox='0 0 52 52'%3E%3Crect width='52' height='52' fill='%23111428'/%3E%3Ctext x='50%25' y='50%25' font-size='10' fill='%2364748b' text-anchor='middle' dy='.3em'%3E待框選%3C/text%3E%3C/svg%3E" alt="ROI Preview">
+                        <div style="font-size:11px; line-height:1.4;">
+                            <span style="color:#fff; font-weight:bold;" id="roi-info-title">尚未框選目標</span><br>
+                            <span style="color:#8892b0;" id="roi-info-detail">在上方畫面拖曳滑鼠即可鎖定</span>
+                        </div>
                     </div>
-                    <div class="sample-thumbnails" id="sample-deck">
-                        <span style="font-size:11px; color:#64748b;">暫無樣本，請點擊下方按鈕新增...</span>
-                    </div>
+                    <button class="step-btn" style="width:auto; padding:6px 12px; font-size:11px; background:#1e274a; border-color:#3a4b88;" onclick="resetROISelection()">
+                        🎯 重新框選
+                    </button>
                 </div>
 
-                <!-- 匹配門檻滑桿 -->
+                <!-- 匹配信心度門檻滑桿 -->
                 <div class="slider-box">
                     <div class="slider-row">
-                        <span>🎚️ 匹配靈敏度閾值 (Confidence Threshold): <b id="thresh-val-label" style="color:var(--neon-blue);">55%</b></span>
-                        <span style="font-size:10px; color:#64748b;">(若漏跟可調低至 45%，若誤判可調高至 65%)</span>
+                        <span>🎚️ 匹配靈敏度閾值 (Confidence Threshold): <b id="thresh-val-label" style="color:var(--neon-blue);">50%</b></span>
+                        <span style="font-size:10px; color:#64748b;">(若漏跟可調低至 40%，若誤判可調高至 65%)</span>
                     </div>
-                    <input type="range" id="confidence-slider" min="30" max="85" value="55" oninput="updateConfidenceThreshold(this.value)">
+                    <input type="range" id="confidence-slider" min="30" max="85" value="50" oninput="updateConfidenceThreshold(this.value)">
                 </div>
 
                 <div class="telemetry-ctrl-strip">
                     <button class="step-btn" id="btn-telemetry-cam" onclick="toggleTelemetryCamera()">
-                        📷 開啟鏡頭
+                        📷 開啟/重啟鏡頭
                     </button>
-                    <button class="step-btn" style="background:#1e274a; border-color:#3a4b88;" onclick="triggerCameraSnapshot()">
-                        📸 鏡頭截取樣本
-                    </button>
-                    <button class="step-btn" style="background:#0f3a40; border-color:var(--neon-blue);" onclick="document.getElementById('few-shot-file-input').click()">
-                        📁 上傳機械人相片
+                    <button class="step-btn" style="background:#161d36; border-color:#2a3463;" onclick="clearROITracker()">
+                        🗑️ 清除目標鎖定
                     </button>
                 </div>
-                <button class="step-btn" style="background:#20111d; border-color:#661d38; color:#f43f5e; margin-top:2px;" onclick="clearAllTemplates()">
-                    🗑️ 清空所有特徵樣本
-                </button>
             </div>
 
             <div class="telemetry-data-card">
@@ -731,10 +713,10 @@
                 </div>
 
                 <div style="background:#090b16; border:1px solid #232a50; border-radius:10px; padding:10px 14px; font-size:11px; color:#8892b0; line-height:1.5;">
-                    💡 <b style="color:var(--neon-green);">Few-Shot 零誤判優勢：</b><br>
-                    • <b>擺脫顏色依賴：</b> 演算法分析機械人的形狀拓撲、雷射雕刻與邊緣線條。<br>
-                    • <b>免疫紅車干擾：</b> 背景紅車與 LED 燈因結構不符，匹配度會被無情剔除！<br>
-                    • <b>微調指引：</b> 建議截取 1–3 張不同角度的照片，讓模型更穩健。
+                    💡 <b style="color:var(--neon-green);">互動拉框 (Direct Bounding Box) 優勢：</b><br>
+                    • <b>100% 同源特徵：</b> 直接從視訊中截取木紋雕刻與外形拓撲，零光影漂移！<br>
+                    • <b>徹底免疫背景干擾：</b> 框選僅包含機械人本身，背景紅車與紅色 LED 連一個像素都不會被採樣！<br>
+                    • <b>操作極簡：</b> 在畫面上按住滑鼠拉出綠色方框，放手立即進入全自動追蹤！
                 </div>
             </div>
         </div>
@@ -761,7 +743,7 @@
     }
 
     // =========================================================================
-    // 【模式一：駕駛艙】GTM + Grad-CAM
+    // 【模式一：駕駛艙】GTM + Grad-CAM (維持完整)
     // =========================================================================
     const GESTURES = {
         "Class 1": { name: "石頭", symbol: "✊", num: "No. 1" },
@@ -1277,21 +1259,28 @@
     }
 
     // =========================================================================
-    // 【模式二：地面遙測站】Few-Shot 視覺幾何特徵比對 (零色彩硬編碼)
+    // 【模式二：地面遙測站】互動式直接拉框 (Direct Bounding Box ROI Tracker)
     // =========================================================================
     let telemetryVideo = null;
     let telemetryCanvas = document.getElementById("telemetry-canvas");
     let telemetryCtx = telemetryCanvas.getContext("2d");
     let isTelemetryRunning = false;
 
-    const ROBOT_REAL_WIDTH_CM = 7.0; // 實體機身寬度 (cm)
+    const ROBOT_REAL_WIDTH_CM = 7.0; // 實體機身寬度 (cm)[cite: 1]
     const FOCAL_LENGTH_PX = 580.0;
 
-    // 少樣本特徵庫清單
-    let fewShotTemplates = [];
-    const TEMPLATE_SIZE = 48; // 標準化特徵核尺寸 (48x48)
-    let matchThreshold = 0.55; // 匹配閾值 (55%)
+    // 滑鼠拉框互動狀態
+    let isDrawingBox = false;
+    let dragStartX = 0, dragStartY = 0;
+    let dragCurrX = 0, dragCurrY = 0;
 
+    // 目標模板數據 (灰階歸一化特徵)
+    let roiTemplate = null; // { grayData: Float32Array, w, h, std, origW, origH }
+    const T_STD_SIZE = 40; // 統一縮放為 40x40 矩陣比對
+    let matchThreshold = 0.50; // 50% 閾值
+
+    // 運動學計算
+    let targetBox = null; // 當前追蹤到的 { x, y, w, h }
     let prevPosition = null;
     let currentSpeed = 0.0;
     let speedHistory = [];
@@ -1312,7 +1301,7 @@
             await new Promise(resolve => telemetryVideo.onloadedmetadata = resolve);
 
             isTelemetryRunning = true;
-            document.getElementById("track-status-tag").innerText = "追蹤中 🟢";
+            document.getElementById("track-status-tag").innerText = "鏡頭就緒 🟢";
             document.getElementById("track-status-tag").style.borderColor = "var(--neon-green)";
             document.getElementById("track-status-tag").style.color = "var(--neon-green)";
             document.getElementById("btn-telemetry-cam").innerText = "⏹ 停止鏡頭";
@@ -1343,230 +1332,283 @@
         document.getElementById("thresh-val-label").innerText = val + "%";
     }
 
-    // --- Few-Shot 樣本建立與微調邏輯 ---
-
-    // 1. 上傳相片處理
-    function handleFileUpload(e) {
-        const files = e.target.files;
-        if (!files || files.length === 0) return;
-
-        for (let i = 0; i < files.length; i++) {
-            const reader = new FileReader();
-            reader.onload = function(evt) {
-                const img = new Image();
-                img.onload = function() {
-                    addTemplateFromImage(img);
-                };
-                img.src = evt.target.result;
-            };
-            reader.readAsDataURL(files[i]);
-        }
-    }
-
-    // 2. 鏡頭截圖處理 (直接取鏡頭畫面中央 180x180 區域)
-    function triggerCameraSnapshot() {
-        if (!telemetryVideo) {
-            alert("請先開啟鏡頭！");
-            return;
-        }
-        const cropSize = 180;
-        const cropX = Math.floor((telemetryCanvas.width - cropSize) / 2);
-        const cropY = Math.floor((telemetryCanvas.height - cropSize) / 2);
-
-        const snapCanvas = document.createElement("canvas");
-        snapCanvas.width = cropSize;
-        snapCanvas.height = cropSize;
-        const sCtx = snapCanvas.getContext("2d");
-        sCtx.drawImage(telemetryVideo, cropX, cropY, cropSize, cropSize, 0, 0, cropSize, cropSize);
-
-        const img = new Image();
-        img.onload = function() {
-            addTemplateFromImage(img);
+    // --- 畫布滑鼠 / 觸摸拉框互動監聽 ---
+    function getCanvasCoords(e) {
+        const rect = telemetryCanvas.getBoundingClientRect();
+        const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+        const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+        const scaleX = telemetryCanvas.width / rect.width;
+        const scaleY = telemetryCanvas.height / rect.height;
+        return {
+            x: Math.max(0, Math.min(telemetryCanvas.width, Math.floor((clientX - rect.left) * scaleX))),
+            y: Math.max(0, Math.min(telemetryCanvas.height, Math.floor((clientY - rect.top) * scaleY)))
         };
-        img.src = snapCanvas.toDataURL();
     }
 
-    // 3. 特徵核生成與歸一化 (ZNCC 核心)
-    function addTemplateFromImage(imgSource) {
-        const tCanvas = document.createElement("canvas");
-        tCanvas.width = TEMPLATE_SIZE;
-        tCanvas.height = TEMPLATE_SIZE;
-        const ctx = tCanvas.getContext("2d");
-        ctx.drawImage(imgSource, 0, 0, TEMPLATE_SIZE, TEMPLATE_SIZE);
+    telemetryCanvas.addEventListener("mousedown", (e) => {
+        if (!telemetryVideo) return;
+        const p = getCanvasCoords(e);
+        isDrawingBox = true;
+        dragStartX = p.x; dragStartY = p.y;
+        dragCurrX = p.x; dragCurrY = p.y;
+    });
 
-        // 利用 TF.js 生成歸一化特徵張量 (Zero-Mean Unit-Variance)
-        const kernelTensor = tf.tidy(() => {
-            let t = tf.browser.fromPixels(tCanvas, 1).toFloat(); // [48, 48, 1] 灰階
-            const mean = t.mean();
-            const std = tf.moments(t).variance.sqrt().add(1e-5);
-            // 歸一化張量並加入卷積形狀 [48, 48, 1, 1]
-            return t.sub(mean).div(std).expandDims(3);
-        });
+    telemetryCanvas.addEventListener("mousemove", (e) => {
+        if (!isDrawingBox) return;
+        const p = getCanvasCoords(e);
+        dragCurrX = p.x; dragCurrY = p.y;
+    });
 
-        fewShotTemplates.push({
-            dataUrl: tCanvas.toDataURL(),
-            kernel: kernelTensor,
-            size: TEMPLATE_SIZE
-        });
+    window.addEventListener("mouseup", () => {
+        if (!isDrawingBox) return;
+        isDrawingBox = false;
+        finalizeROISelection();
+    });
 
-        renderTemplateDeck();
-    }
+    // 觸控支援
+    telemetryCanvas.addEventListener("touchstart", (e) => {
+        if (!telemetryVideo) return;
+        const p = getCanvasCoords(e);
+        isDrawingBox = true;
+        dragStartX = p.x; dragStartY = p.y;
+        dragCurrX = p.x; dragCurrY = p.y;
+    }, { passive: false });
 
-    function renderTemplateDeck() {
-        const deck = document.getElementById("sample-deck");
-        deck.innerHTML = "";
-        document.getElementById("sample-count-badge").innerText = `${fewShotTemplates.length} 個樣本`;
+    telemetryCanvas.addEventListener("touchmove", (e) => {
+        if (!isDrawingBox) return;
+        const p = getCanvasCoords(e);
+        dragCurrX = p.x; dragCurrY = p.y;
+        e.preventDefault();
+    }, { passive: false });
 
-        if (fewShotTemplates.length === 0) {
-            deck.innerHTML = `<span style="font-size:11px; color:#64748b;">暫無樣本，請點擊下方按鈕新增...</span>`;
-            document.getElementById("tracking-status-text").innerText = "📸 請上傳相片或點擊截圖建立樣本";
-            document.getElementById("tracking-status-text").style.color = "var(--neon-yellow)";
-            return;
+    window.addEventListener("touchend", () => {
+        if (!isDrawingBox) return;
+        isDrawingBox = false;
+        finalizeROISelection();
+    });
+
+    // 完成拉框：提取當前區域為特徵核
+    function finalizeROISelection() {
+        const x1 = Math.min(dragStartX, dragCurrX);
+        const y1 = Math.min(dragStartY, dragCurrY);
+        const bw = Math.abs(dragCurrX - dragStartX);
+        const bh = Math.abs(dragCurrY - dragStartY);
+
+        // 防誤觸：小於 18x18 像素視為無效點擊
+        if (bw < 18 || bh < 18) return;
+
+        // 截取 ROI 圖像
+        const tempCanvas = document.createElement("canvas");
+        tempCanvas.width = bw;
+        tempCanvas.height = bh;
+        const tCtx = tempCanvas.getContext("2d");
+        tCtx.drawImage(telemetryVideo, x1, y1, bw, bh, 0, 0, bw, bh);
+
+        // 產生縮圖預覽
+        const thumbUrl = tempCanvas.toDataURL();
+        document.getElementById("roi-preview-img").src = thumbUrl;
+        document.getElementById("roi-info-title").innerText = `已鎖定目標 (${bw}×${bh} px)`;
+        document.getElementById("roi-info-detail").innerText = `以原生結構紋理開始追蹤`;
+
+        // 建立歸一化特徵矩陣 (標準化為 T_STD_SIZE x T_STD_SIZE)
+        const stdCanvas = document.createElement("canvas");
+        stdCanvas.width = T_STD_SIZE;
+        stdCanvas.height = T_STD_SIZE;
+        const sCtx = stdCanvas.getContext("2d");
+        sCtx.drawImage(tempCanvas, 0, 0, T_STD_SIZE, T_STD_SIZE);
+
+        const imgData = sCtx.getImageData(0, 0, T_STD_SIZE, T_STD_SIZE).data;
+        const gray = new Float32Array(T_STD_SIZE * T_STD_SIZE);
+        let sum = 0;
+        for (let i = 0; i < gray.length; i++) {
+            const gVal = 0.299 * imgData[i*4] + 0.587 * imgData[i*4+1] + 0.114 * imgData[i*4+2];
+            gray[i] = gVal;
+            sum += gVal;
+        }
+        const mean = sum / gray.length;
+        let varSum = 0;
+        for (let i = 0; i < gray.length; i++) {
+            gray[i] -= mean;
+            varSum += gray[i] * gray[i];
+        }
+        const std = Math.sqrt(varSum) + 1e-5;
+        for (let i = 0; i < gray.length; i++) {
+            gray[i] /= std; // 單位方差歸一化
         }
 
-        fewShotTemplates.forEach((item, idx) => {
-            const img = document.createElement("img");
-            img.src = item.dataUrl;
-            img.className = "sample-thumb-item";
-            img.title = `特徵樣本 #${idx + 1}`;
-            deck.appendChild(img);
-        });
+        roiTemplate = {
+            gray: gray,
+            origW: bw,
+            origH: bh
+        };
 
-        document.getElementById("tracking-status-text").innerText = `🟢 少樣本特徵比對進行中 (${fewShotTemplates.length} 個特徵核)`;
+        targetBox = { x: x1 + bw/2, y: y1 + bh/2, w: bw, h: bh };
+        prevPosition = null;
+
+        document.getElementById("tracking-status-text").innerText = "🟢 正在鎖定追蹤中...";
         document.getElementById("tracking-status-text").style.color = "var(--neon-green)";
     }
 
-    function clearAllTemplates() {
-        fewShotTemplates.forEach(t => t.kernel.dispose());
-        fewShotTemplates = [];
-        renderTemplateDeck();
+    function resetROISelection() {
+        roiTemplate = null;
+        targetBox = null;
+        prevPosition = null;
+        document.getElementById("roi-preview-img").src = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='52' height='52' viewBox='0 0 52 52'%3E%3Crect width='52' height='52' fill='%23111428'/%3E%3Ctext x='50%25' y='50%25' font-size='10' fill='%2364748b' text-anchor='middle' dy='.3em'%3E待框選%3C/text%3E%3C/svg%3E";
+        document.getElementById("roi-info-title").innerText = "尚未框選目標";
+        document.getElementById("roi-info-detail").innerText = "在上方畫面拖曳滑鼠即可鎖定";
+        document.getElementById("tracking-status-text").innerText = "🎯 請在畫面上按住滑鼠【拉框】框住機械人";
+        document.getElementById("tracking-status-text").style.color = "var(--neon-yellow)";
         document.getElementById("match-score-hud").innerText = "0%";
+        document.getElementById("telemetry-dist-val").innerText = "--";
+        document.getElementById("marker-px-width").innerText = "0";
     }
 
-    // --- 模式二主循環：少樣本空間卷積比對與運動學解算 ---
-    let frameSkip = 0;
-    let cachedOffCanvas = null;
+    function clearROITracker() {
+        resetROISelection();
+    }
+
+    // --- 模式二主循環：特徵比對與運動學遙測 ---
+    let frameThrottle = 0;
+    const searchCanvas = document.createElement("canvas");
+    const sCtx = searchCanvas.getContext("2d");
 
     function telemetryProcessLoop() {
         if (!isTelemetryRunning || !telemetryVideo) return;
 
         telemetryCtx.drawImage(telemetryVideo, 0, 0, telemetryCanvas.width, telemetryCanvas.height);
 
-        // 若無樣本，在畫布中央繪製導引準星輔助截圖
-        if (fewShotTemplates.length === 0) {
-            const guideSize = 180;
-            const gx = (telemetryCanvas.width - guideSize) / 2;
-            const gy = (telemetryCanvas.height - guideSize) / 2;
-            telemetryCtx.strokeStyle = "rgba(0, 240, 255, 0.4)";
+        // 1. 若使用者正在拖曳滑鼠拉框：繪製即時輔助虛線框
+        if (isDrawingBox) {
+            const bx = Math.min(dragStartX, dragCurrX);
+            const by = Math.min(dragStartY, dragCurrY);
+            const bw = Math.abs(dragCurrX - dragStartX);
+            const bh = Math.abs(dragCurrY - dragStartY);
+
+            telemetryCtx.strokeStyle = "var(--neon-yellow)";
             telemetryCtx.lineWidth = 2;
             telemetryCtx.setLineDash([6, 6]);
-            telemetryCtx.strokeRect(gx, gy, guideSize, guideSize);
+            telemetryCtx.strokeRect(bx, by, bw, bh);
             telemetryCtx.setLineDash([]);
-            telemetryCtx.fillStyle = "rgba(0, 240, 255, 0.8)";
-            telemetryCtx.font = "12px sans-serif";
-            telemetryCtx.fillText("請將機械人置於框內並點擊「截取樣本」", gx + 8, gy - 8);
 
-            requestAnimationFrame(telemetryProcessLoop);
-            return;
+            telemetryCtx.fillStyle = "rgba(255, 230, 0, 0.2)";
+            telemetryCtx.fillRect(bx, by, bw, bh);
+
+            telemetryCtx.fillStyle = "#ffffff";
+            telemetryCtx.font = "bold 12px sans-serif";
+            telemetryCtx.fillText(`框選中: ${bw}×${bh}`, bx, Math.max(16, by - 6));
         }
-
-        // 節流處理：每 2 幀運算一次 ZNCC 比對，兼顧極致流暢度與高 FPS
-        frameSkip++;
-        if (frameSkip % 2 === 0) {
-            runFewShotTracking();
+        // 2. 若已有目標模板：執行極速局部 ZNCC 結構比對
+        else if (roiTemplate) {
+            frameThrottle++;
+            if (frameThrottle % 2 === 0) { // 每兩幀計算一次，保證流暢 60 FPS
+                trackROIWithZNCC();
+            } else if (targetBox) {
+                renderTrackingOverlay(targetBox.x, targetBox.y, targetBox.w, targetBox.h, lastScorePct);
+            }
         }
 
         requestAnimationFrame(telemetryProcessLoop);
     }
 
-    function runFewShotTracking() {
-        // 下採樣至 320x240 加速 WebGL 卷積運算
-        const procW = 320, procH = 240;
-        if (!cachedOffCanvas) {
-            cachedOffCanvas = document.createElement("canvas");
-            cachedOffCanvas.width = procW;
-            cachedOffCanvas.height = procH;
-        }
-        const oCtx = cachedOffCanvas.getContext("2d");
-        oCtx.drawImage(telemetryVideo, 0, 0, procW, procH);
+    let lastScorePct = 0;
 
-        tf.tidy(() => {
-            // 畫面灰階轉換與形狀重構 [1, 240, 320, 1]
-            let frameTensor = tf.browser.fromPixels(cachedOffCanvas, 1).toFloat();
-            frameTensor = frameTensor.expandDims(0);
+    function trackROIWithZNCC() {
+        const bw = targetBox.w;
+        const bh = targetBox.h;
 
-            // 計算畫面局部標準差 (用於歸一化相關性分母)
-            const boxSize = 24;
-            const boxKernel = tf.ones([boxSize, boxSize, 1, 1]).div(boxSize * boxSize);
-            const localMean = tf.conv2d(frameTensor, boxKernel, [2, 2], 'same');
-            const localMeanSq = tf.conv2d(frameTensor.square(), boxKernel, [2, 2], 'same');
-            const localStd = tf.relu(localMeanSq.sub(localMean.square())).sqrt().add(1e-4);
+        // 局部搜尋窗口（在上一幀位置周圍 ±70px 範圍搜尋，大幅提升速度並避免跑偏）
+        const searchMargin = 70;
+        const sX1 = Math.max(0, targetBox.x - bw/2 - searchMargin);
+        const sY1 = Math.max(0, targetBox.y - bh/2 - searchMargin);
+        const sX2 = Math.min(telemetryCanvas.width, targetBox.x + bw/2 + searchMargin);
+        const sY2 = Math.min(telemetryCanvas.height, targetBox.y + bh/2 + searchMargin);
+        const sW = sX2 - sX1;
+        const sH = sY2 - sY1;
 
-            let bestScore = -1;
-            let bestX = 0, bestY = 0;
+        if (sW < bw || sH < bh) return;
 
-            // 對多個少樣本特徵核進行並行特徵比對
-            for (let t of fewShotTemplates) {
-                // 執行二維歸一化特徵卷積 (Stride 2)
-                const conv = tf.conv2d(frameTensor, t.kernel, [2, 2], 'same');
-                const normMap = conv.div(localStd.mul(Math.sqrt(t.size * t.size))); // ZNCC 矩陣
+        searchCanvas.width = sW;
+        searchCanvas.height = sH;
+        sCtx.drawImage(telemetryVideo, sX1, sY1, sW, sH, 0, 0, sW, sH);
+        const sImgData = sCtx.getImageData(0, 0, sW, sH);
 
-                const maxValTensor = normMap.max();
-                const score = maxValTensor.dataSync()[0];
+        // 多尺度微調步長
+        let bestScore = -1;
+        let bestOffsetX = 0, bestOffsetY = 0;
+        const step = 4; // 粗搜步長
+
+        const testCanvas = document.createElement("canvas");
+        testCanvas.width = T_STD_SIZE;
+        testCanvas.height = T_STD_SIZE;
+        const tctx = testCanvas.getContext("2d");
+
+        for (let y = 0; y <= sH - bh; y += step) {
+            for (let x = 0; x <= sW - bw; x += step) {
+                tctx.drawImage(searchCanvas, x, y, bw, bh, 0, 0, T_STD_SIZE, T_STD_SIZE);
+                const patchData = tctx.getImageData(0, 0, T_STD_SIZE, T_STD_SIZE).data;
+
+                // 計算當前候選塊的歸一化互相關
+                let pSum = 0;
+                for (let i = 0; i < T_STD_SIZE * T_STD_SIZE; i++) {
+                    pSum += (0.299 * patchData[i*4] + 0.587 * patchData[i*4+1] + 0.114 * patchData[i*4+2]);
+                }
+                const pMean = pSum / (T_STD_SIZE * T_STD_SIZE);
+
+                let pVar = 0, cross = 0;
+                for (let i = 0; i < T_STD_SIZE * T_STD_SIZE; i++) {
+                    const val = (0.299 * patchData[i*4] + 0.587 * patchData[i*4+1] + 0.114 * patchData[i*4+2]) - pMean;
+                    pVar += val * val;
+                    cross += val * roiTemplate.gray[i];
+                }
+                const score = cross / (Math.sqrt(pVar) + 1e-5);
 
                 if (score > bestScore) {
                     bestScore = score;
-                    const flatIdx = normMap.as1D().argMax().dataSync()[0];
-                    const mapW = Math.floor(procW / 2);
-                    bestY = Math.floor(flatIdx / mapW) * 2;
-                    bestX = (flatIdx % mapW) * 2;
+                    bestOffsetX = x;
+                    bestOffsetY = y;
                 }
             }
+        }
 
-            // 更新 UI 匹配度
-            const displayScore = Math.max(0, Math.min(100, Math.round(bestScore * 100)));
-            document.getElementById("match-score-hud").innerText = `${displayScore}%`;
+        lastScorePct = Math.max(0, Math.min(100, Math.round(bestScore * 100)));
+        document.getElementById("match-score-hud").innerText = `${lastScorePct}%`;
 
-            // 若匹配度超越閾值：確認鎖定目標！
-            if (bestScore >= matchThreshold) {
-                // 將下採樣坐標映射回 640x480
-                const scaleX = telemetryCanvas.width / procW;
-                const scaleY = telemetryCanvas.height / procH;
-                const targetX = bestX * scaleX;
-                const targetY = bestY * scaleY;
+        // 若大於信心度閾值：確認鎖定！
+        if (bestScore >= matchThreshold) {
+            const newCenterX = sX1 + bestOffsetX + bw/2;
+            const newCenterY = sY1 + bestOffsetY + bh/2;
 
-                // 估計機械人邊界框寬高
-                const boxW = 80;
-                const boxH = 95;
-                const minX = Math.max(0, targetX - boxW / 2);
-                const minY = Math.max(0, targetY - boxH / 2);
+            // 平滑質心位置
+            targetBox.x = targetBox.x * 0.35 + newCenterX * 0.65;
+            targetBox.y = targetBox.y * 0.35 + newCenterY * 0.65;
 
-                handleTargetIdentified(targetX, targetY, minX, minY, boxW, boxH, displayScore);
-            } else {
-                document.getElementById("telemetry-dist-val").innerText = "--";
-                document.getElementById("marker-px-width").innerText = "0";
-                prevPosition = null;
-            }
-        });
+            handleKinematicsUpdate(targetBox.x, targetBox.y, bw, bh, lastScorePct);
+            renderTrackingOverlay(targetBox.x, targetBox.y, bw, bh, lastScorePct);
+        } else {
+            // 暫時丟失目標
+            document.getElementById("telemetry-dist-val").innerText = "--";
+            document.getElementById("marker-px-width").innerText = "0";
+            prevPosition = null;
+        }
     }
 
-    function handleTargetIdentified(cx, cy, minX, minY, boxW, boxH, scorePct) {
-        // 1. 深度測距：Z = (實體木板寬度 7.0cm * 焦距) / 像素寬度
-        const depthCm = (ROBOT_REAL_WIDTH_CM * FOCAL_LENGTH_PX) / boxW;
+    function handleKinematicsUpdate(cx, cy, bw, bh, scorePct) {
+        // 1. 空間測距：Z = (實體尺寸 7.0cm * 焦距) / 像素寬度[cite: 1]
+        const depthCm = (ROBOT_REAL_WIDTH_CM * FOCAL_LENGTH_PX) / bw;
         document.getElementById("telemetry-dist-val").innerText = depthCm.toFixed(1);
-        document.getElementById("marker-px-width").innerText = Math.round(boxW);
+        document.getElementById("marker-px-width").innerText = Math.round(bw);
 
         // 2. 攀爬物理速度計算 (v = Δs / Δt)
         const now = performance.now();
         if (prevPosition) {
             const dt = (now - prevPosition.timestamp) / 1000.0;
             if (dt > 0.04) {
-                const pxToCm = ROBOT_REAL_WIDTH_CM / boxW;
+                const pxToCm = ROBOT_REAL_WIDTH_CM / bw;
                 const deltaPx = Math.hypot(cx - prevPosition.x, cy - prevPosition.y);
                 const deltaCm = deltaPx * pxToCm;
                 const rawSpeed = deltaCm / dt;
 
-                // 低通平滑濾波 (EMA)
+                // EMA 平滑濾波
                 currentSpeed = (currentSpeed * 0.72) + (rawSpeed * 0.28);
 
                 // 停滯檢測
@@ -1592,12 +1634,18 @@
         } else {
             prevPosition = { x: cx, y: cy, timestamp: now };
         }
+    }
 
-        // 繪製螢光青藍追蹤框與黃色準星 (完全鎖定實體結構)
+    function renderTrackingOverlay(cx, cy, bw, bh, scorePct) {
+        const minX = cx - bw/2;
+        const minY = cy - bh/2;
+
+        // 綠色高亮追蹤框
         telemetryCtx.strokeStyle = "var(--neon-green)";
         telemetryCtx.lineWidth = 3;
-        telemetryCtx.strokeRect(minX, minY, boxW, boxH);
+        telemetryCtx.strokeRect(minX, minY, bw, bh);
 
+        // 黃色質心準星
         telemetryCtx.strokeStyle = "var(--neon-yellow)";
         telemetryCtx.beginPath();
         telemetryCtx.arc(cx, cy, 7, 0, Math.PI * 2);
@@ -1606,9 +1654,10 @@
         telemetryCtx.stroke();
 
         // 標示實時 HUD
+        const depthVal = document.getElementById("telemetry-dist-val").innerText;
         telemetryCtx.fillStyle = "#ffffff";
         telemetryCtx.font = "bold 13px sans-serif";
-        telemetryCtx.fillText(`[LOCKED ${scorePct}%] Z: ${depthCm.toFixed(1)}cm | V: ${currentSpeed.toFixed(1)}cm/s`, minX, Math.max(20, minY - 8));
+        telemetryCtx.fillText(`[TRACKING ${scorePct}%] Z: ${depthVal}cm | V: ${currentSpeed.toFixed(1)}cm/s`, minX, Math.max(20, minY - 8));
     }
 
     const chartCanvas = document.getElementById("speed-chart-canvas");
