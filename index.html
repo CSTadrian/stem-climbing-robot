@@ -3,12 +3,12 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AI Robot Gesture Arena & Telemetry Hub (Tri-Mode Softmax Edition)</title>
-    <!-- TensorFlow.js & Teachable Machine (模式一) -->
+    <title>AI Robot Gesture Arena & Telemetry Hub (Tri-Mode Interactive Edition)</title>
+    <!-- 模式一依賴：TensorFlow.js & Teachable Machine -->
     <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@latest/dist/tf.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@teachablemachine/image@latest/dist/teachablemachine-image.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
-    <!-- MediaPipe Hands (模式二) -->
+    <!-- 模式二依賴：MediaPipe Hands -->
     <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js" crossorigin="anonymous"></script>
     <script src="https://cdn.jsdelivr.net/npm/@mediapipe/hands/hands.js" crossorigin="anonymous"></script>
     <style>
@@ -41,7 +41,7 @@
             gap: 14px;
         }
 
-        /* 頂部三模式導航欄 */
+        /* 頂部三模式切換導航欄 */
         .mode-nav-bar {
             display: grid;
             grid-template-columns: 1fr 1fr 1fr;
@@ -75,6 +75,7 @@
             box-shadow: 0 0 16px rgba(0, 240, 255, 0.35);
         }
 
+        /* 學生基本資訊膠囊條 */
         .meta-strip {
             display: grid;
             grid-template-columns: 140px 140px 1.5fr auto;
@@ -97,8 +98,12 @@
         .mode-section { display: none; flex-direction: column; gap: 14px; }
         .mode-section.active-mode { display: flex; }
 
-        /* 模式共通卡片與元件樣式 */
-        .stepper-board { display: grid; grid-template-columns: 1fr 1.3fr 1fr; gap: 14px; }
+        /* 模式共通看板與卡片 */
+        .stepper-board {
+            display: grid;
+            grid-template-columns: 1fr 1.5fr 1fr;
+            gap: 14px;
+        }
         .step-card {
             background: var(--card-bg);
             border: 2px solid var(--border-dim);
@@ -110,65 +115,416 @@
             position: relative;
             transition: all 0.3s ease;
         }
-        .step-card.done { border-color: var(--neon-green); box-shadow: 0 0 15px rgba(0, 255, 102, 0.2); }
-        .step-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
-        .step-title { font-weight: 800; font-size: 14px; display: flex; align-items: center; gap: 6px; }
-        .step-tag { font-size: 11px; padding: 2px 8px; border-radius: 12px; background: #111428; color: #8892b0; border: 1px solid #333d6b; font-weight: bold; }
-        .step-card.done .step-tag { background: rgba(0, 255, 102, 0.15); color: var(--neon-green); border-color: var(--neon-green); }
-        .step-btn { background: linear-gradient(135deg, #1e293b, #334155); color: #fff; border: 1px solid #475569; padding: 10px 14px; border-radius: 8px; font-weight: bold; font-size: 13px; cursor: pointer; width: 100%; }
-        .step-btn.ready-btn { background: linear-gradient(135deg, #059669, #10b981); border-color: var(--neon-green); }
-        .btn-launch { background: #1a2035; color: #64748b; border: 2px dashed #334155; padding: 12px; border-radius: 8px; font-size: 16px; font-weight: 900; cursor: not-allowed; width: 100%; min-height: 48px; }
-        .btn-launch.unlocked { background: linear-gradient(135deg, var(--neon-blue), var(--neon-green)); color: #032117; border: none; cursor: pointer; box-shadow: 0 0 20px rgba(0, 240, 255, 0.6); animation: pulse-launch 1.4s infinite alternate; }
-        @keyframes pulse-launch { 0% { transform: scale(1); } 100% { transform: scale(1.02); } }
+        .step-card.done {
+            border-color: var(--neon-green);
+            box-shadow: 0 0 15px rgba(0, 255, 102, 0.2);
+        }
+        .step-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+        }
+        .step-title {
+            font-weight: 800;
+            font-size: 14px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .step-tag {
+            font-size: 11px;
+            padding: 2px 8px;
+            border-radius: 12px;
+            background: #111428;
+            color: #8892b0;
+            border: 1px solid #333d6b;
+            font-weight: bold;
+        }
+        .step-card.done .step-tag {
+            background: rgba(0, 255, 102, 0.15);
+            color: var(--neon-green);
+            border-color: var(--neon-green);
+        }
+        .step-btn {
+            background: linear-gradient(135deg, #1e293b, #334155);
+            color: #fff;
+            border: 1px solid #475569;
+            padding: 10px 14px;
+            border-radius: 8px;
+            font-weight: bold;
+            font-size: 13px;
+            cursor: pointer;
+            width: 100%;
+            transition: all 0.2s;
+        }
+        .step-btn.ready-btn {
+            background: linear-gradient(135deg, #059669, #10b981);
+            border-color: var(--neon-green);
+        }
 
-        .stage-layout { display: grid; grid-template-columns: 1fr 180px; gap: 16px; }
-        .arena-box { background: var(--card-bg); border: 2px solid var(--border-dim); border-radius: 16px; padding: 16px 20px; display: flex; flex-direction: column; gap: 14px; }
-        .hud-bar { display: flex; justify-content: space-between; align-items: center; }
-        .combo-badge { font-size: 26px; color: var(--neon-yellow); font-weight: 900; text-shadow: 0 0 12px rgba(255, 230, 0, 0.7); }
-        .score-pill { background: linear-gradient(90deg, #ff007f, #7928ca); padding: 6px 20px; border-radius: 20px; font-size: 20px; font-weight: 900; }
-        .ribbon-track-wrapper { background: #080914; border: 2px solid #202747; border-radius: 14px; padding: 14px; position: relative; overflow: hidden; }
-        .ribbon-track { display: flex; align-items: center; gap: 14px; }
-        .action-card { background: #141730; border: 2px solid #2c355e; border-radius: 12px; min-width: 100px; height: 140px; display: flex; flex-direction: column; align-items: center; justify-content: center; position: relative; transition: all 0.25s ease; }
+        /* 模式二專用：骨骼特徵採樣網格 */
+        .sample-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 6px;
+            margin-bottom: 8px;
+        }
+        .sample-btn {
+            background: #0e1124;
+            border: 1px solid #333d6b;
+            color: #fff;
+            padding: 6px;
+            border-radius: 6px;
+            font-size: 11px;
+            font-weight: bold;
+            cursor: pointer;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 2px;
+            transition: all 0.2s;
+        }
+        .sample-btn:active, .sample-btn.recording {
+            background: var(--neon-pink);
+            border-color: #fff;
+            transform: scale(0.95);
+        }
+        .sample-count {
+            font-size: 9px;
+            color: var(--neon-yellow);
+        }
+
+        /* 啟動大按鈕 */
+        .btn-launch {
+            background: #1a2035;
+            color: #64748b;
+            border: 2px dashed #334155;
+            padding: 12px;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 900;
+            cursor: not-allowed;
+            width: 100%;
+            min-height: 48px;
+        }
+        .btn-launch.unlocked {
+            background: linear-gradient(135deg, var(--neon-blue), var(--neon-green));
+            color: #032117;
+            border: none;
+            cursor: pointer;
+            box-shadow: 0 0 20px rgba(0, 240, 255, 0.6);
+            animation: pulse-launch 1.4s infinite alternate;
+        }
+        @keyframes pulse-launch {
+            0% { transform: scale(1); }
+            100% { transform: scale(1.02); }
+        }
+
+        /* 競技舞台佈局 */
+        .stage-layout {
+            display: grid;
+            grid-template-columns: 1fr 180px;
+            gap: 16px;
+        }
+        .arena-box {
+            background: var(--card-bg);
+            border: 2px solid var(--border-dim);
+            border-radius: 16px;
+            padding: 16px 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 14px;
+        }
+        .hud-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .combo-badge {
+            font-size: 26px;
+            color: var(--neon-yellow);
+            font-weight: 900;
+            text-shadow: 0 0 12px rgba(255, 230, 0, 0.7);
+        }
+        .score-pill {
+            background: linear-gradient(90deg, #ff007f, #7928ca);
+            padding: 6px 20px;
+            border-radius: 20px;
+            font-size: 20px;
+            font-weight: 900;
+        }
+
+        /* 動作流動軌道 */
+        .ribbon-track-wrapper {
+            background: #080914;
+            border: 2px solid #202747;
+            border-radius: 14px;
+            padding: 14px;
+            position: relative;
+            overflow: hidden;
+        }
+        .ribbon-track {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+        }
+        .action-card {
+            background: #141730;
+            border: 2px solid #2c355e;
+            border-radius: 12px;
+            min-width: 100px;
+            height: 140px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            transition: all 0.25s ease;
+        }
         .action-card .symbol { font-size: 44px; line-height: 1; margin-bottom: 4px; }
         .action-card .c-name { font-size: 15px; font-weight: 800; }
-        .action-card .sub-num { font-size: 10px; color: #8892b0; background: rgba(255,255,255,0.08); padding: 2px 6px; border-radius: 4px; margin-top: 4px; }
-        .action-card.active-target { min-width: 130px; height: 160px; background: linear-gradient(180deg, #2c164a 0%, #151a3c 100%); border: 3px solid var(--neon-pink); box-shadow: 0 0 20px rgba(255, 0, 127, 0.6); transform: scale(1.05); z-index: 2; }
+        .action-card .sub-num {
+            font-size: 10px;
+            color: #8892b0;
+            background: rgba(255,255,255,0.08);
+            padding: 2px 6px;
+            border-radius: 4px;
+            margin-top: 4px;
+        }
+        .action-card.active-target {
+            min-width: 130px;
+            height: 160px;
+            background: linear-gradient(180deg, #2c164a 0%, #151a3c 100%);
+            border: 3px solid var(--neon-pink);
+            box-shadow: 0 0 20px rgba(255, 0, 127, 0.6);
+            transform: scale(1.05);
+            z-index: 2;
+        }
         .action-card.active-target .symbol { font-size: 58px; }
         .action-card.upcoming { opacity: 0.6; transform: scale(0.92); }
-        .timer-bg { height: 7px; background: #181d38; border-radius: 4px; margin-top: 12px; overflow: hidden; }
-        .timer-fill { height: 100%; width: 100%; background: var(--neon-blue); transition: width 0.05s linear; }
-        .arena-footer { display: grid; grid-template-columns: 220px 1fr; gap: 14px; align-items: center; }
-        .webcam-box { display: flex; flex-direction: column; gap: 4px; }
-        .meters-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
-        .meter-row { background: #0e1124; border: 1px solid #232a50; border-radius: 6px; padding: 5px 8px; font-size: 12px; display: flex; justify-content: space-between; transition: all 0.2s ease; }
-        .meter-row.matched { background: rgba(0, 255, 102, 0.15); border-color: var(--neon-green); color: var(--neon-green); font-weight: bold; }
-        .tower-card { background: var(--card-bg); border: 2px solid var(--border-dim); border-radius: 16px; padding: 14px 10px; display: flex; flex-direction: column; align-items: center; }
-        .rope-shaft { flex-grow: 1; width: 6px; background: #2b335c; border-radius: 3px; margin: 10px 0; position: relative; min-height: 250px; }
-        .robot-indicator { position: absolute; left: 50%; transform: translateX(-50%); bottom: 0%; font-size: 34px; transition: bottom 0.4s cubic-bezier(0.34, 1.56, 0.64, 1); filter: drop-shadow(0 0 6px #00f0ff); }
-        #splash-text, #splash-text-mp { position: absolute; top: 40%; left: 50%; transform: translate(-50%, -50%) scale(0); font-size: 42px; font-weight: 900; letter-spacing: 2px; pointer-events: none; transition: all 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275); z-index: 10; }
+
+        .timer-bg {
+            height: 7px;
+            background: #181d38;
+            border-radius: 4px;
+            margin-top: 12px;
+            overflow: hidden;
+        }
+        .timer-fill {
+            height: 100%;
+            width: 100%;
+            background: var(--neon-blue);
+            transition: width 0.05s linear;
+        }
+
+        .arena-footer {
+            display: grid;
+            grid-template-columns: 220px 1fr;
+            gap: 14px;
+            align-items: center;
+        }
+        .meters-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 6px;
+        }
+        .meter-row {
+            background: #0e1124;
+            border: 1px solid #232a50;
+            border-radius: 6px;
+            padding: 5px 8px;
+            font-size: 12px;
+            display: flex;
+            justify-content: space-between;
+            transition: all 0.2s ease;
+        }
+        .meter-row.matched {
+            background: rgba(0, 255, 102, 0.15);
+            border-color: var(--neon-green);
+            color: var(--neon-green);
+            font-weight: bold;
+        }
+
+        /* 攀爬高度塔 */
+        .tower-card {
+            background: var(--card-bg);
+            border: 2px solid var(--border-dim);
+            border-radius: 16px;
+            padding: 14px 10px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        .rope-shaft {
+            flex-grow: 1;
+            width: 6px;
+            background: #2b335c;
+            border-radius: 3px;
+            margin: 10px 0;
+            position: relative;
+            min-height: 250px;
+        }
+        .robot-indicator {
+            position: absolute;
+            left: 50%;
+            transform: translateX(-50%);
+            bottom: 0%;
+            font-size: 34px;
+            transition: bottom 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+            filter: drop-shadow(0 0 6px #00f0ff);
+        }
+
+        #splash-text, #splash-text-mp {
+            position: absolute;
+            top: 40%;
+            left: 50%;
+            transform: translate(-50%, -50%) scale(0);
+            font-size: 42px;
+            font-weight: 900;
+            letter-spacing: 2px;
+            pointer-events: none;
+            transition: all 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            z-index: 10;
+        }
         #splash-text.show, #splash-text-mp.show { transform: translate(-50%, -50%) scale(1.15); }
 
-        /* 模式三：地面遙測站樣式 */
-        .telemetry-layout { display: grid; grid-template-columns: 1.4fr 1fr; gap: 16px; }
-        .telemetry-cam-card { background: var(--card-bg); border: 2px solid var(--border-dim); border-radius: 16px; padding: 14px; display: flex; flex-direction: column; gap: 10px; }
-        .cam-feed-wrapper { position: relative; width: 100%; height: 340px; background: #000; border-radius: 12px; overflow: hidden; border: 1px solid #333d6b; user-select: none; }
-        #telemetry-canvas { width: 100%; height: 100%; object-fit: cover; cursor: crosshair; }
-        .cam-crosshair-hud { position: absolute; top: 10px; left: 10px; background: rgba(0,0,0,0.85); padding: 8px 12px; border-radius: 8px; font-size: 11px; color: #fff; border: 1px solid rgba(0, 240, 255, 0.5); pointer-events: none; line-height: 1.5; }
-        .roi-preview-box { background: #090c1e; border: 1px solid #283160; border-radius: 8px; padding: 8px 12px; display: flex; align-items: center; justify-content: space-between; }
-        .roi-thumb-img { width: 52px; height: 52px; border-radius: 6px; border: 2px solid var(--neon-green); object-fit: cover; background: #000; }
-        .telemetry-data-card { display: flex; flex-direction: column; gap: 12px; }
-        .metric-tile { background: var(--card-bg); border: 2px solid var(--border-dim); border-radius: 14px; padding: 14px 18px; display: flex; flex-direction: column; gap: 6px; position: relative; }
-        .metric-title { font-size: 12px; color: #8892b0; font-weight: 800; display: flex; justify-content: space-between; }
-        .metric-val { font-size: 36px; font-weight: 900; line-height: 1; }
+        /* 模式三：地面遙測站佈局 */
+        .telemetry-layout {
+            display: grid;
+            grid-template-columns: 1.4fr 1fr;
+            gap: 16px;
+        }
+        .telemetry-cam-card {
+            background: var(--card-bg);
+            border: 2px solid var(--border-dim);
+            border-radius: 16px;
+            padding: 14px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        .cam-feed-wrapper {
+            position: relative;
+            width: 100%;
+            height: 340px;
+            background: #000;
+            border-radius: 12px;
+            overflow: hidden;
+            border: 1px solid #333d6b;
+            user-select: none;
+        }
+        #telemetry-canvas {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            cursor: crosshair;
+        }
+        .cam-crosshair-hud {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            background: rgba(0,0,0,0.85);
+            padding: 8px 12px;
+            border-radius: 8px;
+            font-size: 11px;
+            color: #fff;
+            border: 1px solid rgba(0, 240, 255, 0.5);
+            pointer-events: none;
+            line-height: 1.5;
+        }
+        .roi-preview-box {
+            background: #090c1e;
+            border: 1px solid #283160;
+            border-radius: 8px;
+            padding: 8px 12px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        .roi-thumb-img {
+            width: 52px;
+            height: 52px;
+            border-radius: 6px;
+            border: 2px solid var(--neon-green);
+            object-fit: cover;
+            background: #000;
+        }
+        .telemetry-data-card {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+        .metric-tile {
+            background: var(--card-bg);
+            border: 2px solid var(--border-dim);
+            border-radius: 14px;
+            padding: 14px 18px;
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            position: relative;
+        }
+        .metric-title {
+            font-size: 12px;
+            color: #8892b0;
+            font-weight: 800;
+            display: flex;
+            justify-content: space-between;
+        }
+        .metric-val {
+            font-size: 36px;
+            font-weight: 900;
+            line-height: 1;
+        }
         .metric-unit { font-size: 14px; color: #8892b0; font-weight: normal; margin-left: 4px; }
         .val-speed { color: var(--neon-green); text-shadow: 0 0 12px rgba(0, 255, 102, 0.4); }
         .val-dist { color: var(--neon-blue); text-shadow: 0 0 12px rgba(0, 240, 255, 0.4); }
-        #speed-chart-canvas { width: 100%; height: 90px; background: #080a18; border-radius: 8px; border: 1px solid #20274c; }
-        .slider-box { background: #090c1e; border: 1px solid #283160; border-radius: 8px; padding: 8px 12px; display: flex; flex-direction: column; gap: 4px; font-size: 11px; color: #8892b0; }
-        .slider-row { display: flex; justify-content: space-between; align-items: center; }
-        .slider-box input[type="range"] { width: 100%; accent-color: var(--neon-blue); cursor: pointer; }
-        .telemetry-ctrl-strip { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
-        .stall-badge { background: rgba(255, 0, 127, 0.15); border: 1px solid var(--neon-pink); color: var(--neon-pink); font-weight: bold; font-size: 12px; padding: 8px 12px; border-radius: 8px; display: none; align-items: center; gap: 6px; }
+        #speed-chart-canvas {
+            width: 100%;
+            height: 90px;
+            background: #080a18;
+            border-radius: 8px;
+            border: 1px solid #20274c;
+        }
+        .slider-box {
+            background: #090c1e;
+            border: 1px solid #283160;
+            border-radius: 8px;
+            padding: 8px 12px;
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+            font-size: 11px;
+            color: #8892b0;
+        }
+        .slider-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .slider-box input[type="range"] {
+            width: 100%;
+            accent-color: var(--neon-blue);
+            cursor: pointer;
+        }
+        .telemetry-ctrl-strip {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px;
+        }
+        .stall-badge {
+            background: rgba(255, 0, 127, 0.15);
+            border: 1px solid var(--neon-pink);
+            color: var(--neon-pink);
+            font-weight: bold;
+            font-size: 12px;
+            padding: 8px 12px;
+            border-radius: 8px;
+            display: none;
+            align-items: center;
+            gap: 6px;
+        }
     </style>
 </head>
 <body>
@@ -182,8 +538,8 @@
             <span style="font-size: 11px; font-weight: normal; opacity: 0.8;">(像素特徵 + Grad-CAM XAI)</span>
         </button>
         <button class="mode-tab-btn" id="tab-mode-2" onclick="switchSystemMode(2)">
-            <span>🖐️ 模式二：MediaPipe 駕駛艙</span>
-            <span style="font-size: 11px; font-weight: normal; opacity: 0.8;">(21 骨骼點 + Softmax 互斥)</span>
+            <span>✋ 模式二：MediaPipe 採樣訓練艙</span>
+            <span style="font-size: 11px; font-weight: normal; opacity: 0.8;">(63維骨骼特徵 + KNN)</span>
         </button>
         <button class="mode-tab-btn" id="tab-mode-3" onclick="switchSystemMode(3)">
             <span>📡 模式三：地面遙測站</span>
@@ -191,13 +547,14 @@
         </button>
     </div>
 
-    <!-- 學生分組資料 -->
+    <!-- 學生分組資料 (三模式共用) -->
     <div class="meta-strip">
         <input type="text" id="groupId" placeholder="組別 (例: Group-01)">
         <input type="text" id="studentId" placeholder="學號 (例: S01)">
         <select id="conditionType">
-            <option value="XAI_GradCAM">實驗組 (全彩 Grad-CAM 熱力圖)</option>
-            <option value="No_XAI_Blackbox">對照組 (黑盒無解釋)</option>
+            <option value="MediaPipe_Geometry">骨骼幾何模型組 (MediaPipe)</option>
+            <option value="XAI_GradCAM">GTM 實驗組 (Grad-CAM 熱力圖)</option>
+            <option value="No_XAI_Blackbox">GTM 對照組 (黑盒無解釋)</option>
         </select>
         <button onclick="uploadDataToDrive()" style="background:#1e293b; color:#94a3b8; border:1px solid #334155; border-radius:6px; padding:6px 12px; cursor:pointer; font-size:12px;">
             📤 提交成績到 Drive
@@ -205,7 +562,7 @@
     </div>
 
     <!-- =========================================================================
-         【模式一：GTM 駕駛艙】
+         【模式一：GTM 駕駛艙 (Teachable Machine + Grad-CAM)】
          ========================================================================= -->
     <div class="mode-section active-mode" id="section-mode-1">
         <div class="stepper-board">
@@ -275,42 +632,84 @@
     </div>
 
     <!-- =========================================================================
-         【模式二：MediaPipe 駕駛艙 (Softmax 互斥多類別分類)】
+         【模式二：MediaPipe 採樣訓練艙 (63維骨骼特徵 + KNN)】
          ========================================================================= -->
     <div class="mode-section" id="section-mode-2">
         <div class="stepper-board">
+            <!-- 步驟 1: 硬件串口連接 -->
             <div class="step-card" id="card-mp-step1">
                 <div>
                     <div class="step-header">
-                        <span class="step-title">🔌 硬件狀態</span>
-                        <span class="step-tag" id="tag-mp-serial">共用串口 ⚪</span>
+                        <span class="step-title">🔌 步驟 1：連接硬件</span>
+                        <span class="step-tag" id="tag-mp-serial">未連接 ⚪</span>
                     </div>
-                    <div style="font-size: 11px; color: #8892b0; margin-bottom: 10px;">三模式共用同一個 Tx micro:bit 串口</div>
+                    <div style="font-size: 11px; color: #8892b0; margin-bottom: 10px;">
+                        將發射端 micro:bit 直插電腦 USB
+                    </div>
                 </div>
-                <button class="step-btn" id="btn-mp-serial" onclick="connectSerial()">連接 Tx micro:bit</button>
+                <button class="step-btn" id="btn-mp-serial" onclick="connectSerial()">
+                    連接 Tx micro:bit
+                </button>
             </div>
+
+            <!-- 步驟 2: 現場手勢骨骼錄製與極速訓練 -->
             <div class="step-card" id="card-mp-step2">
                 <div>
                     <div class="step-header">
-                        <span class="step-title">🖐️ 骨骼追蹤引擎</span>
+                        <span class="step-title">✋ 步驟 2：手勢採樣</span>
                         <span class="step-tag" id="tag-mp-engine">未啟動 ⚪</span>
                     </div>
-                    <div style="font-size: 11px; color: #8892b0; margin-bottom: 10px;">基於 MediaPipe Hands 提取 21 個 3D 關節點</div>
+                    <!-- 5 類手勢採樣按鈕 -->
+                    <div class="sample-grid">
+                        <button class="sample-btn" id="btn-sample-Class 1" onmousedown="startSampling('Class 1')" onmouseup="stopSampling()">
+                            <span>✊ 石頭</span>
+                            <span class="sample-count" id="cnt-Class 1">0 幀</span>
+                        </button>
+                        <button class="sample-btn" id="btn-sample-Class 2" onmousedown="startSampling('Class 2')" onmouseup="stopSampling()">
+                            <span>✌️ 剪刀</span>
+                            <span class="sample-count" id="cnt-Class 2">0 幀</span>
+                        </button>
+                        <button class="sample-btn" id="btn-sample-Class 3" onmousedown="startSampling('Class 3')" onmouseup="stopSampling()">
+                            <span>🖐️ 布</span>
+                            <span class="sample-count" id="cnt-Class 3">0 幀</span>
+                        </button>
+                        <button class="sample-btn" id="btn-sample-Class 4" onmousedown="startSampling('Class 4')" onmouseup="stopSampling()">
+                            <span>👍 讚好</span>
+                            <span class="sample-count" id="cnt-Class 4">0 幀</span>
+                        </button>
+                        <button class="sample-btn" id="btn-sample-Class 5" onmousedown="startSampling('Class 5')" onmouseup="stopSampling()">
+                            <span>🫱 待機</span>
+                            <span class="sample-count" id="cnt-Class 5">0 幀</span>
+                        </button>
+                        <button class="sample-btn" style="background:#2a1b40; border-color:#ff007f;" onclick="clearDataset()">
+                            <span>🗑️ 重置</span>
+                            <span style="font-size:9px; color:#8892b0;">清空樣本</span>
+                        </button>
+                    </div>
                 </div>
-                <button class="step-btn" id="btn-mp-start" onclick="initMediaPipeHands()">啟動 MediaPipe 鏡頭</button>
+                <button class="step-btn" id="btn-mp-start" onclick="initMediaPipe()">
+                    啟動鏡頭開始採樣
+                </button>
             </div>
+
+            <!-- 步驟 3: 啟動對戰競技 -->
             <div class="step-card" id="card-mp-step3">
                 <div>
                     <div class="step-header">
-                        <span class="step-title">🚀 骨骼競技擂台</span>
+                        <span class="step-title">🚀 步驟 3：開始競技</span>
                         <span class="step-tag" id="tag-mp-launch">待解鎖 🔒</span>
                     </div>
-                    <div style="font-size: 11px; color: #8892b0; margin-bottom: 10px;">Softmax 概率互斥分類 (總和嚴格為 100%)</div>
+                    <div style="font-size: 11px; color: #8892b0; margin-bottom: 10px;" id="desc-mp-step3">
+                        需完成步驟 1 並每款手勢錄製 ≥8 幀
+                    </div>
                 </div>
-                <button class="btn-launch" id="btn-launch-mp" onclick="startMediaPipeGame()" disabled>等待鏡頭啟動...</button>
+                <button class="btn-launch" id="btn-launch-mp" onclick="startMPGame()" disabled>
+                    等待準備...
+                </button>
             </div>
         </div>
 
+        <!-- 模式二主擂台 -->
         <div class="stage-layout">
             <div class="arena-box">
                 <div class="hud-bar">
@@ -318,42 +717,22 @@
                     <div class="score-pill">攀爬得分：<span id="score-counter-mp">0</span></div>
                 </div>
 
+                <!-- 動作預告流動軌道 -->
                 <div class="ribbon-track-wrapper">
                     <div class="ribbon-track" id="queue-ribbon-mp"></div>
                     <div class="timer-bg"><div class="timer-fill" id="timer-bar-mp"></div></div>
                     <div id="splash-text-mp">PERFECT!</div>
                 </div>
 
-                <div class="arena-footer" style="grid-template-columns: 280px 1fr;">
-                    <!-- MediaPipe 骨骼實時繪製畫布 -->
-                    <div class="webcam-box">
-                        <div style="width:280px; height:190px; background:#000; border-radius:10px; overflow:hidden; border:1px solid #2e366b; position:relative;">
-                            <video id="mp-video-hidden" playsinline style="display:none;"></video>
-                            <canvas id="mp-canvas" width="280" height="190" style="width:100%; height:100%; transform: scaleX(-1);"></canvas>
-                        </div>
-                        <div style="font-size:10px; color:var(--neon-green); text-align:center; margin-top:2px;">
-                            ⚡ 21 關節骨骼拓撲追蹤進行中
-                        </div>
+                <div class="arena-footer">
+                    <div style="width: 220px; height: 150px; background: #000; border-radius: 10px; overflow: hidden; border: 1px solid #2e366b; position: relative;">
+                        <video id="webcam-video-mp" playsinline style="display:none;"></video>
+                        <canvas id="output-canvas-mp" width="320" height="240" style="width: 100%; height: 100%; transform: scaleX(-1);"></canvas>
                     </div>
-
-                    <!-- 4 類互斥手勢儀表板 (四項概率總和永遠 100%) -->
-                    <div style="display:flex; flex-direction:column; gap:8px;">
-                        <div class="meters-grid">
-                            <div class="meter-row" id="mp-row-rock"><span>✊ 石頭 (全握拳)</span><span id="mp-pct-rock">25%</span></div>
-                            <div class="meter-row" id="mp-row-scissors"><span>✌️ 剪刀 (食中指伸展)</span><span id="mp-pct-scissors">25%</span></div>
-                            <div class="meter-row" id="mp-row-paper"><span>🖐️ 布 (五指張開)</span><span id="mp-pct-paper">25%</span></div>
-                            <div class="meter-row" id="mp-row-thumbsup"><span>👍 讚好 (四指扣緊+拇指豎直)</span><span id="mp-pct-thumbsup">25%</span></div>
-                        </div>
-                        <div style="background:#090b16; border:1px solid #232a50; border-radius:8px; padding:8px 12px; font-size:11px; color:#8892b0; line-height:1.4;">
-                            💡 <b style="color:var(--neon-blue);">Softmax 互斥多類別分類原理：</b><br>
-                            • <b>概率守恆：</b> 4 個類別的概率總和<b>嚴格等於 100%</b>，徹底消滅雙重判定[cite: 1]！<br>
-                            • <b>幾何正交解耦：</b> 石頭要求「拇指扣緊在拳頭旁」，讚好要求「拇指獨立展開向上」，兩者不再打架！
-                        </div>
-                    </div>
+                    <div class="meters-grid" id="meters-container-mp"></div>
                 </div>
             </div>
 
-            <!-- 右側高度塔 -->
             <div class="tower-card">
                 <div style="font-size: 26px;">🏆</div>
                 <div style="font-size: 10px; color: #8892b0; font-weight: bold;">FINISH</div>
@@ -420,7 +799,6 @@
             </div>
 
             <div class="telemetry-data-card">
-                <!-- 瞬時物理速度 -->
                 <div class="metric-tile">
                     <div class="metric-title">
                         <span>⚡ 機械人實時速度 (SPEED: v)</span>
@@ -432,7 +810,6 @@
                     <canvas id="speed-chart-canvas" width="300" height="90"></canvas>
                 </div>
 
-                <!-- 鏡頭實體直線距離 -->
                 <div class="metric-tile">
                     <div class="metric-title">
                         <span>📏 鏡頭與機械人直線距離 (DISTANCE TO CAMERA)</span>
@@ -478,8 +855,8 @@
         document.getElementById("section-mode-2").classList.toggle("active-mode", modeNum === 2);
         document.getElementById("section-mode-3").classList.toggle("active-mode", modeNum === 3);
 
-        if (modeNum === 2 && !isMediaPipeRunning) {
-            initMediaPipeHands();
+        if (modeNum === 2 && !cameraMP) {
+            initMediaPipe();
         } else if (modeNum === 3 && !telemetryVideo) {
             initTelemetryCamera();
         }
@@ -500,17 +877,20 @@
             serialWriter = enc.writable.getWriter();
 
             step1Ready = true;
+
+            // 同步更新模式一 UI
             document.getElementById("card-step1").classList.add("done");
             document.getElementById("tag-step1").innerText = "已連線 🟢";
             document.getElementById("btn-step1").innerText = "✔ 連線成功";
             document.getElementById("btn-step1").classList.add("ready-btn");
             checkCanUnlockStep3();
 
+            // 同步更新模式二 UI
             document.getElementById("card-mp-step1").classList.add("done");
             document.getElementById("tag-mp-serial").innerText = "已連線 🟢";
             document.getElementById("btn-mp-serial").innerText = "✔ 連線成功";
             document.getElementById("btn-mp-serial").classList.add("ready-btn");
-            checkCanUnlockMPGame();
+            checkCanUnlockMPStep3();
         } catch (e) {
             alert("Serial 連接取消或失敗: " + e.message);
         }
@@ -565,7 +945,9 @@
             groupId: document.getElementById("groupId").value || "G_Unknown",
             studentId: document.getElementById("studentId").value || "S_Unknown",
             condition: document.getElementById("conditionType").value,
-            score: score, logs: eventLogs
+            score: currentSystemMode === 2 ? mpScore : score,
+            totalSamples: dataset.length,
+            logs: eventLogs
         };
         try {
             await fetch(GAS_ENDPOINT, { method: "POST", mode: "no-cors", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) });
@@ -574,7 +956,7 @@
     }
 
     // =========================================================================
-    // 【模式一：GTM 駕駛艙】邏輯
+    // 【模式一：GTM 駕駛艙 (Teachable Machine + Grad-CAM)】邏輯
     // =========================================================================
     const GESTURES = {
         "Class 1": { name: "石頭", symbol: "✊", num: "No. 1" },
@@ -873,238 +1255,271 @@
     }
 
     // =========================================================================
-    // 【模式二：MediaPipe 駕駛艙】真正的 Softmax 互斥多類別分類
+    // 【模式二：MediaPipe 採樣訓練艙 (63維骨骼特徵 + KNN)】邏輯
     // =========================================================================
-    let mpHands = null, mpCamera = null;
-    let isMediaPipeRunning = false;
-    let mpVideo = document.getElementById("mp-video-hidden");
-    let mpCanvas = document.getElementById("mp-canvas");
-    let mpCtx = mpCanvas.getContext("2d");
+    let handsMP = null, cameraMP = null;
+    let videoElementMP, canvasElementMP, canvasCtxMP;
+    let currentLandmarks = null;
+    let dataset = []; // 學生現場錄製的 63 維特徵樣本庫 { label: "Class 1", vector: [...] }
+    let isSampling = false;
+    let samplingTarget = null;
+    let sampleInterval = null;
+    let step2MPReady = false;
 
-    const MP_GESTURES = {
-        "Rock": { name: "石頭", symbol: "✊", num: "No. 1" },
-        "Scissors": { name: "剪刀", symbol: "✌️", num: "No. 2" },
-        "Paper": { name: "布", symbol: "🖐️", num: "No. 3" },
-        "ThumbsUp": { name: "讚好", symbol: "👍", num: "No. 4" }
-    };
-    const MP_TARGETS = ["Rock", "Scissors", "Paper", "ThumbsUp"];
-
-    let isMPGameRunning = false, isMPLocked = false;
+    let isMPRunning = false, isMPLocked = false;
     let mpScore = 0, mpCombo = 0, mpRoundStart = 0;
     let mpActionQueue = [];
     let mpTimerLoop = null;
 
-    const HAND_CONNECTIONS = [
-        [0,1],[1,2],[2,3],[3,4],
-        [0,5],[5,6],[6,7],[7,8],
-        [0,9],[9,10],[10,11],[11,12],
-        [0,13],[13,14],[14,15],[15,16],
-        [0,17],[17,18],[18,19],[19,20],
-        [5,9],[9,13],[13,17]
-    ];
-
-    async function initMediaPipeHands() {
+    async function initMediaPipe() {
         const btn = document.getElementById("btn-mp-start");
-        btn.innerText = "載入模型中...";
+        btn.innerText = "載入 MediaPipe 引擎中...";
         btn.disabled = true;
 
-        try {
-            mpHands = new Hands({
-                locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/hands/${file}`
-            });
-            mpHands.setOptions({
-                maxNumHands: 1,
-                modelComplexity: 1,
-                minDetectionConfidence: 0.6,
-                minTrackingConfidence: 0.6
-            });
-            mpHands.onResults(onMediaPipeResults);
+        videoElementMP = document.getElementById("webcam-video-mp");
+        canvasElementMP = document.getElementById("output-canvas-mp");
+        canvasCtxMP = canvasElementMP.getContext("2d");
 
-            mpCamera = new Camera(mpVideo, {
-                onFrame: async () => {
-                    if (currentSystemMode === 2) {
-                        await mpHands.send({ image: mpVideo });
-                    }
-                },
-                width: 640,
-                height: 480
-            });
-            await mpCamera.start();
+        handsMP = new Hands({
+            locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/hands/${file}`
+        });
 
-            isMediaPipeRunning = true;
-            document.getElementById("card-mp-step2").classList.add("done");
-            document.getElementById("tag-mp-engine").innerText = "已就緒 🟢";
-            btn.innerText = "✔ MediaPipe 已就緒";
-            btn.classList.add("ready-btn");
-            btn.disabled = false;
-            checkCanUnlockMPGame();
-        } catch (e) {
-            btn.innerText = "重新啟動鏡頭";
-            btn.disabled = false;
-            alert("MediaPipe 啟動失敗: " + e.message);
-        }
+        handsMP.setOptions({
+            maxNumHands: 1,
+            modelComplexity: 1,
+            minDetectionConfidence: 0.6,
+            minTrackingConfidence: 0.6
+        });
+
+        handsMP.onResults(onHandResults);
+
+        cameraMP = new Camera(videoElementMP, {
+            onFrame: async () => {
+                if (currentSystemMode === 2) {
+                    await handsMP.send({ image: videoElementMP });
+                }
+            },
+            width: 320,
+            height: 240
+        });
+        await cameraMP.start();
+
+        // 動態生成 5 類置信度計量條
+        const mBox = document.getElementById("meters-container-mp");
+        mBox.innerHTML = "";
+        Object.keys(GESTURES).forEach((key) => {
+            const row = document.createElement("div");
+            row.className = "meter-row";
+            row.id = "meter-row-mp-" + key.replace(" ", "-");
+            const g = GESTURES[key];
+            row.innerHTML = `<span>${g.symbol} ${g.name}</span><span>0%</span>`;
+            mBox.appendChild(row);
+        });
+
+        document.getElementById("tag-mp-engine").innerText = "鏡頭就緒 🟡";
+        btn.innerText = "請在上方按住按鈕錄製手勢";
+        btn.classList.add("ready-btn");
+        btn.disabled = false;
     }
 
-    function checkCanUnlockMPGame() {
-        if (isMediaPipeRunning) {
-            document.getElementById("card-mp-step3").classList.add("done");
-            document.getElementById("tag-mp-launch").innerText = "準備就緒 ✨";
-            const btn = document.getElementById("btn-launch-mp");
-            btn.disabled = false;
-            btn.innerText = "🚀 開始骨骼手勢競技！";
-            btn.classList.add("unlocked");
-        }
-    }
+    function onHandResults(results) {
+        canvasElementMP.width = videoElementMP.videoWidth || 320;
+        canvasElementMP.height = videoElementMP.videoHeight || 240;
 
-    // ★ 關鍵修復：結合幾何特徵向量與 Softmax 歸一化 (四類概率總和 = 100%)
-    function onMediaPipeResults(results) {
-        mpCtx.clearRect(0, 0, mpCanvas.width, mpCanvas.height);
-        mpCtx.drawImage(results.image, 0, 0, mpCanvas.width, mpCanvas.height);
-
-        let probabilities = { "Rock": 0.25, "Scissors": 0.25, "Paper": 0.25, "ThumbsUp": 0.25 };
-        let detectedGesture = "None";
+        canvasCtxMP.save();
+        canvasCtxMP.clearRect(0, 0, canvasElementMP.width, canvasElementMP.height);
+        canvasCtxMP.drawImage(results.image, 0, 0, canvasElementMP.width, canvasElementMP.height);
 
         if (results.multiHandLandmarks && results.multiHandLandmarks.length > 0) {
-            const lm = results.multiHandLandmarks[0];
+            currentLandmarks = results.multiHandLandmarks[0];
+            drawSkeletonMP(currentLandmarks);
 
-            // 1. 繪製骨骼線與關鍵點
-            mpCtx.strokeStyle = "var(--neon-blue)";
-            mpCtx.lineWidth = 2.5;
-            for (let c of HAND_CONNECTIONS) {
-                const p1 = lm[c[0]], p2 = lm[c[1]];
-                mpCtx.beginPath();
-                mpCtx.moveTo(p1.x * mpCanvas.width, p1.y * mpCanvas.height);
-                mpCtx.lineTo(p2.x * mpCanvas.width, p2.y * mpCanvas.height);
-                mpCtx.stroke();
+            // 若已有錄製樣本，即時進行 KNN 預測推論
+            if (dataset.length > 0) {
+                classifyCurrentPose();
             }
-
-            mpCtx.fillStyle = "var(--neon-pink)";
-            for (let p of lm) {
-                mpCtx.beginPath();
-                mpCtx.arc(p.x * mpCanvas.width, p.y * mpCanvas.height, 3.5, 0, 2 * Math.PI);
-                mpCtx.fill();
-            }
-
-            // 2. 幾何特徵提取
-            const dist = (i, j) => Math.hypot(lm[i].x - lm[j].x, lm[i].y - lm[j].y);
-            const palmScale = dist(0, 9) + 1e-5; // 手掌個體比例尺 (手腕點 0 到 中指根部點 9)
-
-            // 五指伸展度評分 (0.0: 完全彎曲, 1.0: 完全伸展)
-            const getExtension = (tip, pip) => {
-                const r = dist(tip, 0) / (dist(pip, 0) + 1e-5);
-                return Math.max(0.0, Math.min(1.0, (r - 0.85) / 0.45));
-            };
-
-            const extIndex = getExtension(8, 6);
-            const extMiddle = getExtension(12, 10);
-            const extRing = getExtension(16, 14);
-            const extPinky = getExtension(20, 18);
-
-            // 拇指伸展度：大拇指尖點 4 到小指根部點 17 的相對跨度
-            const thumbSpread = Math.max(0.0, Math.min(1.0, (dist(4, 17) / palmScale - 0.75) / 0.45));
-            // 拇指朝向評分 (點 4 高於點 2 越多，得分越高)
-            const thumbUpward = Math.max(0.0, Math.min(1.0, (lm[2].y - lm[4].y) / (palmScale * 0.35)));
-
-            // 3. 計算未歸一化得分 (Raw Logits z)
-            // 布: 四指全部極限伸展
-            const zPaper = (extIndex + extMiddle + extRing + extPinky) * 2.2;
-
-            // 剪刀: 食指與中指伸展，無名指與小指緊緊收扣
-            const zScissors = (extIndex * 2.5 + extMiddle * 2.5 + (1.0 - extRing) * 2.2 + (1.0 - extPinky) * 2.2);
-
-            // 讚好: 四指全部收緊 + 拇指極限張開 + 拇指垂直朝上！
-            const zThumbsUp = ((1.0 - extIndex) + (1.0 - extMiddle) + (1.0 - extRing) + (1.0 - extPinky)) * 1.5 
-                              + thumbSpread * 3.5 + thumbUpward * 4.0;
-
-            // 石頭: 四指全部收緊 + 拇指也緊貼拳頭（thumbSpread 越低，石頭越真）！
-            const zRock = ((1.0 - extIndex) + (1.0 - extMiddle) + (1.0 - extRing) + (1.0 - extPinky)) * 2.2 
-                          + (1.0 - thumbSpread) * 3.0 + (1.0 - thumbUpward) * 1.8;
-
-            const logits = {
-                "Paper": zPaper,
-                "Scissors": zScissors,
-                "Rock": zRock,
-                "ThumbsUp": zThumbsUp
-            };
-
-            // 4. Softmax 互斥運算 (溫度系數 T = 1.2 保證合理動態區間)
-            const T = 1.2;
-            let expSum = 0;
-            const expVals = {};
-            for (let k in logits) {
-                expVals[k] = Math.exp(logits[k] / T);
-                expSum += expVals[k];
-            }
-
-            let maxProb = 0;
-            for (let k in logits) {
-                probabilities[k] = expVals[k] / expSum;
-                if (probabilities[k] > maxProb) {
-                    maxProb = probabilities[k];
-                    detectedGesture = k;
-                }
-            }
-
-            // 信心度門檻：若最高項未超過 50%，視為模糊狀態 (None)
-            if (maxProb < 0.50) {
-                detectedGesture = "None";
-            }
+        } else {
+            currentLandmarks = null;
         }
+        canvasCtxMP.restore();
+    }
 
-        // 即時更新儀表板百分比 (四項加起來永遠 100%)
-        updateMediaPipeMeters(detectedGesture, probabilities);
+    // 繪製骨骼線條與關節節點
+    function drawSkeletonMP(landmarks) {
+        const CONNECTIONS = [
+            [0,1],[1,2],[2,3],[3,4],
+            [0,5],[5,6],[6,7],[7,8],
+            [5,9],[9,10],[10,11],[11,12],
+            [9,13],[13,14],[14,15],[15,16],
+            [13,17],[17,18],[18,19],[19,20],[0,17]
+        ];
 
-        // 命中判定
-        if (isMPGameRunning && !isMPLocked && mpActionQueue.length > 0) {
+        canvasCtxMP.strokeStyle = "#00f0ff";
+        canvasCtxMP.lineWidth = 3;
+        CONNECTIONS.forEach(([i, j]) => {
+            canvasCtxMP.beginPath();
+            canvasCtxMP.moveTo(landmarks[i].x * canvasElementMP.width, landmarks[i].y * canvasElementMP.height);
+            canvasCtxMP.lineTo(landmarks[j].x * canvasElementMP.width, landmarks[j].y * canvasElementMP.height);
+            canvasCtxMP.stroke();
+        });
+
+        canvasCtxMP.fillStyle = "#ff007f";
+        landmarks.forEach(pt => {
+            canvasCtxMP.beginPath();
+            canvasCtxMP.arc(pt.x * canvasElementMP.width, pt.y * canvasElementMP.height, 4, 0, 2 * Math.PI);
+            canvasCtxMP.fill();
+        });
+    }
+
+    // 提取 63 維歸一化空間特徵向量 (平移至手腕原點並按手掌比例尺縮放)
+    function extractNormalizedFeatures(landmarks) {
+        const base = landmarks[0];
+        const scale = Math.hypot(landmarks[9].x - base.x, landmarks[9].y - base.y) || 1.0;
+        
+        const featureVector = [];
+        for (let i = 0; i < 21; i++) {
+            featureVector.push((landmarks[i].x - base.x) / scale);
+            featureVector.push((landmarks[i].y - base.y) / scale);
+            featureVector.push((landmarks[i].z - base.z) / scale);
+        }
+        return featureVector;
+    }
+
+    // 長按採樣機制
+    function startSampling(label) {
+        if (!currentLandmarks) {
+            alert("鏡頭前未偵測到手掌，請先將手伸入畫面！");
+            return;
+        }
+        isSampling = true;
+        samplingTarget = label;
+        document.getElementById("btn-sample-" + label).classList.add("recording");
+
+        sampleInterval = setInterval(() => {
+            if (isSampling && currentLandmarks) {
+                const vector = extractNormalizedFeatures(currentLandmarks);
+                dataset.push({ label: samplingTarget, vector: vector });
+                updateSampleCountUI(samplingTarget);
+                checkModelReadiness();
+            }
+        }, 80);
+    }
+
+    function stopSampling() {
+        isSampling = false;
+        clearInterval(sampleInterval);
+        if (samplingTarget) {
+            document.getElementById("btn-sample-" + samplingTarget).classList.remove("recording");
+            samplingTarget = null;
+        }
+    }
+
+    function updateSampleCountUI(label) {
+        const count = dataset.filter(d => d.label === label).length;
+        document.getElementById("cnt-" + label).innerText = count + " 幀";
+    }
+
+    function clearDataset() {
+        dataset = [];
+        Object.keys(GESTURES).forEach(key => updateSampleCountUI(key));
+        step2MPReady = false;
+        document.getElementById("card-mp-step2").classList.remove("done");
+        document.getElementById("tag-mp-engine").innerText = "已重置 ⚪";
+        document.getElementById("btn-mp-start").innerText = "請重新錄製 5 款手勢";
+        checkCanUnlockMPStep3();
+    }
+
+    function checkModelReadiness() {
+        const counts = Object.keys(GESTURES).map(k => dataset.filter(d => d.label === k).length);
+        const allReady = counts.every(c => c >= 8); // 每款手勢需錄製 >= 8 幀
+
+        if (allReady && !step2MPReady) {
+            step2MPReady = true;
+            document.getElementById("card-mp-step2").classList.add("done");
+            document.getElementById("tag-mp-engine").innerText = "訓練完成 🟢";
+            document.getElementById("btn-mp-start").innerText = "✔ 5 款手勢模型就緒";
+            checkCanUnlockMPStep3();
+        }
+    }
+
+    // 核心輕量 KNN 分類推論引擎
+    function classifyCurrentPose() {
+        const currentVec = extractNormalizedFeatures(currentLandmarks);
+
+        const distances = dataset.map(sample => {
+            let distSq = 0;
+            for (let i = 0; i < currentVec.length; i++) {
+                const diff = currentVec[i] - sample.vector[i];
+                distSq += diff * diff;
+            }
+            return { label: sample.label, dist: Math.sqrt(distSq) };
+        });
+
+        distances.sort((a, b) => a.dist - b.dist);
+        const k = Math.min(5, distances.length);
+        const topK = distances.slice(0, k);
+
+        const scores = {};
+        Object.keys(GESTURES).forEach(k => scores[k] = 0);
+        topK.forEach(item => scores[item.label]++);
+
+        let topCls = "Class 5";
+        let maxVotes = 0;
+        Object.keys(scores).forEach(cls => {
+            const prob = scores[cls] / k;
+            const row = document.getElementById("meter-row-mp-" + cls.replace(" ", "-"));
+            const g = GESTURES[cls];
+            if (row) {
+                row.innerHTML = `<span>${g.symbol} ${g.name}</span><span>${(prob * 100).toFixed(0)}%</span>`;
+                if (prob > 0.6) row.classList.add("matched");
+                else row.classList.remove("matched");
+            }
+
+            if (scores[cls] > maxVotes) {
+                maxVotes = scores[cls];
+                topCls = cls;
+            }
+        });
+
+        // 觸發競技命中判定
+        if (isMPRunning && !isMPLocked && mpActionQueue.length > 0) {
             const currentTarget = mpActionQueue[0];
-            if (detectedGesture === currentTarget && probabilities[detectedGesture] >= 0.60) {
-                handleMPSuccess(detectedGesture);
+            const topProb = maxVotes / k;
+            if (topCls === currentTarget && topProb >= 0.6) {
+                handleMPSuccess(topCls, topProb);
             }
         }
     }
 
-    function updateMediaPipeMeters(detected, probabilities) {
-        const rows = {
-            "Rock": document.getElementById("mp-row-rock"),
-            "Scissors": document.getElementById("mp-row-scissors"),
-            "Paper": document.getElementById("mp-row-paper"),
-            "ThumbsUp": document.getElementById("mp-row-thumbsup")
-        };
-        const pcts = {
-            "Rock": document.getElementById("mp-pct-rock"),
-            "Scissors": document.getElementById("mp-pct-scissors"),
-            "Paper": document.getElementById("mp-pct-paper"),
-            "ThumbsUp": document.getElementById("mp-pct-thumbsup")
-        };
+    function checkCanUnlockMPStep3() {
+        if (step1Ready && step2MPReady) {
+            document.getElementById("card-mp-step3").classList.add("done");
+            document.getElementById("tag-mp-launch").innerText = "準備就緒 ✨";
+            document.getElementById("desc-mp-step3").innerText = "一切就緒！點擊下方按鈕出發";
 
-        // 四個類別概率相加嚴格為 100%
-        for (let k in rows) {
-            const pctVal = Math.round((probabilities[k] || 0) * 100);
-            pcts[k].innerText = `${pctVal}%`;
-
-            // 只有當前唯一勝出的標籤高亮！
-            if (k === detected && pctVal >= 50) {
-                rows[k].classList.add("matched");
-            } else {
-                rows[k].classList.remove("matched");
-            }
+            const launchBtn = document.getElementById("btn-launch-mp");
+            launchBtn.disabled = false;
+            launchBtn.innerText = "🚀 開始骨骼競技！";
+            launchBtn.classList.add("unlocked");
         }
     }
 
-    function startMediaPipeGame() {
-        isMPGameRunning = true;
+    function startMPGame() {
+        isMPRunning = true;
         isMPLocked = false;
         mpScore = 0;
         mpCombo = 0;
+        eventLogs = [];
         updateMPHUD();
 
-        const btn = document.getElementById("btn-launch-mp");
-        btn.innerText = "🎮 骨骼競技進行中...";
-        btn.disabled = true;
+        const launchBtn = document.getElementById("btn-launch-mp");
+        launchBtn.innerText = "🎮 骨骼競技進行中...";
+        launchBtn.classList.remove("unlocked");
+        launchBtn.disabled = true;
 
         mpActionQueue = [];
         for (let i = 0; i < QUEUE_LENGTH; i++) {
-            mpActionQueue.push(MP_TARGETS[Math.floor(Math.random() * MP_TARGETS.length)]);
+            mpActionQueue.push(getRandomGesture());
         }
         renderMPQueue();
         startMPTimer();
@@ -1114,10 +1529,14 @@
         const ribbon = document.getElementById("queue-ribbon-mp");
         ribbon.innerHTML = "";
         mpActionQueue.forEach((clsKey, index) => {
-            const g = MP_GESTURES[clsKey];
+            const g = GESTURES[clsKey];
             const card = document.createElement("div");
             card.className = "action-card " + (index === 0 ? "active-target" : "upcoming");
-            card.innerHTML = `<div class="symbol">${g.symbol}</div><div class="c-name">${g.name}</div><div class="sub-num">${g.num}</div>`;
+            card.innerHTML = `
+                <div class="symbol">${g.symbol}</div>
+                <div class="c-name">${g.name}</div>
+                <div class="sub-num">${g.num}</div>
+            `;
             ribbon.appendChild(card);
         });
     }
@@ -1126,12 +1545,16 @@
         clearInterval(mpTimerLoop);
         mpRoundStart = performance.now();
         const bar = document.getElementById("timer-bar-mp");
+
         mpTimerLoop = setInterval(() => {
             const elapsed = performance.now() - mpRoundStart;
             const remaining = Math.max(0, TIME_LIMIT_MS - elapsed);
             const pct = (remaining / TIME_LIMIT_MS) * 100;
+
             bar.style.width = pct + "%";
-            bar.style.background = pct > 40 ? "var(--neon-blue)" : "var(--neon-pink)";
+            if (pct > 40) bar.style.background = "var(--neon-blue)";
+            else bar.style.background = "var(--neon-pink)";
+
             if (remaining <= 0) {
                 clearInterval(mpTimerLoop);
                 handleMPTimeout();
@@ -1139,9 +1562,11 @@
         }, 30);
     }
 
-    async function handleMPSuccess(matched) {
+    async function handleMPSuccess(matchedCls, prob) {
         isMPLocked = true;
         clearInterval(mpTimerLoop);
+
+        const duration = Math.round(performance.now() - mpRoundStart);
         mpScore++;
         mpCombo++;
 
@@ -1156,17 +1581,26 @@
 
         updateMPHUD();
 
+        eventLogs.push({
+            timestamp: new Date().toISOString(),
+            target: mpActionQueue[0],
+            matched: matchedCls,
+            durationMs: duration,
+            status: "HIT"
+        });
+
+        // 經 WebSerial 傳送推進指令
         if (serialWriter) {
             try { await serialWriter.write("1\n"); } catch(e) {}
         }
 
         mpActionQueue.shift();
-        mpActionQueue.push(MP_TARGETS[Math.floor(Math.random() * MP_TARGETS.length)]);
+        mpActionQueue.push(getRandomGesture());
         renderMPQueue();
 
         setTimeout(() => {
             isMPLocked = false;
-            if (isMPGameRunning) startMPTimer();
+            if (isMPRunning) startMPTimer();
         }, 800);
     }
 
@@ -1176,10 +1610,18 @@
         popMPSplash("MISS! ✖", "var(--neon-pink)");
         updateMPHUD();
 
+        eventLogs.push({
+            timestamp: new Date().toISOString(),
+            target: mpActionQueue[0],
+            matched: "NONE",
+            durationMs: TIME_LIMIT_MS,
+            status: "TIMEOUT"
+        });
+
         mpActionQueue.shift();
-        mpActionQueue.push(MP_TARGETS[Math.floor(Math.random() * MP_TARGETS.length)]);
+        mpActionQueue.push(getRandomGesture());
         renderMPQueue();
-        if (isMPGameRunning) startMPTimer();
+        if (isMPRunning) startMPTimer();
     }
 
     function popMPSplash(text, color) {
@@ -1561,7 +2003,7 @@
         telemetryCtx.beginPath();
         telemetryCtx.arc(cx, cy, 7, 0, Math.PI * 2);
         telemetryCtx.moveTo(cx - 15, cy); telemetryCtx.lineTo(cx + 15, cy);
-        telemetryCtx.moveTo(cx, cy - 15); telemetryCtx.lineTo(cx + 15, cy);
+        telemetryCtx.moveTo(cx, cy - 15); telemetryCtx.lineTo(cx, cy + 15);
         telemetryCtx.stroke();
 
         const distVal = document.getElementById("telemetry-dist-val").innerText;
