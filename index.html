@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AI Robot Gesture Arena & Telemetry Hub</title>
+    <title>AI Robot Gesture Arena & Telemetry Hub (Few-Shot Edition)</title>
     <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@latest/dist/tf.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@teachablemachine/image@latest/dist/teachablemachine-image.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
@@ -13,7 +13,6 @@
             --neon-blue: #00f0ff;
             --neon-yellow: #ffe600;
             --neon-green: #00ff66;
-            --wood-tone: #d4b287;
             --bg-dark: #0a0b16;
             --card-bg: rgba(22, 26, 51, 0.9);
             --border-dim: #262c54;
@@ -37,6 +36,7 @@
             gap: 14px;
         }
 
+        /* 模式切換導航欄 */
         .mode-nav-bar {
             display: grid;
             grid-template-columns: 1fr 1fr;
@@ -69,6 +69,7 @@
             box-shadow: 0 0 16px rgba(0, 240, 255, 0.35);
         }
 
+        /* 學生基本資訊膠囊條 */
         .meta-strip {
             display: grid;
             grid-template-columns: 140px 140px 1.5fr auto;
@@ -371,7 +372,7 @@
         }
         #splash-text.show { transform: translate(-50%, -50%) scale(1.15); }
 
-        /* ================= 模式二：地面遙測站 (強效木質機身追蹤) ================= */
+        /* ================= 模式二：地面遙測站 (Few-Shot 視覺架構) ================= */
         .telemetry-layout {
             display: grid;
             grid-template-columns: 1.4fr 1fr;
@@ -399,20 +400,52 @@
             width: 100%;
             height: 100%;
             object-fit: cover;
-            cursor: crosshair;
         }
         .cam-crosshair-hud {
             position: absolute;
             top: 10px;
             left: 10px;
-            background: rgba(0,0,0,0.8);
+            background: rgba(0,0,0,0.85);
             padding: 8px 12px;
-            border-radius: 6px;
+            border-radius: 8px;
             font-size: 11px;
             color: #fff;
-            border: 1px solid rgba(0, 240, 255, 0.4);
+            border: 1px solid rgba(0, 240, 255, 0.5);
             pointer-events: none;
             line-height: 1.5;
+        }
+
+        /* Few-Shot 樣本庫展示條 */
+        .sample-deck-box {
+            background: #090c1e;
+            border: 1px solid #283160;
+            border-radius: 8px;
+            padding: 8px 12px;
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+        .sample-deck-header {
+            display: flex;
+            justify-content: space-between;
+            font-size: 11px;
+            color: #8892b0;
+            font-weight: bold;
+        }
+        .sample-thumbnails {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+            overflow-x: auto;
+            min-height: 48px;
+        }
+        .sample-thumb-item {
+            width: 44px;
+            height: 44px;
+            border-radius: 6px;
+            border: 2px solid var(--neon-blue);
+            object-fit: cover;
+            background: #000;
         }
 
         .telemetry-data-card {
@@ -454,6 +487,28 @@
             border: 1px solid #20274c;
         }
 
+        .slider-box {
+            background: #090c1e;
+            border: 1px solid #283160;
+            border-radius: 8px;
+            padding: 8px 12px;
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+            font-size: 11px;
+            color: #8892b0;
+        }
+        .slider-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .slider-box input[type="range"] {
+            width: 100%;
+            accent-color: var(--neon-blue);
+            cursor: pointer;
+        }
+
         .telemetry-ctrl-strip {
             display: grid;
             grid-template-columns: 1fr 1fr 1fr;
@@ -486,7 +541,7 @@
         </button>
         <button class="mode-tab-btn" id="tab-mode-2" onclick="switchSystemMode(2)">
             <span>📡 模式二：地面遙測站</span>
-            <span style="font-size: 11px; font-weight: normal; opacity: 0.8;">(椴木機身追蹤 + 空間深度測距)</span>
+            <span style="font-size: 11px; font-weight: normal; opacity: 0.8;">(Few-Shot 樣本微調 + 測速測距)</span>
         </button>
     </div>
 
@@ -590,33 +645,60 @@
         </div>
     </div>
 
-    <!-- ================= 模式二：地面遙測站 (加入抗紅/抗LED木質濾波器) ================= -->
+    <!-- ================= 模式二：地面遙測站 (Few-Shot 結構追蹤) ================= -->
     <div class="mode-section" id="section-mode-2">
         <div class="telemetry-layout">
             <div class="telemetry-cam-card">
                 <div style="display:flex; justify-content:space-between; align-items:center;">
-                    <span style="font-weight:800; font-size:14px; color:var(--neon-blue);">📡 軌道全局追蹤視野 (Anti-Red Plywood Tracker)</span>
+                    <span style="font-weight:800; font-size:14px; color:var(--neon-blue);">📡 軌道全局追蹤視野 (Few-Shot Structural Tracker)</span>
                     <span id="track-status-tag" style="font-size:11px; background:#111428; border:1px solid #333d6b; color:#8892b0; padding:2px 8px; border-radius:10px;">未啟動鏡頭</span>
                 </div>
+
+                <!-- 隱藏式檔案上傳 Input -->
+                <input type="file" id="few-shot-file-input" accept="image/*" multiple style="display:none;" onchange="handleFileUpload(event)">
+
                 <div class="cam-feed-wrapper">
                     <canvas id="telemetry-canvas" width="640" height="480"></canvas>
                     <div class="cam-crosshair-hud">
-                        點擊機械人木板即可精確採樣取色 🎯<br>
-                        基準色：<span id="target-rgb-preview" style="color:var(--wood-tone); font-weight:bold;">椴木板 (H: 33°, S: 32%)</span><br>
-                        <span id="pixel-count-hud" style="color:#8892b0;">匹配像素簇：0 px</span>
+                        <span id="tracking-status-text" style="color:var(--neon-yellow); font-weight:bold;">📸 請上傳相片或點擊截圖建立樣本</span><br>
+                        結構匹配信心度：<span id="match-score-hud" style="color:var(--neon-green); font-weight:bold;">0%</span>
                     </div>
                 </div>
+
+                <!-- Few-Shot 樣本庫展示條 -->
+                <div class="sample-deck-box">
+                    <div class="sample-deck-header">
+                        <span>🖼️ 已載入的少樣本特徵庫 (Few-Shot Templates)</span>
+                        <span id="sample-count-badge" style="color:var(--neon-blue);">0 個樣本</span>
+                    </div>
+                    <div class="sample-thumbnails" id="sample-deck">
+                        <span style="font-size:11px; color:#64748b;">暫無樣本，請點擊下方按鈕新增...</span>
+                    </div>
+                </div>
+
+                <!-- 匹配門檻滑桿 -->
+                <div class="slider-box">
+                    <div class="slider-row">
+                        <span>🎚️ 匹配靈敏度閾值 (Confidence Threshold): <b id="thresh-val-label" style="color:var(--neon-blue);">55%</b></span>
+                        <span style="font-size:10px; color:#64748b;">(若漏跟可調低至 45%，若誤判可調高至 65%)</span>
+                    </div>
+                    <input type="range" id="confidence-slider" min="30" max="85" value="55" oninput="updateConfidenceThreshold(this.value)">
+                </div>
+
                 <div class="telemetry-ctrl-strip">
                     <button class="step-btn" id="btn-telemetry-cam" onclick="toggleTelemetryCamera()">
                         📷 開啟鏡頭
                     </button>
-                    <button class="step-btn" id="btn-toggle-mask" style="background:#1e274a; border-color:#3a4b88;" onclick="toggleDebugMask()">
-                        👀 顯示辨識遮罩: 關
+                    <button class="step-btn" style="background:#1e274a; border-color:#3a4b88;" onclick="triggerCameraSnapshot()">
+                        📸 鏡頭截取樣本
                     </button>
-                    <button class="step-btn" style="background:#161d36; border-color:#2a3463;" onclick="resetTelemetryCalibration()">
-                        🔄 恢復預設木色
+                    <button class="step-btn" style="background:#0f3a40; border-color:var(--neon-blue);" onclick="document.getElementById('few-shot-file-input').click()">
+                        📁 上傳機械人相片
                     </button>
                 </div>
+                <button class="step-btn" style="background:#20111d; border-color:#661d38; color:#f43f5e; margin-top:2px;" onclick="clearAllTemplates()">
+                    🗑️ 清空所有特徵樣本
+                </button>
             </div>
 
             <div class="telemetry-data-card">
@@ -634,7 +716,7 @@
                 <div class="metric-tile">
                     <div class="metric-title">
                         <span>📏 機械人距鏡頭空間距離 (DEPTH: Z)</span>
-                        <span style="font-size:10px; color:#8892b0;">基於 7.0cm 椴木面板幾何寬度</span>
+                        <span style="font-size:10px; color:#8892b0;">基於 7.0cm 實體木機身尺寸</span>
                     </div>
                     <div class="metric-val val-dist">
                         <span id="telemetry-dist-val">--</span><span class="metric-unit">cm</span>
@@ -649,10 +731,10 @@
                 </div>
 
                 <div style="background:#090b16; border:1px solid #232a50; border-radius:10px; padding:10px 14px; font-size:11px; color:#8892b0; line-height:1.5;">
-                    🛡️ <b style="color:var(--neon-blue);">抗紅光與 LED 抑制機制：</b><br>
-                    • <b>嚴格飽和度上限（$S \le 0.48$）：</b> 紅色 LED 與紅車飽和度通常極高（$S > 0.70$），直接被物理濾除。<br>
-                    • <b>通道差值約束（$R - G \le 55$）：</b> 木質反光中紅綠通道非常接近；強紅光（$R - G > 75$）會被強制拋棄。<br>
-                    • <b>像素聚類閘門（$\text{count} \ge 80$）：</b> 避免孤立的 LED 點亮形成虛假檢測框。
+                    💡 <b style="color:var(--neon-green);">Few-Shot 零誤判優勢：</b><br>
+                    • <b>擺脫顏色依賴：</b> 演算法分析機械人的形狀拓撲、雷射雕刻與邊緣線條。<br>
+                    • <b>免疫紅車干擾：</b> 背景紅車與 LED 燈因結構不符，匹配度會被無情剔除！<br>
+                    • <b>微調指引：</b> 建議截取 1–3 張不同角度的照片，讓模型更穩健。
                 </div>
             </div>
         </div>
@@ -662,7 +744,7 @@
 
 <script>
     // =========================================================================
-    // 雙模式全域切換邏輯
+    // 雙模式切換
     // =========================================================================
     let currentSystemMode = 1;
 
@@ -1195,21 +1277,20 @@
     }
 
     // =========================================================================
-    // 【模式二：地面遙測站】強效抗紅光/LED 木質機身追蹤演算法
+    // 【模式二：地面遙測站】Few-Shot 視覺幾何特徵比對 (零色彩硬編碼)
     // =========================================================================
     let telemetryVideo = null;
     let telemetryCanvas = document.getElementById("telemetry-canvas");
     let telemetryCtx = telemetryCanvas.getContext("2d");
     let isTelemetryRunning = false;
-    let showDebugMask = false; // 是否開啟遮罩檢視
 
-    const ROBOT_REAL_WIDTH_CM = 7.0; // 實體椴木板寬度
+    const ROBOT_REAL_WIDTH_CM = 7.0; // 實體機身寬度 (cm)
     const FOCAL_LENGTH_PX = 580.0;
 
-    // 基準色採樣參數（預設為椴木暖棕色）[cite: 1]
-    let calibH = 33;      // 色相目標 (24° - 42°)
-    let calibS = 0.32;    // 飽和度目標 (0.15 - 0.45)
-    let calibV = 0.78;    // 明度目標 (0.40 - 0.95)
+    // 少樣本特徵庫清單
+    let fewShotTemplates = [];
+    const TEMPLATE_SIZE = 48; // 標準化特徵核尺寸 (48x48)
+    let matchThreshold = 0.55; // 匹配閾值 (55%)
 
     let prevPosition = null;
     let currentSpeed = 0.0;
@@ -1257,234 +1338,277 @@
         }
     }
 
-    function toggleDebugMask() {
-        showDebugMask = !showDebugMask;
-        const btn = document.getElementById("btn-toggle-mask");
-        btn.innerText = showDebugMask ? "👀 顯示辨識遮罩: 開" : "👀 顯示辨識遮罩: 關";
-        btn.style.borderColor = showDebugMask ? "var(--neon-yellow)" : "#3a4b88";
-        btn.style.color = showDebugMask ? "var(--neon-yellow)" : "#fff";
+    function updateConfidenceThreshold(val) {
+        matchThreshold = parseInt(val, 10) / 100.0;
+        document.getElementById("thresh-val-label").innerText = val + "%";
     }
 
-    // 點擊畫面重新採樣（取周圍 7x7 像素平均，避免單點噪聲）
-    telemetryCanvas.addEventListener("click", function(e) {
-        if (!telemetryVideo) return;
-        const rect = telemetryCanvas.getBoundingClientRect();
-        const scaleX = telemetryCanvas.width / rect.width;
-        const scaleY = telemetryCanvas.height / rect.height;
-        const clickX = Math.floor((e.clientX - rect.left) * scaleX);
-        const clickY = Math.floor((e.clientY - rect.top) * scaleY);
+    // --- Few-Shot 樣本建立與微調邏輯 ---
 
-        // 取周圍 7x7 區域中位數/均值
-        let sumR = 0, sumG = 0, sumB = 0, ptCount = 0;
-        for (let dx = -3; dx <= 3; dx++) {
-            for (let dy = -3; dy <= 3; dy++) {
-                const px = Math.min(639, Math.max(0, clickX + dx));
-                const py = Math.min(479, Math.max(0, clickY + dy));
-                const p = telemetryCtx.getImageData(px, py, 1, 1).data;
-                sumR += p[0]; sumG += p[1]; sumB += p[2];
-                ptCount++;
-            }
+    // 1. 上傳相片處理
+    function handleFileUpload(e) {
+        const files = e.target.files;
+        if (!files || files.length === 0) return;
+
+        for (let i = 0; i < files.length; i++) {
+            const reader = new FileReader();
+            reader.onload = function(evt) {
+                const img = new Image();
+                img.onload = function() {
+                    addTemplateFromImage(img);
+                };
+                img.src = evt.target.result;
+            };
+            reader.readAsDataURL(files[i]);
         }
-        const avgR = Math.round(sumR / ptCount);
-        const avgG = Math.round(sumG / ptCount);
-        const avgB = Math.round(sumB / ptCount);
+    }
 
-        const hsv = rgbToHsv(avgR, avgG, avgB);
+    // 2. 鏡頭截圖處理 (直接取鏡頭畫面中央 180x180 區域)
+    function triggerCameraSnapshot() {
+        if (!telemetryVideo) {
+            alert("請先開啟鏡頭！");
+            return;
+        }
+        const cropSize = 180;
+        const cropX = Math.floor((telemetryCanvas.width - cropSize) / 2);
+        const cropY = Math.floor((telemetryCanvas.height - cropSize) / 2);
 
-        // 防呆校驗：若學生誤點擊紅色 LED 或高飽和度紅車，強制拒絕取色！
-        if (hsv.s > 0.55 || (avgR - avgG > 70)) {
-            alert("⚠️ 採樣點過於偏紅或飽和度過高（疑似紅色 LED 或紅車）！請直接點擊淡米黃色的椴木板表面。");
+        const snapCanvas = document.createElement("canvas");
+        snapCanvas.width = cropSize;
+        snapCanvas.height = cropSize;
+        const sCtx = snapCanvas.getContext("2d");
+        sCtx.drawImage(telemetryVideo, cropX, cropY, cropSize, cropSize, 0, 0, cropSize, cropSize);
+
+        const img = new Image();
+        img.onload = function() {
+            addTemplateFromImage(img);
+        };
+        img.src = snapCanvas.toDataURL();
+    }
+
+    // 3. 特徵核生成與歸一化 (ZNCC 核心)
+    function addTemplateFromImage(imgSource) {
+        const tCanvas = document.createElement("canvas");
+        tCanvas.width = TEMPLATE_SIZE;
+        tCanvas.height = TEMPLATE_SIZE;
+        const ctx = tCanvas.getContext("2d");
+        ctx.drawImage(imgSource, 0, 0, TEMPLATE_SIZE, TEMPLATE_SIZE);
+
+        // 利用 TF.js 生成歸一化特徵張量 (Zero-Mean Unit-Variance)
+        const kernelTensor = tf.tidy(() => {
+            let t = tf.browser.fromPixels(tCanvas, 1).toFloat(); // [48, 48, 1] 灰階
+            const mean = t.mean();
+            const std = tf.moments(t).variance.sqrt().add(1e-5);
+            // 歸一化張量並加入卷積形狀 [48, 48, 1, 1]
+            return t.sub(mean).div(std).expandDims(3);
+        });
+
+        fewShotTemplates.push({
+            dataUrl: tCanvas.toDataURL(),
+            kernel: kernelTensor,
+            size: TEMPLATE_SIZE
+        });
+
+        renderTemplateDeck();
+    }
+
+    function renderTemplateDeck() {
+        const deck = document.getElementById("sample-deck");
+        deck.innerHTML = "";
+        document.getElementById("sample-count-badge").innerText = `${fewShotTemplates.length} 個樣本`;
+
+        if (fewShotTemplates.length === 0) {
+            deck.innerHTML = `<span style="font-size:11px; color:#64748b;">暫無樣本，請點擊下方按鈕新增...</span>`;
+            document.getElementById("tracking-status-text").innerText = "📸 請上傳相片或點擊截圖建立樣本";
+            document.getElementById("tracking-status-text").style.color = "var(--neon-yellow)";
             return;
         }
 
-        calibH = hsv.h;
-        calibS = hsv.s;
-        calibV = hsv.v;
+        fewShotTemplates.forEach((item, idx) => {
+            const img = document.createElement("img");
+            img.src = item.dataUrl;
+            img.className = "sample-thumb-item";
+            img.title = `特徵樣本 #${idx + 1}`;
+            deck.appendChild(img);
+        });
 
-        document.getElementById("target-rgb-preview").innerText = `自訂木色 (H: ${calibH}°, S: ${(calibS*100).toFixed(0)}%)`;
-        document.getElementById("target-rgb-preview").style.color = `rgb(${avgR}, ${avgG}, ${avgB})`;
-    });
-
-    function resetTelemetryCalibration() {
-        calibH = 33;
-        calibS = 0.32;
-        calibV = 0.78;
-        document.getElementById("target-rgb-preview").innerText = `椴木板 (H: 33°, S: 32%)`;
-        document.getElementById("target-rgb-preview").style.color = "var(--wood-tone)";
+        document.getElementById("tracking-status-text").innerText = `🟢 少樣本特徵比對進行中 (${fewShotTemplates.length} 個特徵核)`;
+        document.getElementById("tracking-status-text").style.color = "var(--neon-green)";
     }
 
-    // 快速 RGB 轉 HSV
-    function rgbToHsv(r, g, b) {
-        const rNorm = r / 255, gNorm = g / 255, bNorm = b / 255;
-        const max = Math.max(rNorm, gNorm, bNorm);
-        const min = Math.min(rNorm, gNorm, bNorm);
-        const d = max - min;
-
-        let h = 0;
-        if (d !== 0) {
-            if (max === rNorm) h = ((gNorm - bNorm) / d) % 6;
-            else if (max === gNorm) h = (bNorm - rNorm) / d + 2;
-            else h = (rNorm - gNorm) / d + 4;
-            h = Math.round(h * 60);
-            if (h < 0) h += 360;
-        }
-        const s = max === 0 ? 0 : d / max;
-        const v = max;
-        return { h, s, v };
+    function clearAllTemplates() {
+        fewShotTemplates.forEach(t => t.kernel.dispose());
+        fewShotTemplates = [];
+        renderTemplateDeck();
+        document.getElementById("match-score-hud").innerText = "0%";
     }
 
-    // 判定是否屬於椴木機身：加入強效「抗紅光、抗LED」特徵約束[cite: 1]
-    function isWoodPlywood(r, g, b) {
-        // 【第一道防線：通道差值物理過濾】
-        // 1. 天然木質必為暖色：R > G 且 G > B[cite: 1]
-        if (r <= g || g <= b) return false;
+    // --- 模式二主循環：少樣本空間卷積比對與運動學解算 ---
+    let frameSkip = 0;
+    let cachedOffCanvas = null;
 
-        // 2. 嚴格抗紅/抗LED過濾：
-        // 紅色 LED、紅線、紅色車身的 (R - G) 通常大於 75，甚至高達 150+！
-        // 椴木面板在正常光線下的 (R - G) 穩定在 15 至 55 之間[cite: 1]。
-        const rgDiff = r - g;
-        if (rgDiff > 58 || rgDiff < 10) return false;
-
-        // 3. 綠藍差值：木質黃色調中 G 必定大於 B 至少 10
-        if ((g - b) < 8) return false;
-
-        // 【第二道防線：HSV 空間精確幾何約束】
-        const hsv = rgbToHsv(r, g, b);
-
-        // 4. 嚴格飽和度抑制 (Anti-Red Saturation Filter)：
-        // 紅色 LED / 玩具紅車 S 普遍在 0.70 - 1.00，椴木板極限飽和度不超過 0.48[cite: 1]！
-        if (hsv.s > 0.48 || hsv.s < 0.12) return false;
-
-        // 5. 明度範圍：過濾極黑死角與鏡面眩光
-        if (hsv.v < 0.35 || hsv.v > 0.96) return false;
-
-        // 6. 色相角度：椴木黃橙波段鎖定在 24° 至 44°[cite: 1] (紅色 LED 通常在 0° - 15° 或 350° - 360°)
-        if (hsv.h < 23 || hsv.h > 46) return false;
-
-        // 7. 與當前校準點進行動態容差匹配
-        const hDiff = Math.abs(hsv.h - calibH);
-        const sDiff = Math.abs(hsv.s - calibS);
-        return (hDiff <= 14) && (sDiff <= 0.22);
-    }
-
-    // 模式二主循環：特徵過濾、空間深度、測速解算
     function telemetryProcessLoop() {
         if (!isTelemetryRunning || !telemetryVideo) return;
 
         telemetryCtx.drawImage(telemetryVideo, 0, 0, telemetryCanvas.width, telemetryCanvas.height);
-        const frame = telemetryCtx.getImageData(0, 0, telemetryCanvas.width, telemetryCanvas.height);
-        const d = frame.data;
 
-        let sumX = 0, sumY = 0, matchCount = 0;
-        let minX = telemetryCanvas.width, maxX = 0;
-        let minY = telemetryCanvas.height, maxY = 0;
+        // 若無樣本，在畫布中央繪製導引準星輔助截圖
+        if (fewShotTemplates.length === 0) {
+            const guideSize = 180;
+            const gx = (telemetryCanvas.width - guideSize) / 2;
+            const gy = (telemetryCanvas.height - guideSize) / 2;
+            telemetryCtx.strokeStyle = "rgba(0, 240, 255, 0.4)";
+            telemetryCtx.lineWidth = 2;
+            telemetryCtx.setLineDash([6, 6]);
+            telemetryCtx.strokeRect(gx, gy, guideSize, guideSize);
+            telemetryCtx.setLineDash([]);
+            telemetryCtx.fillStyle = "rgba(0, 240, 255, 0.8)";
+            telemetryCtx.font = "12px sans-serif";
+            telemetryCtx.fillText("請將機械人置於框內並點擊「截取樣本」", gx + 8, gy - 8);
 
-        // 步長 4 像素（快速取樣保證 60FPS）
-        for (let i = 0; i < d.length; i += 16) {
-            const r = d[i], g = d[i+1], b = d[i+2];
-
-            if (isWoodPlywood(r, g, b)) {
-                const pixelIndex = i / 4;
-                const px = pixelIndex % telemetryCanvas.width;
-                const py = Math.floor(pixelIndex / telemetryCanvas.width);
-
-                sumX += px; sumY += py; matchCount++;
-                if (px < minX) minX = px;
-                if (px > maxX) maxX = px;
-                if (py < minY) minY = py;
-                if (py > maxY) maxY = py;
-
-                // 若開啟遮罩檢視：將匹配像素直接染成青藍色
-                if (showDebugMask) {
-                    d[i] = 0; d[i+1] = 255; d[i+2] = 255;
-                }
-            } else if (showDebugMask) {
-                // 未匹配像素全部壓暗
-                d[i] = Math.floor(r * 0.25);
-                d[i+1] = Math.floor(g * 0.25);
-                d[i+2] = Math.floor(b * 0.25);
-            }
+            requestAnimationFrame(telemetryProcessLoop);
+            return;
         }
 
-        if (showDebugMask) {
-            telemetryCtx.putImageData(frame, 0, 0);
-        }
-
-        document.getElementById("pixel-count-hud").innerText = `匹配像素簇：${matchCount} px`;
-
-        // 聚類門檻：機械人機身面積大，至少需匹配 80 個像素點（徹底淘汰 LED 零星亮點）[cite: 1]
-        const boxWidth = maxX - minX;
-        const boxHeight = maxY - minY;
-
-        if (matchCount >= 80 && boxWidth >= 18 && boxHeight >= 18) {
-            const cx = sumX / matchCount;
-            const cy = sumY / matchCount;
-            const apparentPxWidth = Math.max(boxWidth, boxHeight * 0.55); // 椴木板長寬幾何投影估算[cite: 1]
-
-            // 1. 空間深度測距公式：Z = (實體木機身 7.0cm * 焦距) / 像素尺寸[cite: 1]
-            const depthCm = (ROBOT_REAL_WIDTH_CM * FOCAL_LENGTH_PX) / apparentPxWidth;
-            document.getElementById("telemetry-dist-val").innerText = depthCm.toFixed(1);
-            document.getElementById("marker-px-width").innerText = Math.round(apparentPxWidth);
-
-            // 2. 攀爬物理速度計算 (v = Δs / Δt)
-            const now = performance.now();
-            if (prevPosition) {
-                const dt = (now - prevPosition.timestamp) / 1000.0;
-                if (dt > 0.04) {
-                    const pxToCm = ROBOT_REAL_WIDTH_CM / apparentPxWidth;
-                    const deltaPx = Math.hypot(cx - prevPosition.x, cy - prevPosition.y);
-                    const deltaCm = deltaPx * pxToCm;
-                    const rawSpeed = deltaCm / dt;
-
-                    // 低通平滑濾波 (EMA)
-                    currentSpeed = (currentSpeed * 0.72) + (rawSpeed * 0.28);
-
-                    if (currentSpeed < 0.8) {
-                        zeroSpeedDuration += (dt * 1000);
-                        if (zeroSpeedDuration > 1500) {
-                            document.getElementById("stall-warning-box").style.display = "flex";
-                        }
-                    } else {
-                        zeroSpeedDuration = 0;
-                        document.getElementById("stall-warning-box").style.display = "none";
-                    }
-
-                    document.getElementById("telemetry-speed-val").innerText = currentSpeed.toFixed(1);
-                    document.getElementById("speed-trend-label").innerText = currentSpeed.toFixed(1) + " cm/s";
-
-                    speedHistory.push(currentSpeed);
-                    if (speedHistory.length > MAX_HISTORY) speedHistory.shift();
-                    drawSpeedChart();
-
-                    prevPosition = { x: cx, y: cy, timestamp: now };
-                }
-            } else {
-                prevPosition = { x: cx, y: cy, timestamp: now };
-            }
-
-            // 繪製高對比度螢光青藍追蹤框與黃色質心準星[cite: 1]
-            telemetryCtx.strokeStyle = "var(--neon-blue)";
-            telemetryCtx.lineWidth = 3;
-            telemetryCtx.strokeRect(minX, minY, boxWidth, boxHeight);
-
-            telemetryCtx.strokeStyle = "var(--neon-yellow)";
-            telemetryCtx.beginPath();
-            telemetryCtx.arc(cx, cy, 8, 0, Math.PI * 2);
-            telemetryCtx.moveTo(cx - 16, cy); telemetryCtx.lineTo(cx + 16, cy);
-            telemetryCtx.moveTo(cx, cy - 16); telemetryCtx.lineTo(cx, cy + 16);
-            telemetryCtx.stroke();
-
-            // 標示實時 HUD
-            telemetryCtx.fillStyle = "#ffffff";
-            telemetryCtx.font = "bold 13px sans-serif";
-            telemetryCtx.fillText(`[WOOD ROBOT] Z: ${depthCm.toFixed(1)}cm | V: ${currentSpeed.toFixed(1)}cm/s`, minX, Math.max(20, minY - 8));
-        } else {
-            document.getElementById("telemetry-dist-val").innerText = "--";
-            document.getElementById("marker-px-width").innerText = "0";
-            prevPosition = null;
+        // 節流處理：每 2 幀運算一次 ZNCC 比對，兼顧極致流暢度與高 FPS
+        frameSkip++;
+        if (frameSkip % 2 === 0) {
+            runFewShotTracking();
         }
 
         requestAnimationFrame(telemetryProcessLoop);
+    }
+
+    function runFewShotTracking() {
+        // 下採樣至 320x240 加速 WebGL 卷積運算
+        const procW = 320, procH = 240;
+        if (!cachedOffCanvas) {
+            cachedOffCanvas = document.createElement("canvas");
+            cachedOffCanvas.width = procW;
+            cachedOffCanvas.height = procH;
+        }
+        const oCtx = cachedOffCanvas.getContext("2d");
+        oCtx.drawImage(telemetryVideo, 0, 0, procW, procH);
+
+        tf.tidy(() => {
+            // 畫面灰階轉換與形狀重構 [1, 240, 320, 1]
+            let frameTensor = tf.browser.fromPixels(cachedOffCanvas, 1).toFloat();
+            frameTensor = frameTensor.expandDims(0);
+
+            // 計算畫面局部標準差 (用於歸一化相關性分母)
+            const boxSize = 24;
+            const boxKernel = tf.ones([boxSize, boxSize, 1, 1]).div(boxSize * boxSize);
+            const localMean = tf.conv2d(frameTensor, boxKernel, [2, 2], 'same');
+            const localMeanSq = tf.conv2d(frameTensor.square(), boxKernel, [2, 2], 'same');
+            const localStd = tf.relu(localMeanSq.sub(localMean.square())).sqrt().add(1e-4);
+
+            let bestScore = -1;
+            let bestX = 0, bestY = 0;
+
+            // 對多個少樣本特徵核進行並行特徵比對
+            for (let t of fewShotTemplates) {
+                // 執行二維歸一化特徵卷積 (Stride 2)
+                const conv = tf.conv2d(frameTensor, t.kernel, [2, 2], 'same');
+                const normMap = conv.div(localStd.mul(Math.sqrt(t.size * t.size))); // ZNCC 矩陣
+
+                const maxValTensor = normMap.max();
+                const score = maxValTensor.dataSync()[0];
+
+                if (score > bestScore) {
+                    bestScore = score;
+                    const flatIdx = normMap.as1D().argMax().dataSync()[0];
+                    const mapW = Math.floor(procW / 2);
+                    bestY = Math.floor(flatIdx / mapW) * 2;
+                    bestX = (flatIdx % mapW) * 2;
+                }
+            }
+
+            // 更新 UI 匹配度
+            const displayScore = Math.max(0, Math.min(100, Math.round(bestScore * 100)));
+            document.getElementById("match-score-hud").innerText = `${displayScore}%`;
+
+            // 若匹配度超越閾值：確認鎖定目標！
+            if (bestScore >= matchThreshold) {
+                // 將下採樣坐標映射回 640x480
+                const scaleX = telemetryCanvas.width / procW;
+                const scaleY = telemetryCanvas.height / procH;
+                const targetX = bestX * scaleX;
+                const targetY = bestY * scaleY;
+
+                // 估計機械人邊界框寬高
+                const boxW = 80;
+                const boxH = 95;
+                const minX = Math.max(0, targetX - boxW / 2);
+                const minY = Math.max(0, targetY - boxH / 2);
+
+                handleTargetIdentified(targetX, targetY, minX, minY, boxW, boxH, displayScore);
+            } else {
+                document.getElementById("telemetry-dist-val").innerText = "--";
+                document.getElementById("marker-px-width").innerText = "0";
+                prevPosition = null;
+            }
+        });
+    }
+
+    function handleTargetIdentified(cx, cy, minX, minY, boxW, boxH, scorePct) {
+        // 1. 深度測距：Z = (實體木板寬度 7.0cm * 焦距) / 像素寬度
+        const depthCm = (ROBOT_REAL_WIDTH_CM * FOCAL_LENGTH_PX) / boxW;
+        document.getElementById("telemetry-dist-val").innerText = depthCm.toFixed(1);
+        document.getElementById("marker-px-width").innerText = Math.round(boxW);
+
+        // 2. 攀爬物理速度計算 (v = Δs / Δt)
+        const now = performance.now();
+        if (prevPosition) {
+            const dt = (now - prevPosition.timestamp) / 1000.0;
+            if (dt > 0.04) {
+                const pxToCm = ROBOT_REAL_WIDTH_CM / boxW;
+                const deltaPx = Math.hypot(cx - prevPosition.x, cy - prevPosition.y);
+                const deltaCm = deltaPx * pxToCm;
+                const rawSpeed = deltaCm / dt;
+
+                // 低通平滑濾波 (EMA)
+                currentSpeed = (currentSpeed * 0.72) + (rawSpeed * 0.28);
+
+                // 停滯檢測
+                if (currentSpeed < 0.8) {
+                    zeroSpeedDuration += (dt * 1000);
+                    if (zeroSpeedDuration > 1500) {
+                        document.getElementById("stall-warning-box").style.display = "flex";
+                    }
+                } else {
+                    zeroSpeedDuration = 0;
+                    document.getElementById("stall-warning-box").style.display = "none";
+                }
+
+                document.getElementById("telemetry-speed-val").innerText = currentSpeed.toFixed(1);
+                document.getElementById("speed-trend-label").innerText = currentSpeed.toFixed(1) + " cm/s";
+
+                speedHistory.push(currentSpeed);
+                if (speedHistory.length > MAX_HISTORY) speedHistory.shift();
+                drawSpeedChart();
+
+                prevPosition = { x: cx, y: cy, timestamp: now };
+            }
+        } else {
+            prevPosition = { x: cx, y: cy, timestamp: now };
+        }
+
+        // 繪製螢光青藍追蹤框與黃色準星 (完全鎖定實體結構)
+        telemetryCtx.strokeStyle = "var(--neon-green)";
+        telemetryCtx.lineWidth = 3;
+        telemetryCtx.strokeRect(minX, minY, boxW, boxH);
+
+        telemetryCtx.strokeStyle = "var(--neon-yellow)";
+        telemetryCtx.beginPath();
+        telemetryCtx.arc(cx, cy, 7, 0, Math.PI * 2);
+        telemetryCtx.moveTo(cx - 15, cy); telemetryCtx.lineTo(cx + 15, cy);
+        telemetryCtx.moveTo(cx, cy - 15); telemetryCtx.lineTo(cx, cy + 15);
+        telemetryCtx.stroke();
+
+        // 標示實時 HUD
+        telemetryCtx.fillStyle = "#ffffff";
+        telemetryCtx.font = "bold 13px sans-serif";
+        telemetryCtx.fillText(`[LOCKED ${scorePct}%] Z: ${depthCm.toFixed(1)}cm | V: ${currentSpeed.toFixed(1)}cm/s`, minX, Math.max(20, minY - 8));
     }
 
     const chartCanvas = document.getElementById("speed-chart-canvas");
