@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AI Robot Gesture Arena & Telemetry Hub (Tri-Mode Interactive Edition)</title>
+    <title>AI Robot Gesture Arena & Telemetry Hub (EDUCON Interactive Edition)</title>
     <!-- 模式一依賴：TensorFlow.js & Teachable Machine -->
     <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@latest/dist/tf.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@teachablemachine/image@latest/dist/teachablemachine-image.min.js"></script>
@@ -13,7 +13,6 @@
     <script src="https://cdn.jsdelivr.net/npm/@mediapipe/hands/hands.js" crossorigin="anonymous"></script>
     <style>
         :root {
-            /* 專業明亮風色彩系統 (Professional & Gaming for P4-S3) */
             --bg-base: #f1f5f9;
             --bg-card: #ffffff;
             --border-ui: #cbd5e1;
@@ -31,6 +30,7 @@
         body {
             margin: 0;
             padding: 16px;
+            padding-bottom: 80px;
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "PingFang HK", sans-serif;
             background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
             color: var(--text-main);
@@ -45,7 +45,7 @@
             gap: 14px;
         }
 
-        /* 頂部三模式導航欄 (淺色立體感) */
+        /* 頂部三模式導航欄 */
         .mode-nav-bar {
             display: grid;
             grid-template-columns: 1fr 1fr 1fr;
@@ -80,19 +80,18 @@
             box-shadow: 0 2px 8px rgba(2, 132, 199, 0.2);
         }
 
-        /* 學生基本資訊膠囊條 */
+        /* 頂部簡化控制條 (只保留 XAI 密碼驗證與手動上傳備援) */
         .meta-strip {
-            display: grid;
-            grid-template-columns: 140px 140px 1.8fr auto;
-            gap: 10px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
             background: var(--bg-card);
             padding: 10px 16px;
             border-radius: 12px;
             border: 1px solid var(--border-ui);
             box-shadow: 0 2px 6px rgba(15, 23, 42, 0.04);
-            align-items: center;
         }
-        .meta-strip input, .meta-strip select {
+        .meta-strip select {
             background: #f8fafc;
             border: 1px solid var(--border-ui);
             color: var(--text-main);
@@ -101,11 +100,6 @@
             font-size: 13px;
             font-weight: 600;
         }
-        .meta-strip input:focus, .meta-strip select:focus {
-            outline: none;
-            border-color: var(--game-blue);
-            background: #fff;
-        }
 
         .mode-section { display: none; flex-direction: column; gap: 14px; }
         .mode-section.active-mode { display: flex; }
@@ -113,7 +107,7 @@
         /* 步驟看板 */
         .stepper-board {
             display: grid;
-            grid-template-columns: 1fr 1.5fr 1fr;
+            grid-template-columns: 1.2fr 1.3fr 1fr;
             gap: 14px;
         }
         .step-card {
@@ -173,10 +167,23 @@
             transition: all 0.2s;
         }
         .step-btn:hover { background: #1e293b; }
-        .step-btn.ready-btn {
-            background: var(--game-green);
+        .step-btn.ready-btn { background: var(--game-green); }
+
+        .id-input-field {
+            background: #ffffff;
+            border: 1.5px solid var(--border-ui);
+            color: var(--text-main);
+            padding: 8px 10px;
+            border-radius: 8px;
+            font-size: 13px;
+            font-weight: bold;
+            width: 100%;
+            margin-bottom: 8px;
         }
-        .step-btn.ready-btn:hover { background: #059669; }
+        .id-input-field:focus {
+            outline: none;
+            border-color: var(--game-blue);
+        }
 
         /* 骨骼採樣網格 */
         .sample-grid {
@@ -207,10 +214,7 @@
             color: #be185d;
             transform: scale(0.96);
         }
-        .sample-count {
-            font-size: 10px;
-            color: var(--game-blue);
-        }
+        .sample-count { font-size: 10px; color: var(--game-blue); }
 
         /* 啟動大按鈕 */
         .btn-launch {
@@ -413,7 +417,7 @@
         }
         #splash-text.show, #splash-text-mp.show { transform: translate(-50%, -50%) scale(1.15); }
 
-        /* 模式三：地面遙測站 */
+        /* 模式三：地面遙測與纜車月台停泊大挑戰 */
         .telemetry-layout {
             display: grid;
             grid-template-columns: 1.4fr 1fr;
@@ -432,7 +436,7 @@
         .cam-feed-wrapper {
             position: relative;
             width: 100%;
-            height: 340px;
+            height: 320px;
             background: #000;
             border-radius: 12px;
             overflow: hidden;
@@ -468,8 +472,8 @@
             justify-content: space-between;
         }
         .roi-thumb-img {
-            width: 52px;
-            height: 52px;
+            width: 48px;
+            height: 48px;
             border-radius: 8px;
             border: 2px solid var(--game-green);
             object-fit: cover;
@@ -484,7 +488,7 @@
             background: var(--bg-card);
             border: 2px solid var(--border-ui);
             border-radius: 14px;
-            padding: 14px 18px;
+            padding: 12px 16px;
             display: flex;
             flex-direction: column;
             gap: 6px;
@@ -498,57 +502,197 @@
             justify-content: space-between;
         }
         .metric-val {
-            font-size: 36px;
+            font-size: 32px;
             font-weight: 900;
             line-height: 1;
         }
         .metric-unit { font-size: 14px; color: var(--text-sub); font-weight: normal; margin-left: 4px; }
         .val-speed { color: #059669; }
         .val-dist { color: #0284c7; }
-        #speed-chart-canvas {
-            width: 100%;
-            height: 90px;
-            background: #f8fafc;
-            border-radius: 8px;
-            border: 1px solid var(--border-ui);
-        }
-        .slider-box {
-            background: #f8fafc;
-            border: 1px solid var(--border-ui);
-            border-radius: 8px;
-            padding: 8px 12px;
+
+        /* 模式三停泊競技板 (Docking Game Board) */
+        .docking-panel {
+            background: #eff6ff;
+            border: 2px solid #93c5fd;
+            border-radius: 12px;
+            padding: 12px;
             display: flex;
             flex-direction: column;
-            gap: 4px;
-            font-size: 11px;
-            color: var(--text-sub);
+            gap: 8px;
         }
-        .slider-row {
+        .docking-status-bar {
+            display: flex;
+            justify-content: space-between;
+            font-weight: bold;
+            font-size: 13px;
+        }
+        .docking-timer-track {
+            height: 10px;
+            background: #dbeafe;
+            border-radius: 5px;
+            overflow: hidden;
+            border: 1px solid #bfdbfe;
+        }
+        .docking-timer-fill {
+            height: 100%;
+            width: 0%;
+            background: var(--game-green);
+            transition: width 0.1s linear;
+        }
+        .control-jog-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 6px;
+            margin-top: 4px;
+        }
+        .jog-btn {
+            background: #1e293b;
+            color: #ffffff;
+            border: none;
+            padding: 10px 4px;
+            border-radius: 8px;
+            font-weight: bold;
+            font-size: 12px;
+            cursor: pointer;
+            transition: all 0.15s;
+        }
+        .jog-btn:active { transform: scale(0.95); background: var(--game-blue); }
+
+        /* =========================================================================
+           互動式蘇格拉底反思 Chatbot (Floating Widget)
+           ========================================================================= */
+        .chatbot-bubble-btn {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background: linear-gradient(135deg, var(--game-blue), var(--game-purple));
+            color: #ffffff;
+            border: none;
+            padding: 12px 20px;
+            border-radius: 30px;
+            font-weight: 800;
+            font-size: 14px;
+            box-shadow: 0 6px 20px rgba(2, 132, 199, 0.4);
+            cursor: pointer;
+            z-index: 1000;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            transition: all 0.25s ease;
+        }
+        .chatbot-bubble-btn:hover { transform: scale(1.05); }
+
+        .chatbot-window {
+            position: fixed;
+            bottom: 75px;
+            right: 20px;
+            width: 360px;
+            max-width: calc(100vw - 40px);
+            height: 520px;
+            background: #ffffff;
+            border: 2px solid var(--border-ui);
+            border-radius: 18px;
+            box-shadow: 0 10px 30px rgba(15, 23, 42, 0.18);
+            display: none;
+            flex-direction: column;
+            overflow: hidden;
+            z-index: 1000;
+            animation: slideUp 0.25s ease forwards;
+        }
+        @keyframes slideUp {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .chat-header {
+            background: linear-gradient(135deg, var(--game-blue), var(--game-purple));
+            color: #ffffff;
+            padding: 12px 16px;
             display: flex;
             justify-content: space-between;
             align-items: center;
+            font-weight: 800;
+            font-size: 14px;
         }
-        .slider-box input[type="range"] {
-            width: 100%;
-            accent-color: var(--game-blue);
+        .chat-body {
+            flex-grow: 1;
+            padding: 14px;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            background: #f8fafc;
+            font-size: 13px;
+        }
+        .chat-msg {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+            max-width: 85%;
+        }
+        .chat-msg.bot {
+            align-self: flex-start;
+        }
+        .chat-msg.bot .bubble {
+            background: #ffffff;
+            color: var(--text-main);
+            border: 1px solid var(--border-ui);
+            padding: 10px 12px;
+            border-radius: 12px 12px 12px 2px;
+            line-height: 1.45;
+        }
+        .chat-msg.user {
+            align-self: flex-end;
+        }
+        .chat-msg.user .bubble {
+            background: var(--game-blue);
+            color: #ffffff;
+            padding: 10px 12px;
+            border-radius: 12px 12px 2px 12px;
+            line-height: 1.45;
+        }
+        .chip-group {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+            margin-top: 6px;
+        }
+        .quick-chip {
+            background: #e0f2fe;
+            border: 1px solid #7dd3fc;
+            color: #0369a1;
+            padding: 4px 8px;
+            border-radius: 12px;
+            font-size: 11px;
             cursor: pointer;
+            font-weight: 600;
         }
-        .telemetry-ctrl-strip {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
+        .quick-chip:hover { background: #bae6fd; }
+
+        .chat-footer {
+            padding: 10px;
+            background: #ffffff;
+            border-top: 1px solid var(--border-ui);
+            display: flex;
             gap: 8px;
         }
-        .stall-badge {
-            background: #fee2e2;
-            border: 1px solid #f87171;
-            color: #b91c1c;
-            font-weight: bold;
+        .chat-input {
+            flex-grow: 1;
+            border: 1px solid var(--border-ui);
+            border-radius: 8px;
+            padding: 8px 10px;
             font-size: 12px;
+            outline: none;
+        }
+        .chat-input:focus { border-color: var(--game-blue); }
+        .chat-send-btn {
+            background: var(--game-blue);
+            color: #fff;
+            border: none;
             padding: 8px 12px;
             border-radius: 8px;
-            display: none;
-            align-items: center;
-            gap: 6px;
+            font-weight: bold;
+            cursor: pointer;
+            font-size: 12px;
         }
     </style>
 </head>
@@ -563,43 +707,45 @@
             <span style="font-size: 11px; font-weight: normal; opacity: 0.85;">(像素特徵 + Grad-CAM XAI)</span>
         </button>
         <button class="mode-tab-btn" id="tab-mode-2" onclick="switchSystemMode(2)">
-            <span>✋ 模式二：MediaPipe 採樣訓練艙</span>
-            <span style="font-size: 11px; font-weight: normal; opacity: 0.85;">(21 個關節點 / 63 維幾何特徵 + KNN)</span>
+            <span>✋ 模式二：MediaPipe 訓練艙 🔒</span>
+            <span style="font-size: 11px; font-weight: normal; opacity: 0.85;">(21 關節點幾何特徵 + KNN)</span>
         </button>
         <button class="mode-tab-btn" id="tab-mode-3" onclick="switchSystemMode(3)">
-            <span>📡 模式三：地面遙測站</span>
-            <span style="font-size: 11px; font-weight: normal; opacity: 0.85;">(HC010 實時動態測距 + 測速)</span>
+            <span>🚡 模式三：地面遙測與纜車停泊賽</span>
+            <span style="font-size: 11px; font-weight: normal; opacity: 0.85;">(HC010 實時測距 + 閉環微調)</span>
         </button>
     </div>
 
-    <!-- 學生分組資料 (XAI 選項已精簡並加上密碼驗證) -->
+    <!-- 頂部精簡控制條 -->
     <div class="meta-strip">
-        <input type="text" id="groupId" placeholder="組別 (例: Group-01)">
-        <input type="text" id="studentId" placeholder="學號 (例: S01)">
+        <div style="font-size: 13px; font-weight: 800; color: var(--game-blue); display: flex; align-items: center; gap: 8px;">
+            <span>🤖 micro:bit 編號：<b id="shared-mb-id-display" style="color:var(--game-pink); font-size:16px;">未填寫</b></span>
+        </div>
         
-        <!-- 只保留兩個選項，預設黑盒，選擇 Grad-CAM 需要密碼 "xai" -->
-        <select id="conditionType" onfocus="storePrevCondition(this.value)" onchange="handleConditionChange(this)">
-            <option value="No_XAI_Blackbox" selected>GTM 對照組 (黑盒無解釋)</option>
-            <option value="XAI_GradCAM">🔒 GTM 實驗組 (Grad-CAM 熱力圖)</option>
-        </select>
-        
-        <button onclick="uploadDataToDrive()" style="background:#0284c7; color:#fff; border:none; border-radius:8px; padding:8px 14px; cursor:pointer; font-size:12px; font-weight:bold;">
-            📤 提交成績到 Drive
-        </button>
+        <div style="display: flex; gap: 10px; align-items: center;">
+            <select id="conditionType" onfocus="storePrevCondition(this.value)" onchange="handleConditionChange(this)">
+                <option value="No_XAI_Blackbox" selected>GTM 對照組 (黑盒無解釋)</option>
+                <option value="XAI_GradCAM">🔒 GTM 實驗組 (Grad-CAM 熱力圖)</option>
+            </select>
+            
+            <button onclick="triggerFullSyncToDrive()" style="background:#0284c7; color:#fff; border:none; border-radius:8px; padding:8px 14px; cursor:pointer; font-size:12px; font-weight:bold;">
+                📤 提交紀錄到 Drive
+            </button>
+        </div>
     </div>
 
     <!-- =========================================================================
-         【模式一：GTM 駕駛艙 (Teachable Machine + Grad-CAM)】
+         【模式一：GTM 駕駛艙】
          ========================================================================= -->
     <div class="mode-section active-mode" id="section-mode-1">
         <div class="stepper-board">
             <div class="step-card" id="card-step1">
                 <div>
                     <div class="step-header">
-                        <span class="step-title">🔌 步驟 1：連接硬件</span>
-                        <span class="step-tag" id="tag-step1">未連接 ⚪</span>
+                        <span class="step-title">🔌 步驟 1：輸入編號與連接</span>
+                        <span class="step-tag" id="tag-step1">未完成 ⚪</span>
                     </div>
-                    <div style="font-size: 11px; color: var(--text-sub); margin-bottom: 10px;">將發射端 micro:bit 直插電腦 USB</div>
+                    <input type="number" class="id-input-field" id="mb-input-1" placeholder="輸入 micro:bit 編號 (例: 12)" oninput="syncMicrobitId(this.value)">
                 </div>
                 <button class="step-btn" id="btn-step1" onclick="connectSerial()">連接 Tx micro:bit</button>
             </div>
@@ -619,7 +765,7 @@
                         <span class="step-title">🚀 步驟 3：開始競技</span>
                         <span class="step-tag" id="tag-step3">待解鎖 🔒</span>
                     </div>
-                    <div style="font-size: 11px; color: var(--text-sub); margin-bottom: 10px;" id="desc-step3">需先完成步驟 1 及 步驟 2</div>
+                    <div style="font-size: 11px; color: var(--text-sub); margin-bottom: 10px;" id="desc-step3">需填寫編號、連線及載入模型</div>
                 </div>
                 <button class="btn-launch" id="btn-launch" onclick="startGame()" disabled>等待準備...</button>
             </div>
@@ -659,61 +805,49 @@
     </div>
 
     <!-- =========================================================================
-         【模式二：MediaPipe 採樣訓練艙 (21個關節點 / 63維骨骼特徵 + KNN)】
+         【模式二：MediaPipe 訓練艙 (密碼保護)】
          ========================================================================= -->
     <div class="mode-section" id="section-mode-2">
         <div class="stepper-board">
             <div class="step-card" id="card-mp-step1">
                 <div>
                     <div class="step-header">
-                        <span class="step-title">🔌 步驟 1：連接硬件</span>
-                        <span class="step-tag" id="tag-mp-serial">未連接 ⚪</span>
+                        <span class="step-title">🔌 步驟 1：輸入編號與連接</span>
+                        <span class="step-tag" id="tag-mp-serial">未完成 ⚪</span>
                     </div>
-                    <div style="font-size: 11px; color: var(--text-sub); margin-bottom: 10px;">
-                        將發射端 micro:bit 直插電腦 USB
-                    </div>
+                    <input type="number" class="id-input-field" id="mb-input-2" placeholder="輸入 micro:bit 編號 (例: 12)" oninput="syncMicrobitId(this.value)">
                 </div>
-                <button class="step-btn" id="btn-mp-serial" onclick="connectSerial()">
-                    連接 Tx micro:bit
-                </button>
+                <button class="step-btn" id="btn-mp-serial" onclick="connectSerial()">連接 Tx micro:bit</button>
             </div>
 
             <div class="step-card" id="card-mp-step2">
                 <div>
                     <div class="step-header">
-                        <span class="step-title">✋ 步驟 2：21 節點手勢採樣</span>
+                        <span class="step-title">✋ 步驟 2：手勢採樣</span>
                         <span class="step-tag" id="tag-mp-engine">未啟動 ⚪</span>
                     </div>
                     <div class="sample-grid">
                         <button class="sample-btn" id="btn-sample-Class 1" onmousedown="startSampling('Class 1')" onmouseup="stopSampling()">
-                            <span>✊ 石頭</span>
-                            <span class="sample-count" id="cnt-Class 1">0 幀</span>
+                            <span>✊ 石頭</span><span class="sample-count" id="cnt-Class 1">0 幀</span>
                         </button>
                         <button class="sample-btn" id="btn-sample-Class 2" onmousedown="startSampling('Class 2')" onmouseup="stopSampling()">
-                            <span>✌️ 剪刀</span>
-                            <span class="sample-count" id="cnt-Class 2">0 幀</span>
+                            <span>✌️ 剪刀</span><span class="sample-count" id="cnt-Class 2">0 幀</span>
                         </button>
                         <button class="sample-btn" id="btn-sample-Class 3" onmousedown="startSampling('Class 3')" onmouseup="stopSampling()">
-                            <span>🖐️ 布</span>
-                            <span class="sample-count" id="cnt-Class 3">0 幀</span>
+                            <span>🖐️ 布</span><span class="sample-count" id="cnt-Class 3">0 幀</span>
                         </button>
                         <button class="sample-btn" id="btn-sample-Class 4" onmousedown="startSampling('Class 4')" onmouseup="stopSampling()">
-                            <span>👍 讚好</span>
-                            <span class="sample-count" id="cnt-Class 4">0 幀</span>
+                            <span>👍 讚好</span><span class="sample-count" id="cnt-Class 4">0 幀</span>
                         </button>
                         <button class="sample-btn" id="btn-sample-Class 5" onmousedown="startSampling('Class 5')" onmouseup="stopSampling()">
-                            <span>🫱 待機</span>
-                            <span class="sample-count" id="cnt-Class 5">0 幀</span>
+                            <span>🫱 待機</span><span class="sample-count" id="cnt-Class 5">0 幀</span>
                         </button>
                         <button class="sample-btn" style="background:#fee2e2; border-color:#fca5a5; color:#991b1b;" onclick="clearDataset()">
-                            <span>🗑️ 重置</span>
-                            <span style="font-size:9px; color:#b91c1c;">清空樣本</span>
+                            <span>🗑️ 重置</span><span style="font-size:9px; color:#b91c1c;">清空</span>
                         </button>
                     </div>
                 </div>
-                <button class="step-btn" id="btn-mp-start" onclick="initMediaPipe()">
-                    啟動鏡頭開始採樣 (21 點)
-                </button>
+                <button class="step-btn" id="btn-mp-start" onclick="initMediaPipe()">啟動鏡頭開始採樣</button>
             </div>
 
             <div class="step-card" id="card-mp-step3">
@@ -722,13 +856,9 @@
                         <span class="step-title">🚀 步驟 3：開始競技</span>
                         <span class="step-tag" id="tag-mp-launch">待解鎖 🔒</span>
                     </div>
-                    <div style="font-size: 11px; color: var(--text-sub); margin-bottom: 10px;" id="desc-mp-step3">
-                        需完成步驟 1 並每款手勢錄製 ≥8 幀 (63維特徵)
-                    </div>
+                    <div style="font-size: 11px; color: var(--text-sub); margin-bottom: 10px;" id="desc-mp-step3">需連線並每款手勢錄製 ≥8 幀</div>
                 </div>
-                <button class="btn-launch" id="btn-launch-mp" onclick="startMPGame()" disabled>
-                    等待準備...
-                </button>
+                <button class="btn-launch" id="btn-launch-mp" onclick="startMPGame()" disabled>等待準備...</button>
             </div>
         </div>
 
@@ -738,13 +868,11 @@
                     <div class="combo-badge" id="combo-display-mp">0x COMBO</div>
                     <div class="score-pill">攀爬得分：<span id="score-counter-mp">0</span></div>
                 </div>
-
                 <div class="ribbon-track-wrapper">
                     <div class="ribbon-track" id="queue-ribbon-mp"></div>
                     <div class="timer-bg"><div class="timer-fill" id="timer-bar-mp"></div></div>
                     <div id="splash-text-mp">PERFECT!</div>
                 </div>
-
                 <div class="arena-footer">
                     <div style="width: 220px; height: 150px; background: #000; border-radius: 10px; overflow: hidden; border: 1px solid var(--border-ui); position: relative;">
                         <video id="webcam-video-mp" playsinline style="display:none;"></video>
@@ -753,7 +881,6 @@
                     <div class="meters-grid" id="meters-container-mp"></div>
                 </div>
             </div>
-
             <div class="tower-card">
                 <div style="font-size: 26px;">🏆</div>
                 <div style="font-size: 10px; color: var(--text-sub); font-weight: bold;">FINISH</div>
@@ -765,94 +892,89 @@
     </div>
 
     <!-- =========================================================================
-         【模式三：地面遙測站 (HC010 實時動態測距 + 速度追蹤)】
+         【模式三：地面遙測與「昂坪 360」纜車精準停泊大挑戰】
          ========================================================================= -->
     <div class="mode-section" id="section-mode-3">
         <div class="telemetry-layout">
             <div class="telemetry-cam-card">
                 <div style="display:flex; justify-content:space-between; align-items:center;">
-                    <span style="font-weight:800; font-size:14px; color:var(--game-blue);">📡 軌道全局追蹤視野 (HC010 Dynamic Distance Tracker)</span>
+                    <span style="font-weight:800; font-size:14px; color:var(--game-blue);">📡 軌道全局視野 (HC010 Distance Vision)</span>
                     <span id="track-status-tag" style="font-size:11px; background:#f1f5f9; border:1px solid var(--border-ui); color:var(--text-sub); padding:2px 8px; border-radius:10px;">未啟動鏡頭</span>
                 </div>
 
                 <div class="cam-feed-wrapper" id="cam-feed-container">
                     <canvas id="telemetry-canvas" width="640" height="480"></canvas>
                     <div class="cam-crosshair-hud">
-                        <span id="tracking-status-text" style="color:var(--game-amber); font-weight:bold;">🎯 請在畫面上按住滑鼠【拉框】框住機械人</span><br>
+                        <span id="tracking-status-text" style="color:var(--game-amber); font-weight:bold;">🎯 請在畫面上按住滑鼠【拉框】框住機械人椴木板</span><br>
                         結構匹配信心度：<span id="match-score-hud" style="color:#4ade80; font-weight:bold;">0%</span>
                     </div>
                 </div>
 
                 <div class="roi-preview-box">
                     <div style="display:flex; align-items:center; gap:10px;">
-                        <img id="roi-preview-img" class="roi-thumb-img" src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='52' height='52' viewBox='0 0 52 52'%3E%3Crect width='52' height='52' fill='%23f1f5f9'/%3E%3Ctext x='50%25' y='50%25' font-size='10' fill='%2394a3b8' text-anchor='middle' dy='.3em'%3E待框選%3C/text%3E%3C/svg%3E" alt="ROI Preview">
+                        <img id="roi-preview-img" class="roi-thumb-img" src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='48' height='48' viewBox='0 0 48 48'%3E%3Crect width='48' height='48' fill='%23f1f5f9'/%3E%3Ctext x='50%25' y='50%25' font-size='10' fill='%2394a3b8' text-anchor='middle' dy='.3em'%3E待框選%3C/text%3E%3C/svg%3E" alt="ROI">
                         <div style="font-size:11px; line-height:1.4;">
                             <span style="color:var(--text-main); font-weight:bold;" id="roi-info-title">尚未框選目標</span><br>
-                            <span style="color:var(--text-sub);" id="roi-info-detail">拖曳滑鼠框選椴木板開始測距</span>
+                            <span style="color:var(--text-sub);" id="roi-info-detail">拉框鎖定後可開啟停泊大挑戰</span>
                         </div>
                     </div>
                     <div style="display:flex; gap:6px;">
-                        <button class="step-btn" style="width:auto; padding:6px 10px; font-size:11px; background:#059669;" onclick="calibrate50cmFocalLength()">
-                            📏 校準為 50cm
-                        </button>
-                        <button class="step-btn" style="width:auto; padding:6px 10px; font-size:11px; background:#475569;" onclick="resetROISelection()">
-                            🎯 重新框選
-                        </button>
+                        <button class="step-btn" style="width:auto; padding:6px 10px; font-size:11px; background:#059669;" onclick="calibrate50cmFocalLength()">📏 校準 50cm</button>
+                        <button class="step-btn" style="width:auto; padding:6px 10px; font-size:11px; background:#475569;" onclick="resetROISelection()">🎯 重新框選</button>
                     </div>
                 </div>
 
-                <div class="slider-box">
-                    <div class="slider-row">
-                        <span>🎚️ 匹配靈敏度閾值 (Confidence Threshold): <b id="thresh-val-label" style="color:var(--game-blue);">40%</b></span>
-                        <span style="font-size:10px; color:#94a3b8;">(數值越小越靈敏)</span>
-                    </div>
-                    <input type="range" id="confidence-slider" min="20" max="75" value="40" oninput="updateConfidenceThreshold(this.value)">
-                </div>
-
-                <div class="telemetry-ctrl-strip">
-                    <button class="step-btn" id="btn-telemetry-cam" onclick="toggleTelemetryCamera()">
-                        📷 開啟/重啟鏡頭
-                    </button>
-                    <button class="step-btn" style="background:#64748b;" onclick="clearROITracker()">
-                        🗑️ 清除目標鎖定
-                    </button>
+                <div style="display:grid; grid-template-columns: 1fr 1fr; gap:8px;">
+                    <button class="step-btn" id="btn-telemetry-cam" onclick="toggleTelemetryCamera()">📷 開啟/重啟鏡頭</button>
+                    <button class="step-btn" style="background:#64748b;" onclick="clearROITracker()">🗑️ 清除目標鎖定</button>
                 </div>
             </div>
 
             <div class="telemetry-data-card">
+                <!-- 昂坪 360 精準月台停泊大挑戰面板 -->
+                <div class="docking-panel">
+                    <div style="display:flex; justify-content:space-between; align-items:center;">
+                        <span style="font-weight:900; color:#1e40af; font-size:14px;">🚡「昂坪 360」月台停泊賽</span>
+                        <span id="docking-round-badge" style="font-size:11px; background:#bfdbfe; color:#1e3a8a; padding:2px 8px; border-radius:10px; font-weight:bold;">第 1 站</span>
+                    </div>
+                    
+                    <div class="docking-status-bar">
+                        <span>目標月台距離：<b id="target-dock-dist" style="color:var(--game-pink); font-size:15px;">50.0 cm</b></span>
+                        <span id="dock-status-text" style="color:#64748b;">待命駛入</span>
+                    </div>
+
+                    <div class="docking-timer-track">
+                        <div class="docking-timer-fill" id="dock-timer-bar"></div>
+                    </div>
+
+                    <!-- 雙向控制鍵盤與按鈕 (連接 Serial 即可控制) -->
+                    <div style="font-size:11px; color:var(--text-sub); margin-top:2px;">🎮 雙向微調操控 (或按鍵盤 ↑ / ↓ 鍵)：</div>
+                    <div class="control-jog-grid">
+                        <button class="jog-btn" onclick="sendRobotCommand('1')">▲ 前進 (Forward)</button>
+                        <button class="jog-btn" style="background:#dc2626;" onclick="sendRobotCommand('0')">⏹ 煞停 (Stop)</button>
+                        <button class="jog-btn" onclick="sendRobotCommand('2')">▼ 倒退 (Back)</button>
+                    </div>
+                    <button class="step-btn" style="background:#2563eb; font-size:12px; padding:8px;" onclick="generateNewDockingTarget()">🎲 隨機更換新月台距離</button>
+                </div>
+
                 <div class="metric-tile">
                     <div class="metric-title">
-                        <span>⚡ 機械人實時速度 (SPEED: v)</span>
+                        <span>📏 實時距離 (Distance to Camera)</span>
+                        <span style="font-size:10px; color:var(--game-blue);" id="focal-status-label">焦距: 350px</span>
+                    </div>
+                    <div class="metric-val val-dist">
+                        <span id="telemetry-dist-val">--</span><span class="metric-unit">cm</span>
+                    </div>
+                </div>
+
+                <div class="metric-tile">
+                    <div class="metric-title">
+                        <span>⚡ 爬行速度 (Speed)</span>
                         <span id="speed-trend-label" style="color:#059669;">0.0 cm/s</span>
                     </div>
                     <div class="metric-val val-speed">
                         <span id="telemetry-speed-val">0.0</span><span class="metric-unit">cm/s</span>
                     </div>
-                    <canvas id="speed-chart-canvas" width="300" height="90"></canvas>
-                </div>
-
-                <div class="metric-tile">
-                    <div class="metric-title">
-                        <span>📏 鏡頭與機械人直線距離 (DISTANCE TO CAMERA)</span>
-                        <span style="font-size:10px; color:var(--game-blue);" id="focal-status-label">焦距: 350px (HC010 85°廣角預設)</span>
-                    </div>
-                    <div class="metric-val val-dist">
-                        <span id="telemetry-dist-val">--</span><span class="metric-unit">cm</span>
-                    </div>
-                    <div style="font-size:11px; color:var(--text-sub); margin-top:2px;">
-                        實時成像寬度：<span id="marker-px-width" style="color:var(--text-main); font-weight:bold;">0</span> px
-                    </div>
-                </div>
-
-                <div class="stall-badge" id="stall-warning-box">
-                    ⚠️ 偵測到機械堵轉或停滯！(速度接近 0 cm/s 超過 1.5 秒)
-                </div>
-
-                <div style="background:#ffffff; border:1px solid var(--border-ui); border-radius:10px; padding:10px 14px; font-size:11px; color:var(--text-sub); line-height:1.5;">
-                    💡 <b style="color:#059669;">HC010 測距原理解析：</b><br>
-                    • <b>無紅外/超聲波：</b> HC010 是純 2D 光學鏡頭，距離純粹由畫面像素反比推算[cite: 1]！<br>
-                    • <b>動態連續更新：</b> 機械人爬遠變細，分母 $w(t)$ 變小，距離即時變大[cite: 1]；爬近變大，距離即時變小[cite: 1]！<br>
-                    • <b>10 秒精確校準：</b> 將機身放距鏡頭 50cm，拉框後按「校準為 50cm」，誤差立刻壓到 2cm 內！
                 </div>
             </div>
         </div>
@@ -860,40 +982,77 @@
 
 </div>
 
+<!-- =========================================================================
+     互動式蘇格拉底反思 Chatbot (無需 API，100% 穩定，記錄到 Drive)
+     ========================================================================= -->
+<button class="chatbot-bubble-btn" onclick="toggleChatWindow()">
+    💬 <span>學習反思小助手</span>
+</button>
+
+<div class="chatbot-window" id="chat-window">
+    <div class="chat-header">
+        <span>🤖 AI 學習小導師</span>
+        <button onclick="toggleChatWindow()" style="background:transparent; border:none; color:#fff; font-size:16px; cursor:pointer;">✕</button>
+    </div>
+    <div class="chat-body" id="chat-body">
+        <div class="chat-msg bot">
+            <div class="bubble">
+                哈囉！我係你嘅學習小導師 🤖。辛苦晒你組裝同測試爬繩機械人！<br><br>
+                <b>請問你頭先喺操作或除錯嗰陣，有冇遇到咩特別嘅困難？</b>
+            </div>
+            <div class="chip-group">
+                <span class="quick-chip" onclick="handleChipClick('手勢成日認錯，受背景干擾')">手勢成日認錯</span>
+                <span class="quick-chip" onclick="handleChipClick('機械人爬唔起，繩索太滑')">繩索太滑</span>
+                <span class="quick-chip" onclick="handleChipClick('micro:bit 訊號有時收唔到')">無線訊號受阻</span>
+                <span class="quick-chip" onclick="handleChipClick('好順利，冇遇到大困難！')">好順利冇問題！</span>
+            </div>
+        </div>
+    </div>
+    <div class="chat-footer">
+        <input type="text" class="chat-input" id="chat-input" placeholder="輸入你想講嘅嘢..." onkeydown="if(event.key==='Enter') sendChatMessage()">
+        <button class="chat-send-btn" onclick="sendChatMessage()">送出</button>
+    </div>
+</div>
+
 <script>
     // =========================================================================
-    // XAI 密碼驗證邏輯 (預設黑盒，輸入 "xai" 才能進入實驗組)
+    // 全域變數與 Google Drive Apps Script 端點
     // =========================================================================
-    let prevConditionVal = "No_XAI_Blackbox";
+    const DRIVE_FOLDER_ID = "18VTaAPt86z7u4BCevGm96ZDF6uRdoODu";
+    const GAS_ENDPOINT = "YOUR_GOOGLE_APPS_SCRIPT_WEB_APP_URL_HERE"; // 貼上你的 Apps Script 網址
+    
+    let sharedMicrobitId = "";
+    let eventLogs = [];
+    let chatReflectionData = {
+        difficulty: "",
+        favorite: "",
+        comments: ""
+    };
+    let chatStep = 0; // 0: Difficulty, 1: Favorite, 2: Comments, 3: Completed
 
-    function storePrevCondition(val) {
-        prevConditionVal = val;
-    }
-
-    function handleConditionChange(selectEl) {
-        if (selectEl.value === "XAI_GradCAM") {
-            const pwd = prompt("請輸入 XAI 實驗組權限密碼：");
-            if (pwd === "xai") {
-                alert("✔ 密碼正確！已成功切換至【GTM 實驗組 (Grad-CAM 熱力圖)】");
-                prevConditionVal = "XAI_GradCAM";
-                document.getElementById("gradcam-legend-ui").style.display = "flex";
-            } else {
-                alert("❌ 密碼錯誤，已鎖定於【GTM 對照組 (黑盒無解釋)】");
-                selectEl.value = prevConditionVal;
-                document.getElementById("gradcam-legend-ui").style.display = "none";
-            }
-        } else {
-            prevConditionVal = selectEl.value;
-            document.getElementById("gradcam-legend-ui").style.display = "none";
-        }
+    function syncMicrobitId(val) {
+        sharedMicrobitId = String(val).trim();
+        document.getElementById("mb-input-1").value = sharedMicrobitId;
+        document.getElementById("mb-input-2").value = sharedMicrobitId;
+        document.getElementById("shared-mb-id-display").innerText = sharedMicrobitId ? ("No. " + sharedMicrobitId) : "未填寫";
+        checkCanUnlockStep3();
+        checkCanUnlockMPStep3();
     }
 
     // =========================================================================
-    // 全域模式切換 (三模式架構)
+    // 全域模式切換 (模式二 Mediapipe 密碼保護)
     // =========================================================================
     let currentSystemMode = 1;
 
     function switchSystemMode(modeNum) {
+        if (modeNum === 2) {
+            const pwd = prompt("請輸入模式二權限密碼：");
+            if (pwd !== "mediapipe") {
+                alert("❌ 密碼錯誤！無法進入模式二。");
+                return;
+            }
+        }
+
         currentSystemMode = modeNum;
         document.getElementById("tab-mode-1").classList.toggle("active", modeNum === 1);
         document.getElementById("tab-mode-2").classList.toggle("active", modeNum === 2);
@@ -911,7 +1070,30 @@
     }
 
     // =========================================================================
-    // 全域 WebSerial 與 Web Audio (三模式共用)
+    // XAI 密碼驗證
+    // =========================================================================
+    let prevConditionVal = "No_XAI_Blackbox";
+    function storePrevCondition(val) { prevConditionVal = val; }
+    function handleConditionChange(selectEl) {
+        if (selectEl.value === "XAI_GradCAM") {
+            const pwd = prompt("請輸入 XAI 實驗組權限密碼：");
+            if (pwd === "xai") {
+                alert("✔ 密碼正確！已切換至【GTM 實驗組 (Grad-CAM 熱力圖)】");
+                prevConditionVal = "XAI_GradCAM";
+                document.getElementById("gradcam-legend-ui").style.display = "flex";
+            } else {
+                alert("❌ 密碼錯誤，已鎖定於【對照組】");
+                selectEl.value = prevConditionVal;
+                document.getElementById("gradcam-legend-ui").style.display = "none";
+            }
+        } else {
+            prevConditionVal = selectEl.value;
+            document.getElementById("gradcam-legend-ui").style.display = "none";
+        }
+    }
+
+    // =========================================================================
+    // WebSerial 發送雙向運動指令 ("1": 前進, "2": 倒退, "0": 煞停)
     // =========================================================================
     let serialPort, serialWriter;
     let step1Ready = false;
@@ -926,14 +1108,14 @@
 
             step1Ready = true;
 
-            // 同步更新模式一 UI
+            // 更新模式一 UI
             document.getElementById("card-step1").classList.add("done");
             document.getElementById("tag-step1").innerText = "已連線 🟢";
             document.getElementById("btn-step1").innerText = "✔ 連線成功";
             document.getElementById("btn-step1").classList.add("ready-btn");
             checkCanUnlockStep3();
 
-            // 同步更新模式二 UI
+            // 更新模式二 UI
             document.getElementById("card-mp-step1").classList.add("done");
             document.getElementById("tag-mp-serial").innerText = "已連線 🟢";
             document.getElementById("btn-mp-serial").innerText = "✔ 連線成功";
@@ -944,67 +1126,62 @@
         }
     }
 
-    let audioCtx = null;
-    function playSfx(type) {
-        try {
-            if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-            const osc = audioCtx.createOscillator();
-            const gain = audioCtx.createGain();
-            osc.connect(gain);
-            gain.connect(audioCtx.destination);
-            const now = audioCtx.currentTime;
-
-            if (type === "hit") {
-                osc.type = "sine";
-                osc.frequency.setValueAtTime(587, now);
-                osc.frequency.exponentialRampToValueAtTime(880, now + 0.1);
-                gain.gain.setValueAtTime(0.3, now);
-                gain.gain.exponentialRampToValueAtTime(0.001, now + 0.25);
-                osc.start(now); osc.stop(now + 0.25);
-            } else if (type === "combo") {
-                osc.type = "triangle";
-                osc.frequency.setValueAtTime(523, now);
-                osc.frequency.setValueAtTime(659, now + 0.08);
-                osc.frequency.setValueAtTime(784, now + 0.16);
-                gain.gain.setValueAtTime(0.35, now);
-                gain.gain.exponentialRampToValueAtTime(0.001, now + 0.35);
-                osc.start(now); osc.stop(now + 0.35);
-            } else if (type === "miss") {
-                osc.type = "sawtooth";
-                osc.frequency.setValueAtTime(160, now);
-                osc.frequency.linearRampToValueAtTime(90, now + 0.2);
-                gain.gain.setValueAtTime(0.2, now);
-                gain.gain.exponentialRampToValueAtTime(0.001, now + 0.25);
-                osc.start(now); osc.stop(now + 0.25);
+    async function sendRobotCommand(cmdStr) {
+        if (serialWriter) {
+            try {
+                await serialWriter.write(cmdStr + "\n");
+            } catch(e) {
+                console.error("Serial 發送失敗", e);
             }
-        } catch(e) {}
+        }
     }
 
-    const DRIVE_FOLDER_ID = "18VTaAPt86z7u4BCevGm96ZDF6uRdoODu";
-    const GAS_ENDPOINT = "YOUR_GOOGLE_APPS_SCRIPT_WEB_APP_URL_HERE";
-    let eventLogs = [];
+    // 支援鍵盤方向鍵微調雙向爬行 (模式三專用快捷鍵)
+    window.addEventListener("keydown", (e) => {
+        if (currentSystemMode === 3) {
+            if (e.key === "ArrowUp") sendRobotCommand("1");
+            else if (e.key === "ArrowDown") sendRobotCommand("2");
+            else if (e.key === " " || e.key === "Escape") sendRobotCommand("0");
+        }
+    });
 
-    async function uploadDataToDrive() {
+    // =========================================================================
+    // 數據上傳至 Google Drive (含 Chatbot 反思語料)
+    // =========================================================================
+    async function triggerFullSyncToDrive() {
+        if (!sharedMicrobitId) {
+            alert("⚠️ 請先在步驟 1 填寫 micro:bit 編號！");
+            return;
+        }
         if (!GAS_ENDPOINT || GAS_ENDPOINT.includes("YOUR_GOOGLE_APPS_SCRIPT")) {
-            alert("請先填寫 Google Apps Script 網址！"); return;
+            alert("請先填寫 Google Apps Script 網址！");
+            return;
         }
         const payload = {
             folderId: DRIVE_FOLDER_ID,
-            groupId: document.getElementById("groupId").value || "G_Unknown",
-            studentId: document.getElementById("studentId").value || "S_Unknown",
+            microbitId: sharedMicrobitId,
             condition: document.getElementById("conditionType").value,
-            score: currentSystemMode === 2 ? mpScore : score,
-            totalSamples: dataset.length,
+            mode1Score: score,
+            mode2Score: mpScore,
+            dockingTarget: targetDockDistance,
+            reflections: chatReflectionData,
             logs: eventLogs
         };
         try {
-            await fetch(GAS_ENDPOINT, { method: "POST", mode: "no-cors", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) });
-            alert("比賽日誌已成功儲存至 Google Drive！");
-        } catch (err) { alert("上傳失敗: " + err.message); }
+            await fetch(GAS_ENDPOINT, {
+                method: "POST",
+                mode: "no-cors",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(payload)
+            });
+            alert("✔ 所有比賽成績及同儕反思已成功上傳 Google Drive！");
+        } catch (err) {
+            alert("上傳失敗: " + err.message);
+        }
     }
 
     // =========================================================================
-    // 【模式一：GTM 駕駛艙 (Teachable Machine + Grad-CAM)】邏輯
+    // 模式一：Teachable Machine + Grad-CAM 邏輯
     // =========================================================================
     const GESTURES = {
         "Class 1": { name: "石頭", symbol: "✊", num: "No. 1" },
@@ -1014,7 +1191,6 @@
         "Class 5": { name: "待機", symbol: "🫱", num: "No. 5" }
     };
     const ACTIVE_TARGETS = ["Class 1", "Class 2", "Class 3", "Class 4"];
-
     let step2Ready = false;
     let model, webcam, maxPredictions;
     let convSubModel = null, headLayers = [];
@@ -1135,7 +1311,7 @@
     }
 
     function checkCanUnlockStep3() {
-        if (step1Ready && step2Ready) {
+        if (step1Ready && step2Ready && sharedMicrobitId) {
             document.getElementById("card-step3").classList.add("done");
             document.getElementById("tag-step3").innerText = "準備就緒 ✨";
             document.getElementById("desc-step3").innerText = "一切就緒！點擊下方按鈕出發";
@@ -1261,17 +1437,15 @@
     async function handleSuccess(matchedCls, prob) {
         isLocked = true;
         clearInterval(timerLoop);
-        const duration = Math.round(performance.now() - roundStart);
         score++; combo++;
         if (combo >= 3) {
-            playSfx("combo"); popSplash("🔥 " + combo + "x COMBO!", "var(--game-amber)");
             if (typeof confetti === "function") confetti({ particleCount: 25, spread: 60, origin: { y: 0.6 } });
+            popSplash("🔥 " + combo + "x COMBO!", "var(--game-amber)");
         } else {
-            playSfx("hit"); popSplash("PERFECT! ⚡", "var(--game-green)");
+            popSplash("PERFECT! ⚡", "var(--game-green)");
         }
         updateHUD();
-        eventLogs.push({ timestamp: new Date().toISOString(), target: actionQueue[0], matched: matchedCls, durationMs: duration, status: "HIT" });
-        if (serialWriter) { try { await serialWriter.write("1\n"); } catch(e) {} }
+        sendRobotCommand("1"); // 發送前進推進信號
         actionQueue.shift();
         actionQueue.push(ACTIVE_TARGETS[Math.floor(Math.random() * ACTIVE_TARGETS.length)]);
         renderQueue();
@@ -1279,9 +1453,8 @@
     }
 
     function handleTimeout() {
-        combo = 0; playSfx("miss"); popSplash("MISS! ✖", "var(--game-pink)");
+        combo = 0; popSplash("MISS! ✖", "var(--game-pink)");
         updateHUD();
-        eventLogs.push({ timestamp: new Date().toISOString(), target: actionQueue[0], matched: "NONE", durationMs: TIME_LIMIT_MS, status: "TIMEOUT" });
         actionQueue.shift();
         actionQueue.push(ACTIVE_TARGETS[Math.floor(Math.random() * ACTIVE_TARGETS.length)]);
         renderQueue();
@@ -1296,28 +1469,22 @@
 
     function updateHUD() {
         document.getElementById("score-counter").innerText = score;
-        const comboEl = document.getElementById("combo-display");
-        comboEl.innerText = combo + "x COMBO"; comboEl.classList.add("pop");
-        setTimeout(() => comboEl.classList.remove("pop"), 120);
+        document.getElementById("combo-display").innerText = combo + "x COMBO";
         document.getElementById("robot-indicator").style.bottom = Math.min(92, (score / 15) * 92) + "%";
     }
 
     // =========================================================================
-    // 【模式二：MediaPipe 採樣訓練艙 (21個關節點 / 63維骨骼特徵 + KNN)】邏輯
+    // 模式二：MediaPipe 訓練艙邏輯
     // =========================================================================
     let handsMP = null, cameraMP = null;
     let videoElementMP, canvasElementMP, canvasCtxMP;
     let currentLandmarks = null;
-    let dataset = []; // 學生現場錄製的 63 維特徵樣本庫 { label: "Class 1", vector: [...] }
-    let isSampling = false;
-    let samplingTarget = null;
-    let sampleInterval = null;
+    let dataset = [];
+    let isSampling = false, samplingTarget = null, sampleInterval = null;
     let step2MPReady = false;
-
     let isMPRunning = false, isMPLocked = false;
     let mpScore = 0, mpCombo = 0, mpRoundStart = 0;
-    let mpActionQueue = [];
-    let mpTimerLoop = null;
+    let mpActionQueue = [], mpTimerLoop = null;
 
     async function initMediaPipe() {
         const btn = document.getElementById("btn-mp-start");
@@ -1343,12 +1510,9 @@
 
         cameraMP = new Camera(videoElementMP, {
             onFrame: async () => {
-                if (currentSystemMode === 2) {
-                    await handsMP.send({ image: videoElementMP });
-                }
+                if (currentSystemMode === 2) await handsMP.send({ image: videoElementMP });
             },
-            width: 320,
-            height: 240
+            width: 320, height: 240
         });
         await cameraMP.start();
 
@@ -1364,7 +1528,7 @@
         });
 
         document.getElementById("tag-mp-engine").innerText = "21點鏡頭就緒 🟡";
-        btn.innerText = "請在上方按住按鈕錄製手勢";
+        btn.innerText = "按住上方按鈕錄製手勢";
         btn.classList.add("ready-btn");
         btn.disabled = false;
     }
@@ -1380,35 +1544,26 @@
         if (results.multiHandLandmarks && results.multiHandLandmarks.length > 0) {
             currentLandmarks = results.multiHandLandmarks[0];
             drawSkeletonMP(currentLandmarks);
-
-            if (dataset.length > 0) {
-                classifyCurrentPose();
-            }
+            if (dataset.length > 0) classifyCurrentPose();
         } else {
             currentLandmarks = null;
         }
         canvasCtxMP.restore();
     }
 
-    // 繪製 21 個骨骼關節節點與連接骨架
     function drawSkeletonMP(landmarks) {
         const CONNECTIONS = [
-            [0,1],[1,2],[2,3],[3,4],
-            [0,5],[5,6],[6,7],[7,8],
-            [5,9],[9,10],[10,11],[11,12],
-            [9,13],[13,14],[14,15],[15,16],
+            [0,1],[1,2],[2,3],[3,4],[0,5],[5,6],[6,7],[7,8],
+            [5,9],[9,10],[10,11],[11,12],[9,13],[13,14],[14,15],[15,16],
             [13,17],[17,18],[18,19],[19,20],[0,17]
         ];
-
-        canvasCtxMP.strokeStyle = "#0284c7";
-        canvasCtxMP.lineWidth = 3;
+        canvasCtxMP.strokeStyle = "#0284c7"; canvasCtxMP.lineWidth = 3;
         CONNECTIONS.forEach(([i, j]) => {
             canvasCtxMP.beginPath();
             canvasCtxMP.moveTo(landmarks[i].x * canvasElementMP.width, landmarks[i].y * canvasElementMP.height);
             canvasCtxMP.lineTo(landmarks[j].x * canvasElementMP.width, landmarks[j].y * canvasElementMP.height);
             canvasCtxMP.stroke();
         });
-
         canvasCtxMP.fillStyle = "#ec4899";
         landmarks.forEach(pt => {
             canvasCtxMP.beginPath();
@@ -1417,11 +1572,9 @@
         });
     }
 
-    // 提取 21 個節點的 63 維歸一化空間特徵向量 (21 points * (x, y, z) = 63 dims)
     function extractNormalizedFeatures(landmarks) {
         const base = landmarks[0];
         const scale = Math.hypot(landmarks[9].x - base.x, landmarks[9].y - base.y) || 1.0;
-        
         const featureVector = [];
         for (let i = 0; i < 21; i++) {
             featureVector.push((landmarks[i].x - base.x) / scale);
@@ -1436,10 +1589,8 @@
             alert("鏡頭前未偵測到 21 點骨骼手掌，請將手伸入畫面！");
             return;
         }
-        isSampling = true;
-        samplingTarget = label;
+        isSampling = true; samplingTarget = label;
         document.getElementById("btn-sample-" + label).classList.add("recording");
-
         sampleInterval = setInterval(() => {
             if (isSampling && currentLandmarks) {
                 const vector = extractNormalizedFeatures(currentLandmarks);
@@ -1451,8 +1602,7 @@
     }
 
     function stopSampling() {
-        isSampling = false;
-        clearInterval(sampleInterval);
+        isSampling = false; clearInterval(sampleInterval);
         if (samplingTarget) {
             document.getElementById("btn-sample-" + samplingTarget).classList.remove("recording");
             samplingTarget = null;
@@ -1470,26 +1620,23 @@
         step2MPReady = false;
         document.getElementById("card-mp-step2").classList.remove("done");
         document.getElementById("tag-mp-engine").innerText = "已重置 ⚪";
-        document.getElementById("btn-mp-start").innerText = "請重新錄製 5 款手勢 (21 點)";
         checkCanUnlockMPStep3();
     }
 
     function checkModelReadiness() {
         const counts = Object.keys(GESTURES).map(k => dataset.filter(d => d.label === k).length);
-        const allReady = counts.every(c => c >= 8); // 每款手勢需錄製 >= 8 幀
-
+        const allReady = counts.every(c => c >= 8);
         if (allReady && !step2MPReady) {
             step2MPReady = true;
             document.getElementById("card-mp-step2").classList.add("done");
             document.getElementById("tag-mp-engine").innerText = "訓練完成 🟢";
-            document.getElementById("btn-mp-start").innerText = "✔ 5 款手勢模型就緒";
+            document.getElementById("btn-mp-start").innerText = "✔ 手勢模型就緒";
             checkCanUnlockMPStep3();
         }
     }
 
     function classifyCurrentPose() {
         const currentVec = extractNormalizedFeatures(currentLandmarks);
-
         const distances = dataset.map(sample => {
             let distSq = 0;
             for (let i = 0; i < currentVec.length; i++) {
@@ -1507,8 +1654,7 @@
         Object.keys(GESTURES).forEach(k => scores[k] = 0);
         topK.forEach(item => scores[item.label]++);
 
-        let topCls = "Class 5";
-        let maxVotes = 0;
+        let topCls = "Class 5"; let maxVotes = 0;
         Object.keys(scores).forEach(cls => {
             const prob = scores[cls] / k;
             const row = document.getElementById("meter-row-mp-" + cls.replace(" ", "-"));
@@ -1518,32 +1664,20 @@
                 if (prob > 0.6) row.classList.add("matched");
                 else row.classList.remove("matched");
             }
-
-            if (scores[cls] > maxVotes) {
-                maxVotes = scores[cls];
-                topCls = cls;
-            }
+            if (scores[cls] > maxVotes) { maxVotes = scores[cls]; topCls = cls; }
         });
 
         if (isMPRunning && !isMPLocked && mpActionQueue.length > 0) {
             const currentTarget = mpActionQueue[0];
             const topProb = maxVotes / k;
-            if (topCls === currentTarget && topProb >= 0.6) {
-                handleMPSuccess(topCls, topProb);
-            }
+            if (topCls === currentTarget && topProb >= 0.6) handleMPSuccess(topCls, topProb);
         }
     }
 
-    function getRandomGesture() {
-        return ACTIVE_TARGETS[Math.floor(Math.random() * ACTIVE_TARGETS.length)];
-    }
-
     function checkCanUnlockMPStep3() {
-        if (step1Ready && step2MPReady) {
+        if (step1Ready && step2MPReady && sharedMicrobitId) {
             document.getElementById("card-mp-step3").classList.add("done");
             document.getElementById("tag-mp-launch").innerText = "準備就緒 ✨";
-            document.getElementById("desc-mp-step3").innerText = "一切就緒！點擊下方按鈕出發";
-
             const launchBtn = document.getElementById("btn-launch-mp");
             launchBtn.disabled = false;
             launchBtn.innerText = "🚀 開始骨骼競技！";
@@ -1552,22 +1686,13 @@
     }
 
     function startMPGame() {
-        isMPRunning = true;
-        isMPLocked = false;
-        mpScore = 0;
-        mpCombo = 0;
-        eventLogs = [];
+        isMPRunning = true; isMPLocked = false; mpScore = 0; mpCombo = 0;
         updateMPHUD();
-
         const launchBtn = document.getElementById("btn-launch-mp");
         launchBtn.innerText = "🎮 骨骼競技進行中...";
-        launchBtn.classList.remove("unlocked");
         launchBtn.disabled = true;
-
         mpActionQueue = [];
-        for (let i = 0; i < QUEUE_LENGTH; i++) {
-            mpActionQueue.push(getRandomGesture());
-        }
+        for (let i = 0; i < QUEUE_LENGTH; i++) mpActionQueue.push(ACTIVE_TARGETS[Math.floor(Math.random() * ACTIVE_TARGETS.length)]);
         renderMPQueue();
         startMPTimer();
     }
@@ -1579,11 +1704,7 @@
             const g = GESTURES[clsKey];
             const card = document.createElement("div");
             card.className = "action-card " + (index === 0 ? "active-target" : "upcoming");
-            card.innerHTML = `
-                <div class="symbol">${g.symbol}</div>
-                <div class="c-name">${g.name}</div>
-                <div class="sub-num">${g.num}</div>
-            `;
+            card.innerHTML = `<div class="symbol">${g.symbol}</div><div class="c-name">${g.name}</div><div class="sub-num">${g.num}</div>`;
             ribbon.appendChild(card);
         });
     }
@@ -1592,103 +1713,56 @@
         clearInterval(mpTimerLoop);
         mpRoundStart = performance.now();
         const bar = document.getElementById("timer-bar-mp");
-
         mpTimerLoop = setInterval(() => {
             const elapsed = performance.now() - mpRoundStart;
             const remaining = Math.max(0, TIME_LIMIT_MS - elapsed);
             const pct = (remaining / TIME_LIMIT_MS) * 100;
-
             bar.style.width = pct + "%";
-            if (pct > 40) bar.style.background = "var(--game-blue)";
-            else bar.style.background = "var(--game-pink)";
-
-            if (remaining <= 0) {
-                clearInterval(mpTimerLoop);
-                handleMPTimeout();
-            }
+            bar.style.background = pct > 40 ? "var(--game-blue)" : "var(--game-pink)";
+            if (remaining <= 0) { clearInterval(mpTimerLoop); handleMPTimeout(); }
         }, 30);
     }
 
     async function handleMPSuccess(matchedCls, prob) {
-        isMPLocked = true;
-        clearInterval(mpTimerLoop);
-
-        const duration = Math.round(performance.now() - mpRoundStart);
-        mpScore++;
-        mpCombo++;
-
+        isMPLocked = true; clearInterval(mpTimerLoop);
+        mpScore++; mpCombo++;
         if (mpCombo >= 3) {
-            playSfx("combo");
-            popMPSplash("🔥 " + mpCombo + "x COMBO!", "var(--game-amber)");
             if (typeof confetti === "function") confetti({ particleCount: 25, spread: 60, origin: { y: 0.6 } });
+            popMPSplash("🔥 " + mpCombo + "x COMBO!", "var(--game-amber)");
         } else {
-            playSfx("hit");
             popMPSplash("PERFECT! ⚡", "var(--game-green)");
         }
-
         updateMPHUD();
-
-        eventLogs.push({
-            timestamp: new Date().toISOString(),
-            target: mpActionQueue[0],
-            matched: matchedCls,
-            durationMs: duration,
-            status: "HIT"
-        });
-
-        if (serialWriter) {
-            try { await serialWriter.write("1\n"); } catch(e) {}
-        }
-
+        sendRobotCommand("1");
         mpActionQueue.shift();
-        mpActionQueue.push(getRandomGesture());
+        mpActionQueue.push(ACTIVE_TARGETS[Math.floor(Math.random() * ACTIVE_TARGETS.length)]);
         renderMPQueue();
-
-        setTimeout(() => {
-            isMPLocked = false;
-            if (isMPRunning) startMPTimer();
-        }, 800);
+        setTimeout(() => { isMPLocked = false; if (isMPRunning) startMPTimer(); }, 800);
     }
 
     function handleMPTimeout() {
-        mpCombo = 0;
-        playSfx("miss");
-        popMPSplash("MISS! ✖", "var(--game-pink)");
+        mpCombo = 0; popMPSplash("MISS! ✖", "var(--game-pink)");
         updateMPHUD();
-
-        eventLogs.push({
-            timestamp: new Date().toISOString(),
-            target: mpActionQueue[0],
-            matched: "NONE",
-            durationMs: TIME_LIMIT_MS,
-            status: "TIMEOUT"
-        });
-
         mpActionQueue.shift();
-        mpActionQueue.push(getRandomGesture());
+        mpActionQueue.push(ACTIVE_TARGETS[Math.floor(Math.random() * ACTIVE_TARGETS.length)]);
         renderMPQueue();
         if (isMPRunning) startMPTimer();
     }
 
     function popMPSplash(text, color) {
         const el = document.getElementById("splash-text-mp");
-        el.innerText = text;
-        el.style.color = color;
-        el.classList.add("show");
+        el.innerText = text; el.style.color = color; el.classList.add("show");
         setTimeout(() => el.classList.remove("show"), 450);
     }
 
     function updateMPHUD() {
         document.getElementById("score-counter-mp").innerText = mpScore;
-        const comboEl = document.getElementById("combo-display-mp");
-        comboEl.innerText = mpCombo + "x COMBO";
-        comboEl.classList.add("pop");
-        setTimeout(() => comboEl.classList.remove("pop"), 120);
+        document.getElementById("combo-display-mp").innerText = mpCombo + "x COMBO";
         document.getElementById("robot-indicator-mp").style.bottom = Math.min(92, (mpScore / 15) * 92) + "%";
     }
 
     // =========================================================================
-    // 【模式三：地面遙測站】HC010 專用動態實時測距 + 速度解算
+    // 模式三：HC010 視覺遙測與「昂坪 360」精準停泊大挑戰
     // =========================================================================
     let telemetryVideo = null;
     let telemetryCanvas = document.getElementById("telemetry-canvas");
@@ -1699,19 +1773,29 @@
     let cameraFocalLengthPx = 350.0;
 
     let isDrawingBox = false;
-    let dragStartX = 0, dragStartY = 0;
-    let dragCurrX = 0, dragCurrY = 0;
-
+    let dragStartX = 0, dragStartY = 0, dragCurrX = 0, dragCurrY = 0;
     let roiTemplate = null; 
     const T_STD_SIZE = 36;
     let matchThreshold = 0.40;
-
-    let targetBox = null;
-    let prevPosition = null;
+    let targetBox = null, prevPosition = null;
     let currentSpeed = 0.0;
-    let speedHistory = [];
-    const MAX_HISTORY = 40;
-    let zeroSpeedDuration = 0;
+
+    // 停泊遊戲狀態變數
+    let targetDockDistance = 50.0; // 目標距離 cm
+    let dockingTolerance = 3.5;    // 容許誤差範圍 ±3.5cm
+    let dockingHoldTimer = 0;
+    const DOCK_HOLD_GOAL = 3000;   // 需連續停泊 3 秒
+    let isDockingWon = false;
+
+    function generateNewDockingTarget() {
+        targetDockDistance = (Math.random() * 35 + 35).toFixed(1); // 35cm 至 70cm 隨機
+        document.getElementById("target-dock-dist").innerText = targetDockDistance + " cm";
+        dockingHoldTimer = 0;
+        isDockingWon = false;
+        document.getElementById("dock-status-text").innerText = "駛入新月台中...";
+        document.getElementById("dock-status-text").style.color = "#64748b";
+        document.getElementById("dock-timer-bar").style.width = "0%";
+    }
 
     async function initTelemetryCamera() {
         try {
@@ -1720,18 +1804,13 @@
                 telemetryVideo.autoplay = true;
                 telemetryVideo.playsInline = true;
             }
-            const stream = await navigator.mediaDevices.getUserMedia({
-                video: { width: 640, height: 480 }
-            });
+            const stream = await navigator.mediaDevices.getUserMedia({ video: { width: 640, height: 480 } });
             telemetryVideo.srcObject = stream;
             await new Promise(resolve => telemetryVideo.onloadedmetadata = resolve);
 
             isTelemetryRunning = true;
             document.getElementById("track-status-tag").innerText = "HC010 就緒 🟢";
-            document.getElementById("track-status-tag").style.borderColor = "var(--game-green)";
-            document.getElementById("track-status-tag").style.color = "#15803d";
             document.getElementById("btn-telemetry-cam").innerText = "⏹ 停止鏡頭";
-
             requestAnimationFrame(telemetryProcessLoop);
         } catch (err) { alert("鏡頭啟動失敗: " + err.message); }
     }
@@ -1750,20 +1829,13 @@
         }
     }
 
-    function updateConfidenceThreshold(val) {
-        matchThreshold = parseInt(val, 10) / 100.0;
-        document.getElementById("thresh-val-label").innerText = val + "%";
-    }
-
     function calibrate50cmFocalLength() {
         if (!targetBox || targetBox.w < 20) {
-            alert("⚠️ 請先在畫面上用滑鼠拉框框住機械人！\n請用尺將機械人放在鏡頭前方剛好 50cm 處。");
-            return;
+            alert("⚠️ 請先在畫面上用滑鼠拉框框住機械人！"); return;
         }
         cameraFocalLengthPx = (targetBox.w * 50.0) / ROBOT_REAL_WIDTH_CM;
-        document.getElementById("focal-status-label").innerText = `校準焦距: ${cameraFocalLengthPx.toFixed(0)}px (精確 50cm 基準)`;
-        document.getElementById("focal-status-label").style.color = "#059669";
-        alert(`✔ 校準成功！\n檢測到 50cm 處寬度為 ${targetBox.w.toFixed(0)}px\nHC010 焦距已鎖定為 ${cameraFocalLengthPx.toFixed(1)}px！`);
+        document.getElementById("focal-status-label").innerText = `校準焦距: ${cameraFocalLengthPx.toFixed(0)}px`;
+        alert(`✔ 校準成功！HC010 焦距鎖定為 ${cameraFocalLengthPx.toFixed(1)}px`);
     }
 
     function getCanvasCoords(e) {
@@ -1781,38 +1853,17 @@
     telemetryCanvas.addEventListener("mousedown", (e) => {
         if (!telemetryVideo) return;
         const p = getCanvasCoords(e);
-        isDrawingBox = true;
-        dragStartX = p.x; dragStartY = p.y;
-        dragCurrX = p.x; dragCurrY = p.y;
+        isDrawingBox = true; dragStartX = p.x; dragStartY = p.y; dragCurrX = p.x; dragCurrY = p.y;
     });
 
     telemetryCanvas.addEventListener("mousemove", (e) => {
         if (!isDrawingBox) return;
-        const p = getCanvasCoords(e);
-        dragCurrX = p.x; dragCurrY = p.y;
+        const p = getCanvasCoords(e); dragCurrX = p.x; dragCurrY = p.y;
     });
 
     window.addEventListener("mouseup", () => {
         if (!isDrawingBox) return;
-        isDrawingBox = false;
-        finalizeROISelection();
-    });
-
-    telemetryCanvas.addEventListener("touchstart", (e) => {
-        if (!telemetryVideo) return;
-        const p = getCanvasCoords(e);
-        isDrawingBox = true; dragStartX = p.x; dragStartY = p.y; dragCurrX = p.x; dragCurrY = p.y;
-    }, { passive: false });
-
-    telemetryCanvas.addEventListener("touchmove", (e) => {
-        if (!isDrawingBox) return;
-        const p = getCanvasCoords(e); dragCurrX = p.x; dragCurrY = p.y; e.preventDefault();
-    }, { passive: false });
-
-    window.addEventListener("touchend", () => {
-        if (!isDrawingBox) return;
-        isDrawingBox = false;
-        finalizeROISelection();
+        isDrawingBox = false; finalizeROISelection();
     });
 
     function finalizeROISelection() {
@@ -1820,7 +1871,6 @@
         const y1 = Math.min(dragStartY, dragCurrY);
         const bw = Math.abs(dragCurrX - dragStartX);
         const bh = Math.abs(dragCurrY - dragStartY);
-
         if (bw < 18 || bh < 18) return;
 
         const tempCanvas = document.createElement("canvas");
@@ -1829,8 +1879,7 @@
         tCtx.drawImage(telemetryVideo, x1, y1, bw, bh, 0, 0, bw, bh);
 
         document.getElementById("roi-preview-img").src = tempCanvas.toDataURL();
-        document.getElementById("roi-info-title").innerText = `已鎖定目標 (${bw}×${bh} px)`;
-        document.getElementById("roi-info-detail").innerText = `實時連續測距進行中`;
+        document.getElementById("roi-info-title").innerText = `目標鎖定 (${bw}×${bh} px)`;
 
         const stdCanvas = document.createElement("canvas");
         stdCanvas.width = T_STD_SIZE; stdCanvas.height = T_STD_SIZE;
@@ -1855,23 +1904,13 @@
         roiTemplate = { gray: gray, aspectRatio: bh / bw };
         targetBox = { x: x1 + bw/2, y: y1 + bh/2, w: bw, h: bh };
         prevPosition = null;
-
-        document.getElementById("tracking-status-text").innerText = "🟢 實時動態測距中...";
-        document.getElementById("tracking-status-text").style.color = "#4ade80";
+        document.getElementById("tracking-status-text").innerText = "🟢 動態測距中...";
     }
 
     function resetROISelection() {
         roiTemplate = null; targetBox = null; prevPosition = null;
-        document.getElementById("roi-preview-img").src = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='52' height='52' viewBox='0 0 52 52'%3E%3Crect width='52' height='52' fill='%23f1f5f9'/%3E%3Ctext x='50%25' y='50%25' font-size='10' fill='%2394a3b8' text-anchor='middle' dy='.3em'%3E待框選%3C/text%3E%3C/svg%3E";
-        document.getElementById("roi-info-title").innerText = "尚未框選目標";
-        document.getElementById("roi-info-detail").innerText = "在上方畫面拖曳滑鼠即可鎖定";
-        document.getElementById("tracking-status-text").innerText = "🎯 請在畫面上按住滑鼠【拉框】框住機械人";
-        document.getElementById("tracking-status-text").style.color = "var(--game-amber)";
-        document.getElementById("match-score-hud").innerText = "0%";
         document.getElementById("telemetry-dist-val").innerText = "--";
-        document.getElementById("marker-px-width").innerText = "0";
     }
-
     function clearROITracker() { resetROISelection(); }
 
     let frameThrottle = 0;
@@ -1880,11 +1919,9 @@
     const testPatchCanvas = document.createElement("canvas");
     testPatchCanvas.width = T_STD_SIZE; testPatchCanvas.height = T_STD_SIZE;
     const tPatchCtx = testPatchCanvas.getContext("2d");
-    let lastScorePct = 0;
 
     function telemetryProcessLoop() {
         if (!isTelemetryRunning || !telemetryVideo) return;
-
         telemetryCtx.drawImage(telemetryVideo, 0, 0, telemetryCanvas.width, telemetryCanvas.height);
 
         if (isDrawingBox) {
@@ -1892,29 +1929,19 @@
             const by = Math.min(dragStartY, dragCurrY);
             const bw = Math.abs(dragCurrX - dragStartX);
             const bh = Math.abs(dragCurrY - dragStartY);
-
             telemetryCtx.strokeStyle = "var(--game-amber)";
             telemetryCtx.lineWidth = 2;
-            telemetryCtx.setLineDash([6, 6]);
             telemetryCtx.strokeRect(bx, by, bw, bh);
-            telemetryCtx.setLineDash([]);
-            telemetryCtx.fillStyle = "rgba(245, 158, 11, 0.2)";
-            telemetryCtx.fillRect(bx, by, bw, bh);
         } else if (roiTemplate) {
             frameThrottle++;
-            if (frameThrottle % 2 === 0) {
-                trackScaleAdaptiveZNCC();
-            } else if (targetBox) {
-                renderTrackingOverlay(targetBox.x, targetBox.y, targetBox.w, targetBox.h, lastScorePct);
-            }
+            if (frameThrottle % 2 === 0) trackScaleAdaptiveZNCC();
         }
         requestAnimationFrame(telemetryProcessLoop);
     }
 
     function trackScaleAdaptiveZNCC() {
-        const curW = targetBox.w;
-        const curH = targetBox.h;
-        const searchMargin = 75;
+        const curW = targetBox.w, curH = targetBox.h;
+        const searchMargin = 60;
         const sX1 = Math.max(0, targetBox.x - curW/2 - searchMargin);
         const sY1 = Math.max(0, targetBox.y - curH/2 - searchMargin);
         const sX2 = Math.min(telemetryCanvas.width, targetBox.x + curW/2 + searchMargin);
@@ -1939,7 +1966,6 @@
                     pSum += (0.299 * patchData[i*4] + 0.587 * patchData[i*4+1] + 0.114 * patchData[i*4+2]);
                 }
                 const pMean = pSum / (T_STD_SIZE * T_STD_SIZE);
-
                 let pVar = 0, cross = 0;
                 for (let i = 0; i < T_STD_SIZE * T_STD_SIZE; i++) {
                     const val = (0.299 * patchData[i*4] + 0.587 * patchData[i*4+1] + 0.114 * patchData[i*4+2]) - pMean;
@@ -1950,88 +1976,58 @@
             }
         }
 
-        const candidateScales = [0.90, 0.95, 1.0, 1.05, 1.10];
-        let optimalScale = 1.0, scaleMaxScore = bestScore;
-        const foundCenterX = bestOffsetX + curW / 2;
-        const foundCenterY = bestOffsetY + curH / 2;
+        const scorePct = Math.max(0, Math.min(100, Math.round(bestScore * 100)));
+        document.getElementById("match-score-hud").innerText = `${scorePct}%`;
 
-        for (let s of candidateScales) {
-            const testW = curW * s, testH = curH * s;
-            const testX = foundCenterX - testW / 2, testY = foundCenterY - testH / 2;
-            if (testX >= 0 && testY >= 0 && (testX + testW) <= sW && (testY + testH) <= sH) {
-                tPatchCtx.drawImage(searchCanvas, testX, testY, testW, testH, 0, 0, T_STD_SIZE, T_STD_SIZE);
-                const patchData = tPatchCtx.getImageData(0, 0, T_STD_SIZE, T_STD_SIZE).data;
+        if (bestScore >= matchThreshold) {
+            targetBox.x = targetBox.x * 0.4 + (sX1 + bestOffsetX + curW/2) * 0.6;
+            targetBox.y = targetBox.y * 0.4 + (sY1 + bestOffsetY + curH/2) * 0.6;
 
-                let pSum = 0;
-                for (let i = 0; i < T_STD_SIZE * T_STD_SIZE; i++) {
-                    pSum += (0.299 * patchData[i*4] + 0.587 * patchData[i*4+1] + 0.114 * patchData[i*4+2]);
-                }
-                const pMean = pSum / (T_STD_SIZE * T_STD_SIZE);
+            handleDynamicKinematicsAndDocking(targetBox.x, targetBox.y, targetBox.w);
 
-                let pVar = 0, cross = 0;
-                for (let i = 0; i < T_STD_SIZE * T_STD_SIZE; i++) {
-                    const val = (0.299 * patchData[i*4] + 0.587 * patchData[i*4+1] + 0.114 * patchData[i*4+2]) - pMean;
-                    pVar += val * val; cross += val * roiTemplate.gray[i];
-                }
-                const sScore = cross / (Math.sqrt(pVar) + 1e-5);
-                if (sScore > scaleMaxScore) { scaleMaxScore = sScore; optimalScale = s; }
-            }
-        }
-
-        lastScorePct = Math.max(0, Math.min(100, Math.round(scaleMaxScore * 100)));
-        document.getElementById("match-score-hud").innerText = `${lastScorePct}%`;
-
-        if (scaleMaxScore >= matchThreshold) {
-            targetBox.x = targetBox.x * 0.35 + (sX1 + foundCenterX) * 0.65;
-            targetBox.y = targetBox.y * 0.35 + (sY1 + foundCenterY) * 0.65;
-
-            const targetWidth = curW * optimalScale;
-            if (targetWidth >= 20 && targetWidth <= 350) {
-                targetBox.w = targetBox.w * 0.8 + targetWidth * 0.2;
-                targetBox.h = targetBox.w * roiTemplate.aspectRatio;
-            }
-
-            handleDynamicKinematics(targetBox.x, targetBox.y, targetBox.w);
-            renderTrackingOverlay(targetBox.x, targetBox.y, targetBox.w, targetBox.h, lastScorePct);
-        } else {
-            document.getElementById("telemetry-dist-val").innerText = "--";
-            document.getElementById("marker-px-width").innerText = "0";
-            prevPosition = null;
+            telemetryCtx.strokeStyle = "#10b981"; telemetryCtx.lineWidth = 3;
+            telemetryCtx.strokeRect(targetBox.x - curW/2, targetBox.y - curH/2, curW, curH);
         }
     }
 
-    function handleDynamicKinematics(cx, cy, currentBoxWidth) {
+    function handleDynamicKinematicsAndDocking(cx, cy, currentBoxWidth) {
         const now = performance.now();
-
         const distanceToCamCm = (ROBOT_REAL_WIDTH_CM * cameraFocalLengthPx) / currentBoxWidth;
         document.getElementById("telemetry-dist-val").innerText = distanceToCamCm.toFixed(1);
-        document.getElementById("marker-px-width").innerText = Math.round(currentBoxWidth);
 
         if (prevPosition) {
             const dt = (now - prevPosition.timestamp) / 1000.0;
-            if (dt > 0.035) {
+            if (dt > 0.04) {
                 const cmPerPixel = ROBOT_REAL_WIDTH_CM / currentBoxWidth;
                 const deltaPx = Math.hypot(cx - prevPosition.x, cy - prevPosition.y);
-                const deltaCm = deltaPx * cmPerPixel;
-                const rawSpeed = deltaCm / dt;
-
-                currentSpeed = (currentSpeed * 0.72) + (rawSpeed * 0.28);
-
-                if (currentSpeed < 0.8) {
-                    zeroSpeedDuration += (dt * 1000);
-                    if (zeroSpeedDuration > 1500) document.getElementById("stall-warning-box").style.display = "flex";
-                } else {
-                    zeroSpeedDuration = 0;
-                    document.getElementById("stall-warning-box").style.display = "none";
-                }
+                const rawSpeed = (deltaPx * cmPerPixel) / dt;
+                currentSpeed = currentSpeed * 0.7 + rawSpeed * 0.3;
 
                 document.getElementById("telemetry-speed-val").innerText = currentSpeed.toFixed(1);
                 document.getElementById("speed-trend-label").innerText = currentSpeed.toFixed(1) + " cm/s";
 
-                speedHistory.push(currentSpeed);
-                if (speedHistory.length > MAX_HISTORY) speedHistory.shift();
-                drawSpeedChart();
+                // 停泊判斷邏輯：進入距離範圍 且 速度低於 0.8 cm/s
+                const distDiff = Math.abs(distanceToCamCm - targetDockDistance);
+                if (distDiff <= dockingTolerance && currentSpeed < 0.8) {
+                    dockingHoldTimer += (dt * 1000);
+                    const pct = Math.min(100, (dockingHoldTimer / DOCK_HOLD_GOAL) * 100);
+                    document.getElementById("dock-timer-bar").style.width = pct + "%";
+                    document.getElementById("dock-status-text").innerText = `🎯 保持穩定中 (${(dockingHoldTimer/1000).toFixed(1)}s)`;
+                    document.getElementById("dock-status-text").style.color = "var(--game-green)";
 
+                    if (dockingHoldTimer >= DOCK_HOLD_GOAL && !isDockingWon) {
+                        isDockingWon = true;
+                        if (typeof confetti === "function") confetti({ particleCount: 50, spread: 80, origin: { y: 0.6 } });
+                        alert("🎉 太精彩了！纜車成功精準停泊於月台閘門！");
+                    }
+                } else {
+                    dockingHoldTimer = Math.max(0, dockingHoldTimer - (dt * 1500));
+                    document.getElementById("dock-timer-bar").style.width = (dockingHoldTimer / DOCK_HOLD_GOAL) * 100 + "%";
+                    if (distDiff > dockingTolerance) {
+                        document.getElementById("dock-status-text").innerText = distanceToCamCm > targetDockDistance ? "請向前推進 ▲" : "請向後倒退 ▼";
+                        document.getElementById("dock-status-text").style.color = "var(--game-pink)";
+                    }
+                }
                 prevPosition = { x: cx, y: cy, timestamp: now };
             }
         } else {
@@ -2039,42 +2035,86 @@
         }
     }
 
-    function renderTrackingOverlay(cx, cy, bw, bh, scorePct) {
-        const minX = cx - bw/2, minY = cy - bh/2;
-        telemetryCtx.strokeStyle = "#10b981";
-        telemetryCtx.lineWidth = 3;
-        telemetryCtx.strokeRect(minX, minY, bw, bh);
-
-        telemetryCtx.strokeStyle = "#f59e0b";
-        telemetryCtx.beginPath();
-        telemetryCtx.arc(cx, cy, 7, 0, Math.PI * 2);
-        telemetryCtx.moveTo(cx - 15, cy); telemetryCtx.lineTo(cx + 15, cy);
-        telemetryCtx.moveTo(cx, cy - 15); telemetryCtx.lineTo(cx, cy + 15);
-        telemetryCtx.stroke();
-
-        const distVal = document.getElementById("telemetry-dist-val").innerText;
-        telemetryCtx.fillStyle = "#ffffff";
-        telemetryCtx.font = "bold 13px sans-serif";
-        telemetryCtx.fillText(`[HC010 ${scorePct}%] 距離: ${distVal}cm | 速度: ${currentSpeed.toFixed(1)}cm/s`, minX, Math.max(20, minY - 8));
+    // =========================================================================
+    // 互動式蘇格拉底反思 Chatbot 邏輯
+    // =========================================================================
+    function toggleChatWindow() {
+        const win = document.getElementById("chat-window");
+        win.style.display = (win.style.display === "flex") ? "none" : "flex";
     }
 
-    const chartCanvas = document.getElementById("speed-chart-canvas");
-    const chartCtx = chartCanvas.getContext("2d");
+    function handleChipClick(chipText) {
+        document.getElementById("chat-input").value = chipText;
+        sendChatMessage();
+    }
 
-    function drawSpeedChart() {
-        const w = chartCanvas.width, h = chartCanvas.height;
-        chartCtx.clearRect(0, 0, w, h);
-        chartCtx.strokeStyle = "#cbd5e1"; chartCtx.lineWidth = 1;
-        chartCtx.beginPath(); chartCtx.moveTo(0, h * 0.5); chartCtx.lineTo(w, h * 0.5); chartCtx.stroke();
-        if (speedHistory.length < 2) return;
-        chartCtx.strokeStyle = "#059669"; chartCtx.lineWidth = 2.5; chartCtx.beginPath();
-        const maxVal = 25.0;
-        for (let i = 0; i < speedHistory.length; i++) {
-            const x = (i / (MAX_HISTORY - 1)) * w;
-            const y = h - (Math.min(maxVal, speedHistory[i]) / maxVal) * (h - 10) - 5;
-            if (i === 0) chartCtx.moveTo(x, y); else chartCtx.lineTo(x, y);
+    function sendChatMessage() {
+        const inp = document.getElementById("chat-input");
+        const msg = inp.value.trim();
+        if (!msg) return;
+
+        appendChatMsg(msg, "user");
+        inp.value = "";
+
+        // 蘇格拉底式引導三步曲
+        setTimeout(() => {
+            if (chatStep === 0) {
+                chatReflectionData.difficulty = msg;
+                chatStep = 1;
+                appendChatMsg("收到！遇到問題懂得發現同除錯，就係真正嘅工程師思維 💡！<br><br><b>咁喺成個活動入面，你最鍾意或者覺得最神奇、最想同同學分享嘅係邊部分？</b>", "bot", [
+                    "看見 Grad-CAM 彩色熱力圖", "用手勢隔空控制爬繩", "同拍檔一齊除錯成功", "搶包山極速倒退回防"
+                ]);
+            } else if (chatStep === 1) {
+                chatReflectionData.favorite = msg;
+                chatStep = 2;
+                appendChatMsg("哇，呢個發現真係好正！同儕互助往往比一個人自己做學得更多仲快得多 👏！<br><br><b>最後，如果你可以幫呢部爬繩機械人再升級一項功能，你會想加咩？或者有咩改善建議？</b>", "bot", [
+                    "加裝超聲波自動煞停", "改成垂直 90 度抓力爪", "增加速度感應自動變檔"
+                ]);
+            } else if (chatStep === 2) {
+                chatReflectionData.comments = msg;
+                chatStep = 3;
+                appendChatMsg("太感謝你嘅認真反思！我已經將你嘅所有心得記錄低。<br><br>👉 <b>點擊下方按鈕，即刻將你的反思與成績同步到 Google Drive！</b>", "bot");
+                appendSubmitButtonToChat();
+            } else {
+                appendChatMsg("你的寶貴反思已經妥善記錄！隨時可以再次挑戰模式一或模式三哦 🚀", "bot");
+            }
+        }, 600);
+    }
+
+    function appendChatMsg(text, sender, chips = null) {
+        const body = document.getElementById("chat-body");
+        const msgDiv = document.createElement("div");
+        msgDiv.className = `chat-msg ${sender}`;
+        msgDiv.innerHTML = `<div class="bubble">${text}</div>`;
+
+        if (chips && chips.length > 0) {
+            const chipGroup = document.createElement("div");
+            chipGroup.className = "chip-group";
+            chips.forEach(c => {
+                const sp = document.createElement("span");
+                sp.className = "quick-chip";
+                sp.innerText = c;
+                sp.onclick = () => handleChipClick(c);
+                chipGroup.appendChild(sp);
+            });
+            msgDiv.appendChild(chipGroup);
         }
-        chartCtx.stroke();
+
+        body.appendChild(msgDiv);
+        body.scrollTop = body.scrollHeight;
+    }
+
+    function appendSubmitButtonToChat() {
+        const body = document.getElementById("chat-body");
+        const btnBox = document.createElement("div");
+        btnBox.style.marginTop = "8px";
+        btnBox.innerHTML = `
+            <button onclick="triggerFullSyncToDrive()" style="background:var(--game-green); color:#fff; border:none; border-radius:8px; padding:10px 14px; font-weight:bold; cursor:pointer; width:100%; box-shadow:0 2px 8px rgba(16,185,129,0.3);">
+                📤 確認並上傳所有反思到 Drive
+            </button>
+        `;
+        body.appendChild(btnBox);
+        body.scrollTop = body.scrollHeight;
     }
 </script>
 </body>
