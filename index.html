@@ -3,170 +3,148 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AI Robot Gesture Arena & Telemetry Hub</title>
-    <!-- 模式一依賴：TensorFlow.js & Teachable Machine -->
+    <title>In-Browser Few-Shot CNN & Grad-CAM Data Quality Diagnostic Studio</title>
+    <!-- 核心依賴：TensorFlow.js 官方庫 -->
     <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@latest/dist/tf.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@teachablemachine/image@latest/dist/teachablemachine-image.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
-    <!-- 模式二與三依賴：MediaPipe Hands -->
-    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js" crossorigin="anonymous"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/hands/hands.js" crossorigin="anonymous"></script>
     <style>
         :root {
-            --bg-base: #f1f5f9;
+            --bg-base: #f8fafc;
             --bg-card: #ffffff;
             --border-ui: #cbd5e1;
             --text-main: #0f172a;
             --text-sub: #475569;
-            --game-blue: #0284c7;
-            --game-pink: #ec4899;
-            --game-green: #10b981;
-            --game-amber: #f59e0b;
-            --game-purple: #8b5cf6;
-            --game-red: #ef4444;
+            --accent-blue: #0284c7;
+            --accent-green: #10b981;
+            --accent-amber: #f59e0b;
+            --accent-rose: #f43f5e;
         }
 
         * { box-sizing: border-box; }
         body {
             margin: 0;
             padding: 16px;
-            padding-bottom: 90px;
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "PingFang HK", sans-serif;
             background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
             color: var(--text-main);
             min-height: 100vh;
         }
 
-        .arena-container {
-            max-width: 1100px;
+        .container {
+            max-width: 1150px;
             margin: 0 auto;
             display: flex;
             flex-direction: column;
-            gap: 14px;
+            gap: 16px;
         }
 
-        /* 頂部三模式導航欄 */
-        .mode-nav-bar {
-            display: grid;
-            grid-template-columns: 1fr 1fr 1fr;
-            gap: 10px;
-            background: #ffffff;
-            padding: 8px;
+        .header-strip {
+            background: var(--bg-card);
+            padding: 14px 20px;
             border-radius: 14px;
             border: 1px solid var(--border-ui);
-            box-shadow: 0 4px 12px rgba(15, 23, 42, 0.05);
-        }
-        .mode-tab-btn {
-            background: #f8fafc;
-            border: 2px solid var(--border-ui);
-            color: var(--text-sub);
-            padding: 12px 10px;
-            border-radius: 10px;
-            font-size: 13px;
-            font-weight: 800;
-            cursor: pointer;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            gap: 4px;
-            transition: all 0.2s ease;
-        }
-        .mode-tab-btn:hover { border-color: var(--game-blue); color: var(--game-blue); }
-        .mode-tab-btn.active {
-            background: linear-gradient(135deg, #e0f2fe, #fce7f3);
-            border-color: var(--game-blue);
-            color: #0369a1;
-            box-shadow: 0 2px 8px rgba(2, 132, 199, 0.2);
-        }
-
-        /* 頂部全域資訊與語系切換條 */
-        .meta-strip {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            background: var(--bg-card);
-            padding: 10px 16px;
-            border-radius: 12px;
-            border: 1px solid var(--border-ui);
-            box-shadow: 0 2px 6px rgba(15, 23, 42, 0.04);
+            box-shadow: 0 2px 8px rgba(15, 23, 42, 0.05);
         }
-        .meta-strip select {
+        .header-title {
+            font-size: 18px;
+            font-weight: 900;
+            color: var(--accent-blue);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .main-grid {
+            display: grid;
+            grid-template-columns: 360px 1fr;
+            gap: 16px;
+        }
+
+        /* 左側鏡頭與推論看板 */
+        .camera-card {
+            background: var(--bg-card);
+            border: 2px solid var(--border-ui);
+            border-radius: 16px;
+            padding: 16px;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            box-shadow: 0 4px 12px rgba(15, 23, 42, 0.04);
+        }
+        .viewport-box {
+            position: relative;
+            width: 100%;
+            height: 245px;
+            background: #000;
+            border-radius: 12px;
+            overflow: hidden;
+            border: 1px solid var(--border-ui);
+        }
+        #webcam-video {
+            display: none;
+        }
+        #main-canvas {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+        .hud-status {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            background: rgba(15, 23, 42, 0.85);
+            color: #fff;
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-size: 11px;
+            font-weight: bold;
+            pointer-events: none;
+        }
+
+        .meters-list {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+        .meter-row {
             background: #f8fafc;
             border: 1px solid var(--border-ui);
-            color: var(--text-main);
-            padding: 8px 12px;
             border-radius: 8px;
+            padding: 8px 12px;
             font-size: 13px;
-            font-weight: 600;
-        }
-        .lang-btn {
-            background: #ffffff;
-            border: 1.5px solid var(--game-blue);
-            color: var(--game-blue);
-            padding: 7px 14px;
-            border-radius: 20px;
-            font-weight: 800;
-            font-size: 12px;
-            cursor: pointer;
+            font-weight: bold;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
             transition: all 0.2s;
         }
-        .lang-btn:hover { background: #e0f2fe; }
-
-        .mode-section { display: none; flex-direction: column; gap: 14px; }
-        .mode-section.active-mode { display: flex; }
-
-        /* 步驟看板 */
-        .stepper-board {
-            display: grid;
-            grid-template-columns: 1.2fr 1.3fr 1fr;
-            gap: 14px;
+        .meter-row.matched {
+            background: #dcfce7;
+            border-color: #86efac;
+            color: #15803d;
+            box-shadow: 0 2px 8px rgba(16, 185, 129, 0.2);
         }
-        .step-card {
+
+        /* 右側樣本採集與訓練面板 */
+        .workbench-card {
             background: var(--bg-card);
             border: 2px solid var(--border-ui);
-            border-radius: 14px;
-            padding: 14px 16px;
+            border-radius: 16px;
+            padding: 16px 20px;
             display: flex;
             flex-direction: column;
-            justify-content: space-between;
-            box-shadow: 0 4px 10px rgba(15, 23, 42, 0.03);
-            transition: all 0.25s ease;
+            gap: 14px;
+            box-shadow: 0 4px 12px rgba(15, 23, 42, 0.04);
         }
-        .step-card.done {
-            border-color: var(--game-green);
-            background: #f0fdf4;
-            box-shadow: 0 4px 14px rgba(16, 185, 129, 0.15);
+
+        .action-toolbar {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
         }
-        .step-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 8px;
-        }
-        .step-title {
-            font-weight: 800;
-            font-size: 14px;
-            display: flex;
-            align-items: center;
-            gap: 6px;
-            color: var(--text-main);
-        }
-        .step-tag {
-            font-size: 11px;
-            padding: 3px 8px;
-            border-radius: 12px;
-            background: #f1f5f9;
-            color: var(--text-sub);
-            border: 1px solid var(--border-ui);
-            font-weight: bold;
-        }
-        .step-card.done .step-tag {
-            background: #dcfce7;
-            color: #15803d;
-            border-color: #86efac;
-        }
-        .step-btn {
+        .btn {
             background: #334155;
             color: #ffffff;
             border: none;
@@ -175,1671 +153,515 @@
             font-weight: bold;
             font-size: 13px;
             cursor: pointer;
-            width: 100%;
             transition: all 0.2s;
-        }
-        .step-btn:hover { background: #1e293b; }
-        .step-btn.ready-btn { background: var(--game-green); }
-
-        .id-input-field {
-            background: #ffffff;
-            border: 1.5px solid var(--border-ui);
-            color: var(--text-main);
-            padding: 8px 10px;
-            border-radius: 8px;
-            font-size: 13px;
-            font-weight: bold;
-            width: 100%;
-            margin-bottom: 8px;
-        }
-
-        /* 骨骼採樣網格 */
-        .sample-grid {
-            display: grid;
-            grid-template-columns: repeat(3, 1fr);
+            display: flex;
+            align-items: center;
+            justify-content: center;
             gap: 6px;
-            margin-bottom: 8px;
         }
-        .sample-btn {
+        .btn:hover { background: #1e293b; }
+        .btn.primary { background: var(--accent-blue); }
+        .btn.primary:hover { background: #0369a1; }
+        .btn.success { background: var(--accent-green); }
+        .btn.success:hover { background: #059669; }
+        .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+        /* 類別採樣網格 */
+        .classes-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+            gap: 10px;
+        }
+        .class-box {
             background: #f8fafc;
-            border: 1.5px solid var(--border-ui);
-            color: var(--text-main);
-            padding: 6px;
-            border-radius: 8px;
-            font-size: 11px;
-            font-weight: bold;
-            cursor: pointer;
+            border: 2px solid var(--border-ui);
+            border-radius: 12px;
+            padding: 10px;
             display: flex;
             flex-direction: column;
+            gap: 6px;
             align-items: center;
-            gap: 2px;
+            text-align: center;
+        }
+        .class-box.active {
+            border-color: var(--accent-blue);
+            background: #f0f9ff;
+        }
+        .class-title {
+            font-weight: 800;
+            font-size: 13px;
+        }
+        .sample-thumb-slot {
+            width: 80px;
+            height: 80px;
+            border-radius: 8px;
+            background: #e2e8f0;
+            border: 1.5px dashed #94a3b8;
+            overflow: hidden;
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .sample-thumb-slot canvas {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+        .quality-tag {
+            font-size: 10px;
+            font-weight: bold;
+            padding: 2px 6px;
+            border-radius: 10px;
+            margin-top: 2px;
+        }
+        .quality-tag.good { background: #dcfce7; color: #15803d; }
+        .quality-tag.noise { background: #fee2e2; color: #b91c1c; }
+        .quality-tag.empty { background: #f1f5f9; color: #94a3b8; }
+
+        .btn-capture-slot {
+            width: 100%;
+            padding: 6px;
+            font-size: 11px;
+            font-weight: bold;
+            background: #ffffff;
+            border: 1px solid var(--border-ui);
+            border-radius: 6px;
+            cursor: pointer;
             transition: all 0.15s;
         }
-        .sample-btn:hover { background: #e2e8f0; }
-        .sample-btn:active, .sample-btn.recording {
-            background: #fce7f3;
-            border-color: var(--game-pink);
-            color: #be185d;
-            transform: scale(0.96);
-        }
-        .sample-count { font-size: 10px; color: var(--game-blue); }
+        .btn-capture-slot:hover { background: #e2e8f0; }
+        .btn-capture-slot:active { background: var(--accent-blue); color: #fff; }
 
-        /* 啟動按鈕 */
-        .btn-launch {
-            background: #e2e8f0;
-            color: #94a3b8;
-            border: 2px dashed #cbd5e1;
-            padding: 12px;
-            border-radius: 8px;
-            font-size: 15px;
-            font-weight: 900;
-            cursor: not-allowed;
-            width: 100%;
-            min-height: 46px;
-        }
-        .btn-launch.unlocked {
-            background: linear-gradient(135deg, var(--game-blue), var(--game-green));
-            color: #ffffff;
-            border: none;
-            cursor: pointer;
-            box-shadow: 0 4px 14px rgba(2, 132, 199, 0.4);
-            animation: pulse-launch 1.4s infinite alternate;
-        }
-        @keyframes pulse-launch {
-            0% { transform: scale(1); }
-            100% { transform: scale(1.02); }
-        }
-
-        /* 競技舞台佈局 */
-        .stage-layout {
-            display: grid;
-            grid-template-columns: 1fr 180px;
-            gap: 16px;
-        }
-        .arena-box {
-            background: var(--bg-card);
-            border: 2px solid var(--border-ui);
-            border-radius: 16px;
-            padding: 16px 20px;
-            display: flex;
-            flex-direction: column;
-            gap: 14px;
-            box-shadow: 0 4px 14px rgba(15, 23, 42, 0.04);
-            position: relative;
-        }
-        .hud-bar {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-        .combo-badge {
-            font-size: 26px;
-            color: var(--game-amber);
-            font-weight: 900;
-        }
-        .score-pill {
-            background: linear-gradient(90deg, #ec4899, #8b5cf6);
-            color: #fff;
-            padding: 6px 20px;
-            border-radius: 20px;
-            font-size: 18px;
-            font-weight: 900;
-        }
-
-        .ribbon-track-wrapper {
-            background: #f8fafc;
-            border: 2px solid var(--border-ui);
-            border-radius: 14px;
-            padding: 14px;
-            position: relative;
-            overflow: hidden;
-        }
-        .ribbon-track {
-            display: flex;
-            align-items: center;
-            gap: 14px;
-        }
-        .action-card {
-            background: #ffffff;
-            border: 2px solid var(--border-ui);
+        /* 底部診斷說明 */
+        .diagnostic-card {
+            background: #eff6ff;
+            border: 1px solid #bfdbfe;
             border-radius: 12px;
-            min-width: 100px;
-            height: 140px;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            position: relative;
-            box-shadow: 0 2px 6px rgba(15, 23, 42, 0.04);
-            transition: all 0.25s ease;
-        }
-        .action-card .symbol { font-size: 44px; line-height: 1; margin-bottom: 4px; }
-        .action-card .c-name { font-size: 15px; font-weight: 800; }
-        .action-card.active-target {
-            min-width: 130px;
-            height: 160px;
-            border: 3px solid var(--game-pink);
-            transform: scale(1.04);
-            z-index: 2;
-        }
-        .action-card.active-target .symbol { font-size: 58px; }
-        .action-card.upcoming { opacity: 0.65; transform: scale(0.92); }
-
-        .timer-bg {
-            height: 8px;
-            background: #e2e8f0;
-            border-radius: 4px;
-            margin-top: 12px;
-            overflow: hidden;
-        }
-        .timer-fill {
-            height: 100%;
-            width: 100%;
-            background: var(--game-blue);
-            transition: width 0.05s linear;
-        }
-
-        .arena-footer {
-            display: grid;
-            grid-template-columns: 220px 1fr;
-            gap: 14px;
-            align-items: center;
-        }
-        .meters-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 6px;
-        }
-        .meter-row {
-            background: #f8fafc;
-            border: 1px solid var(--border-ui);
-            border-radius: 8px;
-            padding: 6px 10px;
-            font-size: 12px;
-            font-weight: 600;
-            display: flex;
-            justify-content: space-between;
-        }
-        .meter-row.matched {
-            background: #dcfce7;
-            border-color: #86efac;
-            color: #15803d;
-            font-weight: bold;
-        }
-
-        /* 攀爬高度塔 */
-        .tower-card {
-            background: var(--bg-card);
-            border: 2px solid var(--border-ui);
-            border-radius: 16px;
-            padding: 14px 10px;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-        }
-        .rope-shaft {
-            flex-grow: 1;
-            width: 6px;
-            background: #cbd5e1;
-            border-radius: 3px;
-            margin: 10px 0;
-            position: relative;
-            min-height: 250px;
-        }
-        .robot-indicator {
-            position: absolute;
-            left: 50%;
-            transform: translateX(-50%);
-            bottom: 0%;
-            font-size: 34px;
-            transition: bottom 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
-        }
-
-        #splash-text, #splash-text-mp, #splash-text-mode3 {
-            position: absolute;
-            top: 40%;
-            left: 50%;
-            transform: translate(-50%, -50%) scale(0);
-            font-size: 42px;
-            font-weight: 900;
-            letter-spacing: 2px;
-            pointer-events: none;
-            transition: all 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-            z-index: 10;
-        }
-        #splash-text.show, #splash-text-mp.show, #splash-text-mode3.show { transform: translate(-50%, -50%) scale(1.15); }
-
-        /* =========================================================================
-           模式三：昂坪紅綠燈 AI 執法機 + 5 秒定身遮罩
-           ========================================================================= */
-        .traffic-hud-bar {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            background: #0f172a;
-            border-radius: 12px;
-            padding: 10px 16px;
-            color: #fff;
-        }
-        .traffic-lights-box {
-            display: flex;
-            gap: 12px;
-            align-items: center;
-            background: #1e293b;
-            padding: 6px 16px;
-            border-radius: 30px;
-        }
-        .bulb-circle {
-            width: 28px;
-            height: 28px;
-            border-radius: 50%;
-            opacity: 0.2;
-            transition: all 0.2s ease;
-        }
-        .bulb-circle.red { background: #ef4444; }
-        .bulb-circle.green { background: #10b981; }
-        .bulb-circle.active.red { opacity: 1; box-shadow: 0 0 18px #ef4444; }
-        .bulb-circle.active.green { opacity: 1; box-shadow: 0 0 18px #10b981; }
-
-        /* 5 秒定身懲罰全域遮罩 */
-        .freeze-overlay {
-            position: absolute;
-            top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(220, 38, 38, 0.92);
-            backdrop-filter: blur(4px);
-            display: none;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            color: #ffffff;
-            z-index: 100;
-            border-radius: 16px;
-            animation: pulse-freeze 0.5s infinite alternate;
-        }
-        @keyframes pulse-freeze {
-            0% { background: rgba(220, 38, 38, 0.90); }
-            100% { background: rgba(185, 28, 28, 0.96); }
-        }
-        .freeze-title {
-            font-size: 28px;
-            font-weight: 900;
-            letter-spacing: 2px;
-            margin-bottom: 6px;
-        }
-        .freeze-timer-count {
-            font-size: 72px;
-            font-weight: 900;
-            line-height: 1;
-            color: #fef08a;
-            text-shadow: 0 4px 14px rgba(0,0,0,0.4);
-        }
-
-        /* 互動式引導 Chatbot */
-        .chatbot-bubble-btn {
-            position: fixed;
-            bottom: 20px;
-            right: 20px;
-            background: linear-gradient(135deg, var(--game-blue), var(--game-purple));
-            color: #ffffff;
-            border: none;
-            padding: 12px 20px;
-            border-radius: 30px;
-            font-weight: 800;
-            font-size: 14px;
-            box-shadow: 0 6px 20px rgba(2, 132, 199, 0.4);
-            cursor: pointer;
-            z-index: 1000;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-        .chatbot-window {
-            position: fixed;
-            bottom: 75px;
-            right: 20px;
-            width: 360px;
-            max-width: calc(100vw - 40px);
-            height: 500px;
-            background: #ffffff;
-            border: 2px solid var(--border-ui);
-            border-radius: 18px;
-            box-shadow: 0 10px 30px rgba(15, 23, 42, 0.18);
-            display: none;
-            flex-direction: column;
-            overflow: hidden;
-            z-index: 1000;
-        }
-        .chat-header {
-            background: linear-gradient(135deg, var(--game-blue), var(--game-purple));
-            color: #ffffff;
             padding: 12px 16px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            font-weight: 800;
-        }
-        .chat-body {
-            flex-grow: 1;
-            padding: 14px;
-            overflow-y: auto;
-            display: flex;
-            flex-direction: column;
-            gap: 12px;
-            background: #f8fafc;
-            font-size: 13px;
-        }
-        .chat-msg.bot .bubble {
-            background: #ffffff;
-            border: 1px solid var(--border-ui);
-            padding: 10px 12px;
-            border-radius: 12px 12px 12px 2px;
-            line-height: 1.45;
-        }
-        .chat-msg.user { align-self: flex-end; }
-        .chat-msg.user .bubble {
-            background: var(--game-blue);
-            color: #ffffff;
-            padding: 10px 12px;
-            border-radius: 12px 12px 2px 12px;
-        }
-        .chip-group {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 6px;
-            margin-top: 6px;
-        }
-        .quick-chip {
-            background: #e0f2fe;
-            border: 1px solid #7dd3fc;
-            color: #0369a1;
-            padding: 4px 8px;
-            border-radius: 12px;
-            font-size: 11px;
-            cursor: pointer;
-            font-weight: 600;
-        }
-        .chat-footer {
-            padding: 10px;
-            background: #ffffff;
-            border-top: 1px solid var(--border-ui);
-            display: flex;
-            gap: 8px;
-        }
-        .chat-input {
-            flex-grow: 1;
-            border: 1px solid var(--border-ui);
-            border-radius: 8px;
-            padding: 8px 10px;
             font-size: 12px;
-            outline: none;
+            line-height: 1.5;
+            color: #1e40af;
         }
     </style>
 </head>
 <body>
 
-<div class="arena-container">
+<div class="container">
 
-    <!-- 頂部三模式導航欄 -->
-    <div class="mode-nav-bar">
-        <button class="mode-tab-btn active" id="tab-mode-1" onclick="switchSystemMode(1)">
-            <span data-zh="🎮 模式一：GTM 駕駛艙" data-en="🎮 Mode 1: GTM Cockpit">🎮 模式一：GTM 駕駛艙</span>
-            <span style="font-size: 11px; font-weight: normal; opacity: 0.85;" data-zh="(像素特徵 + Grad-CAM XAI)" data-en="(Pixel Features + Grad-CAM)">(像素特徵 + Grad-CAM XAI)</span>
-        </button>
-        <button class="mode-tab-btn" id="tab-mode-2" onclick="switchSystemMode(2)">
-            <span data-zh="✋ 模式二：MediaPipe 訓練艙 🔒" data-en="✋ Mode 2: MediaPipe Studio 🔒">✋ 模式二：MediaPipe 訓練艙 🔒</span>
-            <span style="font-size: 11px; font-weight: normal; opacity: 0.85;" data-zh="(密碼解鎖 + 21點骨骼幾何)" data-en="(Password + 21-pt Skeleton)">(密碼解鎖 + 21點骨骼幾何)</span>
-        </button>
-        <button class="mode-tab-btn" id="tab-mode-3" onclick="switchSystemMode(3)">
-            <span data-zh="🚦 模式三：昂坪紅綠燈 AI 執法賽" data-en="🚦 Mode 3: Red Light, Green Light">🚦 模式三：昂坪紅綠燈 AI 執法賽</span>
-            <span style="font-size: 11px; font-weight: normal; opacity: 0.85;" data-zh="(MediaPipe 骨骼 + 5秒罰凍結)" data-en="(MediaPipe + 5s Freeze Penalty)">(MediaPipe 骨骼 + 5秒罰凍結)</span>
-        </button>
-    </div>
-
-    <!-- 頂部資訊與語系切換條 -->
-    <div class="meta-strip">
-        <div style="font-size: 13px; font-weight: 800; color: var(--game-blue); display: flex; align-items: center; gap: 8px;">
-            <span data-zh="🤖 micro:bit 編號：" data-en="🤖 micro:bit ID: ">🤖 micro:bit 編號：</span>
-            <b id="shared-mb-id-display" style="color:var(--game-pink); font-size:16px;" data-zh="未填寫" data-en="Unset">未填寫</b>
+    <!-- 頂部資訊列 -->
+    <div class="header-strip">
+        <div class="header-title">
+            <span>🔬 本地卷積特徵提取與 Grad-CAM 樣本質素診斷室</span>
         </div>
-        
-        <div style="display: flex; gap: 10px; align-items: center;">
-            <select id="conditionType" onfocus="storePrevCondition(this.value)" onchange="handleConditionChange(this)">
-                <option value="No_XAI_Blackbox" selected data-zh="GTM 對照組 (黑盒無解釋)" data-en="Control: Blackbox">GTM 對照組 (黑盒無解釋)</option>
-                <option value="XAI_GradCAM" data-zh="🔒 GTM 實驗組 (Grad-CAM 熱力圖)" data-en="🔒 Experimental: Grad-CAM">🔒 GTM 實驗組 (Grad-CAM 熱力圖)</option>
-            </select>
-            
-            <button class="lang-btn" id="lang-btn" onclick="toggleLanguage()">🌐 English</button>
+        <div id="engine-status" style="font-size: 12px; font-weight: bold; color: var(--accent-amber);">
+            正在下載 MobileNet 基礎卷積網絡...
         </div>
     </div>
 
-    <!-- =========================================================================
-         【模式一：GTM 駕駛艙】
-         ========================================================================= -->
-    <div class="mode-section active-mode" id="section-mode-1">
-        <div class="stepper-board">
-            <div class="step-card" id="card-step1">
-                <div>
-                    <div class="step-header">
-                        <span class="step-title" data-zh="🔌 步驟 1：輸入編號與連接" data-en="🔌 Step 1: Set ID & Connect">🔌 步驟 1：輸入編號與連接</span>
-                        <span class="step-tag" id="tag-step1" data-zh="未完成 ⚪" data-en="Incomplete ⚪">未完成 ⚪</span>
-                    </div>
-                    <input type="number" class="id-input-field" id="mb-input-1" placeholder="輸入 micro:bit 編號 (例: 12)" data-ph-zh="輸入 micro:bit 編號 (例: 12)" data-ph-en="Enter micro:bit ID (e.g. 12)" oninput="syncMicrobitId(this.value)">
-                </div>
-                <button class="step-btn" id="btn-step1" onclick="connectSerial()" data-zh="連接 Tx micro:bit" data-en="Connect Tx micro:bit">連接 Tx micro:bit</button>
+    <div class="main-grid">
+        <!-- 左側：實時鏡頭與預測 Grad-CAM -->
+        <div class="camera-card">
+            <div style="display:flex; justify-content:space-between; align-items:center;">
+                <span style="font-weight:800; font-size:14px;">📷 實時推論熱力圖視野</span>
+                <label style="font-size:11px; color:var(--text-sub); display:flex; align-items:center; gap:4px; cursor:pointer;">
+                    <input type="checkbox" id="toggle-gradcam" checked> 開啟熱力圖
+                </label>
             </div>
-            <div class="step-card" id="card-step2">
-                <div>
-                    <div class="step-header">
-                        <span class="step-title" data-zh="📷 步驟 2：載入模型" data-en="📷 Step 2: Load Model">📷 步驟 2：載入模型</span>
-                        <span class="step-tag" id="tag-step2" data-zh="未載入 ⚪" data-en="Unloaded ⚪">未載入 ⚪</span>
-                    </div>
-                    <input type="text" id="modelUrl" placeholder="貼上 Teachable Machine 模型連結" data-ph-zh="貼上 Teachable Machine 模型連結" data-ph-en="Paste Teachable Machine model URL" style="background:#f8fafc; border:1px solid var(--border-ui); color:var(--text-main); width:100%; padding:8px; font-size:11px; border-radius:6px; margin-bottom: 8px;">
-                </div>
-                <button class="step-btn" id="btn-step2" onclick="initAI()" data-zh="啟動模型與鏡頭" data-en="Start Model & Camera">啟動模型與鏡頭</button>
+
+            <div class="viewport-box">
+                <video id="webcam-video" playsinline></video>
+                <canvas id="main-canvas" width="224" height="224"></canvas>
+                <div class="hud-status" id="hud-status">模型待訓練</div>
             </div>
-            <div class="step-card" id="card-step3">
-                <div>
-                    <div class="step-header">
-                        <span class="step-title" data-zh="🚀 步驟 3：開始競技" data-en="🚀 Step 3: Launch Arena">🚀 步驟 3：開始競技</span>
-                        <span class="step-tag" id="tag-step3" data-zh="待解鎖 🔒" data-en="Locked 🔒">待解鎖 🔒</span>
-                    </div>
-                    <div style="font-size: 11px; color: var(--text-sub); margin-bottom: 10px;" id="desc-step3" data-zh="需填寫編號、連線及載入模型" data-en="Requires ID, Serial, and Model">需填寫編號、連線及載入模型</div>
-                </div>
-                <button class="btn-launch" id="btn-launch" onclick="startGame()" disabled data-zh="等待準備..." data-en="Waiting...">等待準備...</button>
+
+            <div class="meters-list" id="meters-box">
+                <!-- 預測機率即時列表 -->
             </div>
         </div>
 
-        <div class="stage-layout">
-            <div class="arena-box">
-                <div class="hud-bar">
-                    <div class="combo-badge" id="combo-display">0x COMBO</div>
-                    <div class="score-pill"><span data-zh="攀爬得分：" data-en="Score: ">攀爬得分：</span><span id="score-counter">0</span></div>
-                </div>
-                <div class="ribbon-track-wrapper">
-                    <div class="ribbon-track" id="queue-ribbon"></div>
-                    <div class="timer-bg"><div class="timer-fill" id="timer-bar"></div></div>
-                    <div id="splash-text">PERFECT!</div>
-                </div>
-                <div class="arena-footer">
-                    <div class="webcam-box">
-                        <div id="webcam-container" style="width:220px; height:150px; background:#000; border-radius:10px; overflow:hidden; border:1px solid var(--border-ui); position:relative;"></div>
-                        <div class="gradcam-legend-bar" id="gradcam-legend-ui" style="display:none; align-items:center; justify-content:space-between; font-size:9px; color:var(--text-sub); padding:4px 2px 0;">
-                            <span data-zh="透明(無關)" data-en="Clear(None)">透明(無關)</span>
-                            <div class="gradcam-spectrum" style="flex-grow:1; height:5px; margin:0 6px; border-radius:3px; background:linear-gradient(to right, rgba(0,255,255,0.4) 0%, #00ff00 35%, #ffff00 70%, #ff0000 100%); border:1px solid #cbd5e1;"></div>
-                            <span data-zh="🔥 核心特徵(紅)" data-en="🔥 Salient(Red)">🔥 核心特徵(紅)</span>
-                        </div>
-                    </div>
-                    <div class="meters-grid" id="meters-container"></div>
-                </div>
+        <!-- 右側：採樣工作台與樣本質素診斷 -->
+        <div class="workbench-card">
+            <div style="display:flex; justify-content:space-between; align-items:center;">
+                <span style="font-weight:800; font-size:14px;">🖐️ 數據集工作台（支援一類一張樣本）</span>
+                <span style="font-size:11px; color:var(--text-sub);">鏡頭前擺好手勢，按下方「📸 拍攝」即可截取</span>
             </div>
-            <div class="tower-card">
-                <div style="font-size: 26px;">🏆</div>
-                <div style="font-size: 10px; color: var(--text-sub); font-weight: bold;">FINISH</div>
-                <div class="rope-shaft" id="rope-shaft"><div class="robot-indicator" id="robot-indicator">🤖</div></div>
-                <div style="font-size: 10px; color: var(--text-sub); font-weight: bold;">START</div>
-                <div style="font-size: 20px;">🚩</div>
+
+            <!-- 5 款類別採樣區 -->
+            <div class="classes-grid" id="classes-grid">
+                <!-- 動態注入類別卡片 -->
+            </div>
+
+            <div class="action-toolbar">
+                <button class="btn primary" id="btn-train" onclick="trainModel()" disabled>
+                    ⚡ 一鍵本地訓練模型 (Transfer Learning)
+                </button>
+                <button class="btn success" id="btn-diagnose" onclick="diagnoseDatasetQuality()" disabled>
+                    🔍 檢驗訓練樣本 Grad-CAM 質素
+                </button>
+            </div>
+
+            <div class="diagnostic-card">
+                <b>💡 學生除錯指引（點解準確率得 50–75%？）：</b><br>
+                1. <b>採樣後按「檢驗質素」：</b> 系統會回頭為你的訓練照片計算 Grad-CAM 熱力圖。<br>
+                2. <b>紅點如果在手勢上（🟢 數據優質）：</b> 代表特徵正確抓取。<br>
+                3. <b>紅點如果落在背後窗簾、花衣服或書架（🔴 背景雜音）：</b> 這就是 CNN 誤判的核心成因！請學生清理背景或將鏡頭轉向純白牆，即可親身見證命中率重回 90% 以上！
             </div>
         </div>
     </div>
 
-    <!-- =========================================================================
-         【模式二：MediaPipe 訓練艙 (密碼保護)】
-         ========================================================================= -->
-    <div class="mode-section" id="section-mode-2">
-        <div class="stepper-board">
-            <div class="step-card" id="card-mp-step1">
-                <div>
-                    <div class="step-header">
-                        <span class="step-title" data-zh="🔌 步驟 1：輸入編號與連接" data-en="🔌 Step 1: Set ID & Connect">🔌 步驟 1：輸入編號與連接</span>
-                        <span class="step-tag" id="tag-mp-serial" data-zh="未完成 ⚪" data-en="Incomplete ⚪">未完成 ⚪</span>
-                    </div>
-                    <input type="number" class="id-input-field" id="mb-input-2" placeholder="輸入 micro:bit 編號 (例: 12)" data-ph-zh="輸入 micro:bit 編號 (例: 12)" data-ph-en="Enter micro:bit ID (e.g. 12)" oninput="syncMicrobitId(this.value)">
-                </div>
-                <button class="step-btn" id="btn-mp-serial" onclick="connectSerial()" data-zh="連接 Tx micro:bit" data-en="Connect Tx micro:bit">連接 Tx micro:bit</button>
-            </div>
-
-            <div class="step-card" id="card-mp-step2">
-                <div>
-                    <div class="step-header">
-                        <span class="step-title" data-zh="✋ 步驟 2：手勢採樣" data-en="✋ Step 2: Pose Sampling">✋ 步驟 2：手勢採樣</span>
-                        <span class="step-tag" id="tag-mp-engine" data-zh="未啟動 ⚪" data-en="Inactive ⚪">未啟動 ⚪</span>
-                    </div>
-                    <div class="sample-grid">
-                        <button class="sample-btn" id="btn-sample-Class 1" onmousedown="startSampling('Class 1')" onmouseup="stopSampling()">
-                            <span data-zh="✊ 石頭" data-en="✊ Rock">✊ 石頭</span><span class="sample-count" id="cnt-Class 1">0 幀</span>
-                        </button>
-                        <button class="sample-btn" id="btn-sample-Class 2" onmousedown="startSampling('Class 2')" onmouseup="stopSampling()">
-                            <span data-zh="✌️ 剪刀" data-en="✌️ Scissor">✌️ 剪刀</span><span class="sample-count" id="cnt-Class 2">0 幀</span>
-                        </button>
-                        <button class="sample-btn" id="btn-sample-Class 3" onmousedown="startSampling('Class 3')" onmouseup="stopSampling()">
-                            <span data-zh="🖐️ 布" data-en="🖐️ Paper">🖐️ 布</span><span class="sample-count" id="cnt-Class 3">0 幀</span>
-                        </button>
-                        <button class="sample-btn" id="btn-sample-Class 4" onmousedown="startSampling('Class 4')" onmouseup="stopSampling()">
-                            <span data-zh="👍 讚好" data-en="👍 Like">👍 讚好</span><span class="sample-count" id="cnt-Class 4">0 幀</span>
-                        </button>
-                        <button class="sample-btn" id="btn-sample-Class 5" onmousedown="startSampling('Class 5')" onmouseup="stopSampling()">
-                            <span data-zh="🫱 待機" data-en="🫱 Idle">🫱 待機</span><span class="sample-count" id="cnt-Class 5">0 幀</span>
-                        </button>
-                        <button class="sample-btn" style="background:#fee2e2; border-color:#fca5a5; color:#991b1b;" onclick="clearDataset()">
-                            <span data-zh="🗑️ 重置" data-en="🗑️ Reset">🗑️ 重置</span><span style="font-size:9px; color:#b91c1c;" data-zh="清空" data-en="Clear">清空</span>
-                        </button>
-                    </div>
-                </div>
-                <button class="step-btn" id="btn-mp-start" onclick="initMediaPipe(2)" data-zh="啟動鏡頭開始採樣" data-en="Start Camera Sampling">啟動鏡頭開始採樣</button>
-            </div>
-
-            <div class="step-card" id="card-mp-step3">
-                <div>
-                    <div class="step-header">
-                        <span class="step-title" data-zh="🚀 步驟 3：開始競技" data-en="🚀 Step 3: Launch Arena">🚀 步驟 3：開始競技</span>
-                        <span class="step-tag" id="tag-mp-launch" data-zh="待解鎖 🔒" data-en="Locked 🔒">待解鎖 🔒</span>
-                    </div>
-                    <div style="font-size: 11px; color: var(--text-sub); margin-bottom: 10px;" id="desc-mp-step3" data-zh="需填寫編號、連線並每款錄製 ≥8 幀" data-en="Requires ID, Serial, and ≥8 frames/class">需填寫編號、連線並每款錄製 ≥8 幀</div>
-                </div>
-                <button class="btn-launch" id="btn-launch-mp" onclick="startMPGame()" disabled data-zh="等待準備..." data-en="Waiting...">等待準備...</button>
-            </div>
-        </div>
-
-        <div class="stage-layout">
-            <div class="arena-box">
-                <div class="hud-bar">
-                    <div class="combo-badge" id="combo-display-mp">0x COMBO</div>
-                    <div class="score-pill"><span data-zh="攀爬得分：" data-en="Score: ">攀爬得分：</span><span id="score-counter-mp">0</span></div>
-                </div>
-                <div class="ribbon-track-wrapper">
-                    <div class="ribbon-track" id="queue-ribbon-mp"></div>
-                    <div class="timer-bg"><div class="timer-fill" id="timer-bar-mp"></div></div>
-                    <div id="splash-text-mp">PERFECT!</div>
-                </div>
-                <div class="arena-footer">
-                    <div style="width: 220px; height: 150px; background: #000; border-radius: 10px; overflow: hidden; border: 1px solid var(--border-ui); position: relative;">
-                        <video id="webcam-video-mp" playsinline style="display:none;"></video>
-                        <canvas id="output-canvas-mp" width="320" height="240" style="width: 100%; height: 100%; transform: scaleX(-1);"></canvas>
-                    </div>
-                    <div class="meters-grid" id="meters-container-mp"></div>
-                </div>
-            </div>
-            <div class="tower-card">
-                <div style="font-size: 26px;">🏆</div>
-                <div style="font-size: 10px; color: var(--text-sub); font-weight: bold;">FINISH</div>
-                <div class="rope-shaft"><div class="robot-indicator" id="robot-indicator-mp">🤖</div></div>
-                <div style="font-size: 10px; color: var(--text-sub); font-weight: bold;">START</div>
-                <div style="font-size: 20px;">🚩</div>
-            </div>
-        </div>
-    </div>
-
-    <!-- =========================================================================
-         【模式三：昂坪 360 紅綠燈 AI 執法賽 (MediaPipe 骨骼 + 5 秒罰凍結)】
-         ========================================================================= -->
-    <div class="mode-section" id="section-mode-3">
-        <div class="stepper-board">
-            <div class="step-card" id="card-mode3-step1">
-                <div>
-                    <div class="step-header">
-                        <span class="step-title" data-zh="🔌 步驟 1：輸入編號與連接" data-en="🔌 Step 1: Set ID & Connect">🔌 步驟 1：輸入編號與連接</span>
-                        <span class="step-tag" id="tag-mode3-serial" data-zh="未完成 ⚪" data-en="Incomplete ⚪">未完成 ⚪</span>
-                    </div>
-                    <input type="number" class="id-input-field" id="mb-input-3" placeholder="輸入 micro:bit 編號 (例: 12)" data-ph-zh="輸入 micro:bit 編號 (例: 12)" data-ph-en="Enter micro:bit ID (e.g. 12)" oninput="syncMicrobitId(this.value)">
-                </div>
-                <button class="step-btn" id="btn-mode3-serial" onclick="connectSerial()" data-zh="連接 Tx micro:bit" data-en="Connect Tx micro:bit">連接 Tx micro:bit</button>
-            </div>
-            <div class="step-card" id="card-mode3-step2">
-                <div>
-                    <div class="step-header">
-                        <span class="step-title" data-zh="📷 步驟 2：啟動 MediaPipe 鏡頭" data-en="📷 Step 2: Start Hand Cam">📷 步驟 2：啟動 MediaPipe 鏡頭</span>
-                        <span class="step-tag" id="tag-mode3-cam" data-zh="未啟動 ⚪" data-en="Inactive ⚪">未啟動 ⚪</span>
-                    </div>
-                    <div style="font-size: 11px; color: var(--text-sub); margin-bottom: 10px;" data-zh="啟動 21 節點骨骼手勢識別" data-en="Start 21-pt gesture tracking">啟動 21 節點骨骼手勢識別</div>
-                </div>
-                <button class="step-btn" id="btn-mode3-cam" onclick="initMediaPipe(3)" data-zh="📷 開啟手勢鏡頭" data-en="📷 Start Hand Cam">📷 開啟手勢鏡頭</button>
-            </div>
-            <div class="step-card" id="card-mode3-step3">
-                <div>
-                    <div class="step-header">
-                        <span class="step-title" data-zh="🚦 步驟 3：開始紅綠燈賽" data-en="🚦 Step 3: Start Traffic Race">🚦 步驟 3：開始紅綠燈賽</span>
-                        <span class="step-tag" id="tag-mode3-game" data-zh="待解鎖 🔒" data-en="Locked 🔒">待解鎖 🔒</span>
-                    </div>
-                    <div style="font-size: 11px; color: var(--text-sub); margin-bottom: 10px;" id="desc-mode3-step3" data-zh="綠燈出目標手勢，紅燈違者罰凍結 5 秒！" data-en="Move on Green! Freeze on Red (5s penalty)!">綠燈出目標手勢，紅燈違者罰凍結 5 秒！</div>
-                </div>
-                <button class="btn-launch" id="btn-launch-mode3" onclick="startTrafficGameMode3()" disabled data-zh="等待準備..." data-en="Waiting...">等待準備...</button>
-            </div>
-        </div>
-
-        <div class="stage-layout">
-            <div class="arena-box" id="arena-box-mode3">
-                <!-- 5 秒定身懲罰全域遮罩 -->
-                <div class="freeze-overlay" id="freeze-penalty-overlay">
-                    <div class="freeze-title" data-zh="🚨 違規！急煞失敗罰凍結" data-en="🚨 VIOLATION! FREEZE PENALTY">🚨 違規！急煞失敗罰凍結</div>
-                    <div class="freeze-timer-count" id="freeze-seconds-left">5</div>
-                    <div style="font-size:14px; font-weight:bold; margin-top:8px;" data-zh="🚫 扣除 2 分，全畫面鎖定中..." data-en="🚫 -2 Points, Screen Locked...">🚫 扣除 2 分，全畫面鎖定中...</div>
-                </div>
-
-                <!-- 頂部信號燈 HUD -->
-                <div class="traffic-hud-bar">
-                    <div class="traffic-lights-box">
-                        <div class="bulb-circle red" id="m3-bulb-red"></div>
-                        <div class="bulb-circle green active" id="m3-bulb-green"></div>
-                    </div>
-                    <div style="font-size: 18px; font-weight: 900;" id="m3-traffic-status-text" data-zh="🟢 綠燈：出招前進！" data-en="🟢 GREEN: MATCH GESTURE!">🟢 綠燈：出招前進！</div>
-                    <div class="score-pill"><span data-zh="攀爬得分：" data-en="Score: ">攀爬得分：</span><span id="score-counter-mode3">0</span></div>
-                </div>
-
-                <!-- 目標手勢流動軌道 -->
-                <div class="ribbon-track-wrapper">
-                    <div class="ribbon-track" id="queue-ribbon-mode3"></div>
-                    <div class="timer-bg"><div class="timer-fill" id="timer-bar-mode3"></div></div>
-                    <div id="splash-text-mode3">PERFECT!</div>
-                </div>
-
-                <div class="arena-footer">
-                    <div style="width: 220px; height: 150px; background: #000; border-radius: 10px; overflow: hidden; border: 1px solid var(--border-ui); position: relative;">
-                        <canvas id="output-canvas-mode3" width="320" height="240" style="width: 100%; height: 100%; transform: scaleX(-1);"></canvas>
-                    </div>
-                    <div class="meters-grid" id="meters-container-mode3"></div>
-                </div>
-            </div>
-
-            <div class="tower-card">
-                <div style="font-size: 26px;">🏆</div>
-                <div style="font-size: 10px; color: var(--text-sub); font-weight: bold;">FINISH</div>
-                <div class="rope-shaft"><div class="robot-indicator" id="robot-indicator-mode3">🤖</div></div>
-                <div style="font-size: 10px; color: var(--text-sub); font-weight: bold;">START</div>
-                <div style="font-size: 20px;">🚩</div>
-            </div>
-        </div>
-    </div>
-
-</div>
-
-<!-- 互動式引導反思 Chatbot -->
-<button class="chatbot-bubble-btn" onclick="toggleChatWindow()">
-    💬 <span data-zh="學習反思小助手" data-en="Reflection Tutor">學習反思小助手</span>
-</button>
-
-<div class="chatbot-window" id="chat-window">
-    <div class="chat-header">
-        <span data-zh="🤖 AI 學習小導師" data-en="🤖 AI Learning Tutor">🤖 AI 學習小導師</span>
-        <button onclick="toggleChatWindow()" style="background:transparent; border:none; color:#fff; font-size:16px; cursor:pointer;">✕</button>
-    </div>
-    <div class="chat-body" id="chat-body">
-        <div class="chat-msg bot">
-            <div class="bubble" id="chat-first-bubble">
-                哈囉！我係你嘅學習小導師 🤖。辛苦晒你組裝同測試爬繩機械人！<br><br>
-                <b>請問你頭先喺操作或除錯嗰陣，有冇遇到咩特別嘅困難？</b>
-            </div>
-            <div class="chip-group" id="chat-first-chips">
-                <span class="quick-chip" onclick="handleChipClick('手勢成日認錯，受背景干擾')">手勢成日認錯</span>
-                <span class="quick-chip" onclick="handleChipClick('紅燈嗰陣成日剎唔切車')">紅燈剎唔切車</span>
-                <span class="quick-chip" onclick="handleChipClick('機械人爬唔起，繩索太滑')">繩索太滑</span>
-                <span class="quick-chip" onclick="handleChipClick('好順利，冇遇到大困難！')">好順利冇問題！</span>
-            </div>
-        </div>
-    </div>
-    <div class="chat-footer">
-        <input type="text" class="chat-input" id="chat-input" placeholder="輸入你想講嘅嘢..." data-ph-zh="輸入你想講嘅嘢..." data-ph-en="Type your response..." onkeydown="if(event.key==='Enter') sendChatMessage()">
-        <button class="step-btn" style="width:auto; padding:6px 12px; background:var(--game-blue);" onclick="sendChatMessage()" data-zh="送出" data-en="Send">送出</button>
-    </div>
 </div>
 
 <script>
-    // =========================================================================
-    // 1. 全域配置與 Google Sheet 靜默自動導出
-    // =========================================================================
-    const GAS_ENDPOINT = "https://script.google.com/macros/s/AKfycbxYOUR_ACTUAL_DEPLOYED_URL_HERE/exec"; 
-    const SPREADSHEET_ID = "1HBh4g4FIGXVHxKcbtgfJPsvpK-YG5P1xs9p_-j_EBcY";
+    const CLASSES = [
+        { id: "c1", name: "石頭 ✊", key: "Rock" },
+        { id: "c2", name: "剪刀 ✌️", key: "Scissors" },
+        { id: "c3", name: "布 🖐️",   key: "Paper" },
+        { id: "c4", name: "讚好 👍", key: "Like" },
+        { id: "c5", name: "待機 🫱", key: "Idle" }
+    ];
 
-    let sharedMicrobitId = "";
-    let eventLogs = [];
-    let chatReflectionData = { difficulty: "", favorite: "", comments: "" };
-    let chatStep = 0;
+    let truncatedMobileNet = null;
+    let customTopModel = null;
+    let videoEl = document.getElementById("webcam-video");
+    let mainCanvas = document.getElementById("main-canvas");
+    let mainCtx = mainCanvas.getContext("2d");
 
-    async function autoExportToGoogleSheet(modeName, finalScore) {
-        if (!sharedMicrobitId || !GAS_ENDPOINT || GAS_ENDPOINT.includes("YOUR_ACTUAL_DEPLOYED_URL")) return;
-        const payload = {
-            sheetId: SPREADSHEET_ID,
-            microbitId: sharedMicrobitId,
-            condition: document.getElementById("conditionType").value,
-            mode: modeName,
-            score: finalScore,
-            reflections: chatReflectionData,
-            logs: eventLogs
-        };
+    let classSamples = {}; // 儲存各類別已採樣的 Canvas 元素
+    let isModelTrained = false;
+    let isPredicting = false;
+
+    // 1. 初始化頁面結構與鏡頭
+    async function initPlatform() {
+        renderClassBoxes();
+        renderMeters();
+        await setupCamera();
+        await loadFeatureExtractor();
+    }
+
+    function renderClassBoxes() {
+        const grid = document.getElementById("classes-grid");
+        grid.innerHTML = "";
+        CLASSES.forEach((c, idx) => {
+            classSamples[c.id] = null;
+            const box = document.createElement("div");
+            box.className = "class-box";
+            box.id = `box-${c.id}`;
+            box.innerHTML = `
+                <div class="class-title">${c.name}</div>
+                <div class="sample-thumb-slot" id="slot-${c.id}">
+                    <span style="color:#94a3b8; font-size:10px;">未採樣</span>
+                </div>
+                <span class="quality-tag empty" id="tag-${c.id}">等待數據</span>
+                <button class="btn-capture-slot" onclick="captureSample('${c.id}')">📸 拍攝此類別</button>
+            `;
+            grid.appendChild(box);
+        });
+    }
+
+    function renderMeters() {
+        const box = document.getElementById("meters-box");
+        box.innerHTML = "";
+        CLASSES.forEach(c => {
+            const row = document.createElement("div");
+            row.className = "meter-row";
+            row.id = `meter-${c.id}`;
+            row.innerHTML = `<span>${c.name}</span><span id="prob-${c.id}">0%</span>`;
+            box.appendChild(row);
+        });
+    }
+
+    async function setupCamera() {
         try {
-            await fetch(GAS_ENDPOINT, {
-                method: "POST",
-                mode: "no-cors",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify(payload)
+            const stream = await navigator.mediaDevices.getUserMedia({
+                video: { width: 224, height: 224, facingMode: "user" }
             });
-            console.log("✔ Auto-synced to Google Sheet quietly.");
-        } catch(e) {}
-    }
-
-    // =========================================================================
-    // 2. 繁英即時切換邏輯 (少於 25 行代碼)
-    // =========================================================================
-    let currentLang = 'zh';
-    function toggleLanguage() {
-        currentLang = currentLang === 'zh' ? 'en' : 'zh';
-        document.getElementById('lang-btn').innerText = currentLang === 'zh' ? '🌐 English' : '🌐 繁體中文';
-        document.querySelectorAll('[data-zh]').forEach(el => {
-            el.innerText = el.getAttribute(`data-${currentLang}`);
-        });
-        document.querySelectorAll('[data-ph-zh]').forEach(el => {
-            el.placeholder = el.getAttribute(`data-ph-${currentLang}`);
-        });
-        if (currentLang === 'en') {
-            document.getElementById('chat-first-bubble').innerHTML = "Hello! I am your AI Learning Tutor 🤖. Great job on the rope-climbing robot today!<br><br><b>What was the biggest technical challenge or error you encountered?</b>";
-        } else {
-            document.getElementById('chat-first-bubble').innerHTML = "哈囉！我係你嘅學習小導師 🤖。辛苦晒你組裝同測試爬繩機械人！<br><br><b>請問你頭先喺操作或除錯嗰陣，有冇遇到咩特別嘅困難？</b>";
+            videoEl.srcObject = stream;
+            await new Promise(resolve => videoEl.onloadedmetadata = resolve);
+            videoEl.play();
+            requestAnimationFrame(videoRenderLoop);
+        } catch (e) {
+            alert("鏡頭啟動失敗: " + e.message);
         }
     }
 
-    // =========================================================================
-    // 3. 全自動三模式 ID 同步
-    // =========================================================================
-    function syncMicrobitId(val) {
-        sharedMicrobitId = String(val).trim();
-        document.getElementById("mb-input-1").value = sharedMicrobitId;
-        document.getElementById("mb-input-2").value = sharedMicrobitId;
-        document.getElementById("mb-input-3").value = sharedMicrobitId;
-        document.getElementById("shared-mb-id-display").innerText = sharedMicrobitId ? ("No. " + sharedMicrobitId) : (currentLang === 'zh' ? "未填寫" : "Unset");
-        checkCanUnlockStep3();
-        checkCanUnlockMPStep3();
-        checkCanUnlockMode3Step3();
+    // 2. 本地直接載入 MobileNet 卷積基底（毋須任何 GTM 檔案）
+    async function loadFeatureExtractor() {
+        const statusEl = document.getElementById("engine-status");
+        try {
+            // 直接載入官方輕量 MobileNet v1 (0.25 寬度系數，極致輕量，下載僅約 1.8MB)
+            const mobilenet = await tf.loadLayersModel('https://storage.googleapis.com/tfjs-models/tfjs/mobilenet_v1_0.25_224/model.json');
+            
+            // 截取至最後一層核心卷積層 conv_pw_13_relu (Shape: [1, 7, 7, 256])
+            const layer = mobilenet.getLayer('conv_pw_13_relu');
+            truncatedMobileNet = tf.model({ inputs: mobilenet.inputs, outputs: layer.output });
+
+            statusEl.innerText = "✔ MobileNet 卷積基底就緒！請為各類別拍攝樣本";
+            statusEl.style.color = "var(--accent-green)";
+        } catch (err) {
+            statusEl.innerText = "基底下載失敗，請檢查網絡連線: " + err.message;
+            statusEl.style.color = "var(--accent-rose)";
+        }
     }
 
-    // =========================================================================
-    // 4. 模式切換 (模式二密碼 mediapipe)
-    // =========================================================================
-    let currentSystemMode = 1;
-    function switchSystemMode(modeNum) {
-        if (modeNum === 2) {
-            const pwd = prompt(currentLang === 'zh' ? "請輸入模式二權限密碼：" : "Enter Mode 2 Password:");
-            if (pwd !== "mediapipe") {
-                alert(currentLang === 'zh' ? "❌ 密碼錯誤！無法進入模式二。" : "❌ Incorrect Password!");
-                return;
+    // 3. 採樣邏輯：從畫面上截取正方形影像
+    function captureSample(classId) {
+        const slot = document.getElementById(`slot-${classId}`);
+        const tag = document.getElementById(`tag-${classId}`);
+
+        const canvas = document.createElement("canvas");
+        canvas.width = 224;
+        canvas.height = 224;
+        const ctx = canvas.getContext("2d");
+        ctx.drawImage(videoEl, 0, 0, 224, 224);
+
+        classSamples[classId] = canvas;
+        slot.innerHTML = "";
+        slot.appendChild(canvas);
+
+        tag.className = "quality-tag empty";
+        tag.innerText = "已採樣 1 張";
+
+        // 檢查是否至少有 2 個類別已拍照
+        const capturedCount = Object.values(classSamples).filter(v => v !== null).length;
+        if (capturedCount >= 2) {
+            document.getElementById("btn-train").disabled = false;
+        }
+    }
+
+    // 4. 一鍵本地遷移訓練（Transfer Learning）
+    async function trainModel() {
+        const btnTrain = document.getElementById("btn-train");
+        btnTrain.innerText = "⚡ 本地學習中 (約 1 秒)...";
+        btnTrain.disabled = true;
+
+        // 構建特徵張量與標籤
+        const features = [];
+        const labels = [];
+        const activeClassIndices = [];
+
+        CLASSES.forEach((c, idx) => {
+            if (classSamples[c.id]) {
+                activeClassIndices.push(idx);
+                tf.tidy(() => {
+                    const imgTensor = tf.browser.fromPixels(classSamples[c.id]).toFloat().div(127.5).sub(1.0).expandDims(0);
+                    const feat = truncatedMobileNet.predict(imgTensor);
+                    features.push(feat);
+                });
+                // One-hot 標籤
+                const l = new Array(CLASSES.length).fill(0);
+                l[idx] = 1.0;
+                labels.push(l);
             }
-        }
-        currentSystemMode = modeNum;
-        document.getElementById("tab-mode-1").classList.toggle("active", modeNum === 1);
-        document.getElementById("tab-mode-2").classList.toggle("active", modeNum === 2);
-        document.getElementById("tab-mode-3").classList.toggle("active", modeNum === 3);
+        });
 
-        document.getElementById("section-mode-1").classList.toggle("active-mode", modeNum === 1);
-        document.getElementById("section-mode-2").classList.toggle("active-mode", modeNum === 2);
-        document.getElementById("section-mode-3").classList.toggle("active-mode", modeNum === 3);
+        const xs = tf.concat(features, 0);
+        const ys = tf.tensor2d(labels);
 
-        if (modeNum === 2 && !cameraMP) initMediaPipe(2);
-        else if (modeNum === 3 && !cameraMP) initMediaPipe(3);
+        // 構建頂層分類器 (GAP + Dense Softmax)
+        customTopModel = tf.sequential({
+            layers: [
+                tf.layers.globalAveragePooling2d({ inputShape: [7, 7, 256] }),
+                tf.layers.dense({ units: CLASSES.length, activation: 'softmax', kernelInitializer: 'varianceScaling' })
+            ]
+        });
+
+        customTopModel.compile({
+            optimizer: tf.train.adam(0.01),
+            loss: 'categoricalCrossentropy'
+        });
+
+        await customTopModel.fit(xs, ys, {
+            epochs: 35,
+            batchSize: Math.max(1, features.length),
+            shuffle: true
+        });
+
+        xs.dispose();
+        ys.dispose();
+        features.forEach(f => f.dispose());
+
+        isModelTrained = true;
+        btnTrain.innerText = "✔ 學習完成！實時預測中";
+        btnTrain.classList.add("success");
+        document.getElementById("btn-diagnose").disabled = false;
+        document.getElementById("hud-status").innerText = "實時推論中";
     }
 
-    // XAI 密碼驗證
-    let prevConditionVal = "No_XAI_Blackbox";
-    function storePrevCondition(val) { prevConditionVal = val; }
-    function handleConditionChange(selectEl) {
-        if (selectEl.value === "XAI_GradCAM") {
-            const pwd = prompt(currentLang === 'zh' ? "請輸入 XAI 實驗組權限密碼：" : "Enter XAI Password:");
-            if (pwd === "xai") {
-                alert(currentLang === 'zh' ? "✔ 密碼正確！已切換至【GTM 實驗組 (Grad-CAM 熱力圖)】" : "✔ Access Granted: Grad-CAM Activated");
-                prevConditionVal = "XAI_GradCAM";
-                document.getElementById("gradcam-legend-ui").style.display = "flex";
+    // 5. 核心：Grad-CAM 計算演算法
+    function computeGradCAM(inputTensor, targetClassIdx) {
+        return tf.tidy(() => {
+            const convOutput = truncatedMobileNet.predict(inputTensor); // [1, 7, 7, 256]
+            const scoreFn = (act) => {
+                const pooled = act.mean([1, 2]); // GAP
+                const logits = customTopModel.apply(act);
+                return logits.gather([targetClassIdx], 1).as1D();
+            };
+            const gradFn = tf.grad(scoreFn);
+            const grads = gradFn(convOutput); // [1, 7, 7, 256]
+            const weights = grads.mean([0, 1, 2]); // [256]
+            const cam = convOutput.squeeze(0).mul(weights).sum(-1); // [7, 7]
+            const reluCam = tf.relu(cam);
+            const min = reluCam.min();
+            const max = reluCam.max();
+            return reluCam.sub(min).div(max.sub(min).add(1e-8)); // 歸一化 [7, 7]
+        });
+    }
+
+    // 6. 訓練樣本質素診斷（解決「點解準確率得 50-75%」的關鍵功能）
+    async function diagnoseDatasetQuality() {
+        if (!isModelTrained) return;
+
+        CLASSES.forEach(async (c, idx) => {
+            const canvas = classSamples[c.id];
+            if (!canvas) return;
+
+            const inputTensor = tf.tidy(() => {
+                return tf.browser.fromPixels(canvas).toFloat().div(127.5).sub(1.0).expandDims(0);
+            });
+
+            const camTensor = computeGradCAM(inputTensor, idx);
+            inputTensor.dispose();
+
+            const camData = await camTensor.data();
+            camTensor.dispose();
+
+            // 在樣本縮圖上繪製熱力圖疊加
+            const ctx = canvas.getContext("2d");
+            ctx.drawImage(videoEl, 0, 0, 224, 224); // 重繪原圖
+
+            const heatCanvas = document.createElement("canvas");
+            heatCanvas.width = 7;
+            heatCanvas.height = 7;
+            const hCtx = heatCanvas.getContext("2d");
+            const imgData = hCtx.createImageData(7, 7);
+
+            let centerActivationSum = 0;
+            let totalActivationSum = 0;
+
+            for (let i = 0; i < 49; i++) {
+                const val = camData[i];
+                totalActivationSum += val;
+                const x = i % 7;
+                const y = Math.floor(i / 7);
+                // 檢查是否落在畫面中心手勢區域 (x: 2~4, y: 2~4)
+                if (x >= 2 && x <= 4 && y >= 2 && y <= 4) {
+                    centerActivationSum += val;
+                }
+                const [r, g, b, a] = getJetColor(val);
+                imgData.data[i * 4] = r;
+                imgData.data[i * 4 + 1] = g;
+                imgData.data[i * 4 + 2] = b;
+                imgData.data[i * 4 + 3] = a;
+            }
+            hCtx.putImageData(imgData, 0, 0);
+
+            // 平滑放大疊加於樣本照片
+            ctx.save();
+            ctx.globalAlpha = 0.65;
+            ctx.imageSmoothingEnabled = true;
+            ctx.drawImage(heatCanvas, 0, 0, 224, 224);
+            ctx.restore();
+
+            // 評判數據品質：中央權重 vs 背景雜音
+            const tag = document.getElementById(`tag-${c.id}`);
+            const centerRatio = centerActivationSum / (totalActivationSum + 1e-5);
+            if (centerRatio > 0.45) {
+                tag.className = "quality-tag good";
+                tag.innerText = "🟢 聚焦手勢 (優質)";
             } else {
-                alert(currentLang === 'zh' ? "❌ 密碼錯誤，已鎖定於【對照組】" : "❌ Access Denied!");
-                selectEl.value = prevConditionVal;
-                document.getElementById("gradcam-legend-ui").style.display = "none";
+                tag.className = "quality-tag noise";
+                tag.innerText = "🔴 背景干擾 (需重拍)";
             }
-        } else {
-            prevConditionVal = selectEl.value;
-            document.getElementById("gradcam-legend-ui").style.display = "none";
-        }
+        });
     }
 
-    // =========================================================================
-    // 5. WebSerial 通訊控制 (完全無需更動 Rx，只送 1\n)
-    // =========================================================================
-    let serialPort, serialWriter;
-    let step1Ready = false;
+    // 7. 即時推論與相機疊加 Loop
+    let predictThrottle = 0;
+    let cachedLiveCamCanvas = null;
 
-    async function connectSerial() {
-        try {
-            serialPort = await navigator.serial.requestPort();
-            await serialPort.open({ baudRate: 115200 });
-            const enc = new TextEncoderStream();
-            enc.readable.pipeTo(serialPort.writable);
-            serialWriter = enc.writable.getWriter();
+    async function videoRenderLoop() {
+        mainCtx.drawImage(videoEl, 0, 0, 224, 224);
 
-            step1Ready = true;
-            ["card-step1", "card-mp-step1", "card-mode3-step1"].forEach(id => document.getElementById(id).classList.add("done"));
-            ["tag-step1", "tag-mp-serial", "tag-mode3-serial"].forEach(id => document.getElementById(id).innerText = currentLang === 'zh' ? "已連線 🟢" : "Ready 🟢");
-            ["btn-step1", "btn-mp-serial", "btn-mode3-serial"].forEach(id => {
-                document.getElementById(id).innerText = currentLang === 'zh' ? "✔ 連線成功" : "✔ Connected";
-                document.getElementById(id).classList.add("ready-btn");
-            });
-            checkCanUnlockStep3();
-            checkCanUnlockMPStep3();
-            checkCanUnlockMode3Step3();
-        } catch (e) {
-            alert("Serial Connection Error: " + e.message);
-        }
-    }
-
-    async function sendRobotCommand(cmdStr) {
-        if (serialWriter) {
-            try { await serialWriter.write(cmdStr + "\n"); } catch(e) {}
-        }
-    }
-
-    // =========================================================================
-    // 6. 模式一：Teachable Machine + Grad-CAM
-    // =========================================================================
-    const GESTURES = {
-        "Class 1": { name: "石頭", symbol: "✊" },
-        "Class 2": { name: "剪刀", symbol: "✌️" },
-        "Class 3": { name: "布",   symbol: "🖐️" },
-        "Class 4": { name: "讚好", symbol: "👍" },
-        "Class 5": { name: "待機", symbol: "🫱" }
-    };
-    const ACTIVE_TARGETS = ["Class 1", "Class 2", "Class 3", "Class 4"];
-    let step2Ready = false, model, webcam, maxPredictions;
-    let convSubModel = null, headLayers = [], displayCanvas, displayCtx, offCanvas, offCtx;
-    let gradCamThrottle = 0, cachedHeatmapCanvas = null;
-    let actionQueue = [], isRunning = false, isLocked = false, score = 0, combo = 0, roundStart = 0;
-    const TIME_LIMIT_MS = 3000;
-    let timerLoop = null;
-
-    async function initAI() {
-        let url = document.getElementById("modelUrl").value.trim();
-        if (!url) { alert(currentLang === 'zh' ? "請先填寫 Teachable Machine 模型連結！" : "Please paste your Teachable Machine model URL!"); return; }
-        if (url.endsWith("model.json")) url = url.replace("model.json", "");
-        if (!url.endsWith("/")) url += "/";
-
-        const btn = document.getElementById("btn-step2");
-        btn.innerText = currentLang === 'zh' ? "載入中..." : "Loading...";
-        btn.disabled = true;
-
-        try {
-            model = await tmImage.load(url + "model.json", url + "metadata.json");
-            maxPredictions = model.getTotalClasses();
-
-            webcam = new tmImage.Webcam(220, 150, true);
-            await webcam.setup();
-            await webcam.play();
-
-            displayCanvas = document.createElement("canvas");
-            displayCanvas.width = 220; displayCanvas.height = 150;
-            displayCtx = displayCanvas.getContext("2d");
-            const container = document.getElementById("webcam-container");
-            container.innerHTML = "";
-            container.appendChild(displayCanvas);
-
-            setupGradCAMComponents(model.model);
-
-            const mBox = document.getElementById("meters-container");
-            mBox.innerHTML = "";
-            for (let i = 0; i < maxPredictions; i++) {
-                const row = document.createElement("div");
-                row.className = "meter-row";
-                row.id = "meter-row-" + i;
-                mBox.appendChild(row);
+        if (isModelTrained) {
+            predictThrottle++;
+            if (predictThrottle % 2 === 0) {
+                await runLiveInference();
             }
-
-            step2Ready = true;
-            document.getElementById("card-step2").classList.add("done");
-            document.getElementById("tag-step2").innerText = currentLang === 'zh' ? "已就緒 🟢" : "Ready 🟢";
-            btn.innerText = currentLang === 'zh' ? "✔ 模型與鏡頭就緒" : "✔ Ready";
-            btn.classList.add("ready-btn");
-            btn.disabled = false;
-            checkCanUnlockStep3();
-            window.requestAnimationFrame(predictLoop);
-        } catch (e) {
-            btn.innerText = "Retry"; btn.disabled = false;
-            alert("Error: " + e.message);
-        }
-    }
-
-    function setupGradCAMComponents(tmLayersModel) {
-        if (!tmLayersModel) return;
-        headLayers = [];
-        let targetConvLayer = null;
-        try {
-            if (tmLayersModel.layers[0] && tmLayersModel.layers[0].layers) {
-                const subLayers = tmLayersModel.layers[0].layers;
-                for (let i = subLayers.length - 1; i >= 0; i--) {
-                    const l = subLayers[i];
-                    if (l.outputShape && l.outputShape.length === 4 && l.outputShape[1] > 1) {
-                        targetConvLayer = l;
-                        for (let j = i + 1; j < subLayers.length; j++) headLayers.push(subLayers[j]);
-                        break;
-                    }
-                }
-                for (let k = 1; k < tmLayersModel.layers.length; k++) headLayers.push(tmLayersModel.layers[k]);
-                if (targetConvLayer) {
-                    convSubModel = tf.model({ inputs: tmLayersModel.layers[0].inputs, outputs: targetConvLayer.output });
-                }
+            if (document.getElementById("toggle-gradcam").checked && cachedLiveCamCanvas) {
+                mainCtx.save();
+                mainCtx.globalAlpha = 0.55;
+                mainCtx.drawImage(cachedLiveCamCanvas, 0, 0, 224, 224);
+                mainCtx.restore();
             }
-        } catch(err) {}
+        }
+        requestAnimationFrame(videoRenderLoop);
     }
 
-    function getJetColorAndAlpha(val) {
+    async function runLiveInference() {
+        const inputTensor = tf.tidy(() => {
+            return tf.browser.fromPixels(videoEl).toFloat().div(127.5).sub(1.0).expandDims(0);
+        });
+
+        // 預測機率
+        const probsTensor = tf.tidy(() => {
+            const feat = truncatedMobileNet.predict(inputTensor);
+            return customTopModel.predict(feat);
+        });
+
+        const probs = await probsTensor.data();
+        probsTensor.dispose();
+
+        let topIdx = 0, topProb = 0;
+        CLASSES.forEach((c, idx) => {
+            const p = probs[idx] || 0;
+            document.getElementById(`prob-${c.id}`).innerText = `${(p * 100).toFixed(0)}%`;
+            const row = document.getElementById(`meter-${c.id}`);
+            if (p > 0.65) row.classList.add("matched");
+            else row.classList.remove("matched");
+
+            if (p > topProb) { topProb = p; topIdx = idx; }
+        });
+
+        // 計算 Live Grad-CAM
+        if (document.getElementById("toggle-gradcam").checked) {
+            const camTensor = computeGradCAM(inputTensor, topIdx);
+            const camData = await camTensor.data();
+            camTensor.dispose();
+
+            if (!cachedLiveCamCanvas) {
+                cachedLiveCamCanvas = document.createElement("canvas");
+                cachedLiveCamCanvas.width = 7;
+                cachedLiveCamCanvas.height = 7;
+            }
+            const hCtx = cachedLiveCamCanvas.getContext("2d");
+            const imgData = hCtx.createImageData(7, 7);
+            for (let i = 0; i < 49; i++) {
+                const [r, g, b, a] = getJetColor(camData[i]);
+                imgData.data[i * 4] = r;
+                imgData.data[i * 4 + 1] = g;
+                imgData.data[i * 4 + 2] = b;
+                imgData.data[i * 4 + 3] = a;
+            }
+            hCtx.putImageData(imgData, 0, 0);
+        }
+
+        inputTensor.dispose();
+    }
+
+    function getJetColor(val) {
         val = Math.max(0, Math.min(1, val));
-        if (val < 0.15) return [0, 0, 0, 0];
-        const norm = (val - 0.15) / 0.85;
+        if (val < 0.2) return [0, 0, 0, 0]; // 弱激活完全透明
+        const norm = (val - 0.2) / 0.8;
         let r = 0, g = 0, b = 0;
         if (norm < 0.25) { r = 0; g = Math.round(255 * (norm / 0.25)); b = 255; }
         else if (norm < 0.5) { r = 0; g = 255; b = Math.round(255 * (1 - (norm - 0.25) / 0.25)); }
         else if (norm < 0.75) { r = Math.round(255 * ((norm - 0.5) / 0.25)); g = 255; b = 0; }
         else { r = 255; g = Math.round(255 * (1 - (norm - 0.75) / 0.25)); b = 0; }
-        return [r, g, b, Math.round(70 + norm * 130)];
+        return [r, g, b, Math.round(100 + norm * 140)];
     }
 
-    async function computeGradCAM(inputTensor, targetClassIdx) {
-        if (!convSubModel || headLayers.length === 0) return null;
-        return tf.tidy(() => {
-            const convOutput = convSubModel.predict(inputTensor);
-            const scoreFn = (act) => {
-                let x = act;
-                for (let l of headLayers) x = l.apply(x);
-                return x.as1D().gather([targetClassIdx]);
-            };
-            const gradFn = tf.grad(scoreFn);
-            const grads = gradFn(convOutput);
-            const weights = grads.mean([0, 1, 2]);
-            const cam = convOutput.squeeze(0).mul(weights).sum(-1);
-            const reluCam = tf.relu(cam);
-            return reluCam.sub(reluCam.min()).div(reluCam.max().sub(reluCam.min()).add(1e-8));
-        });
-    }
-
-    function checkCanUnlockStep3() {
-        if (step1Ready && step2Ready && sharedMicrobitId) {
-            document.getElementById("card-step3").classList.add("done");
-            document.getElementById("tag-step3").innerText = currentLang === 'zh' ? "準備就緒 ✨" : "Ready ✨";
-            const launchBtn = document.getElementById("btn-launch");
-            launchBtn.disabled = false;
-            launchBtn.innerText = currentLang === 'zh' ? "🚀 開始攀爬競技！" : "🚀 Start Arena!";
-            launchBtn.classList.add("unlocked");
-        }
-    }
-
-    async function predictLoop() {
-        if (currentSystemMode === 1 && webcam) {
-            webcam.update();
-            await evaluateTarget();
-        }
-        window.requestAnimationFrame(predictLoop);
-    }
-
-    async function evaluateTarget() {
-        if (!model) return;
-        const predictions = await model.predict(webcam.canvas);
-        let topCls = "", topProb = 0, topIdx = 0;
-
-        for (let i = 0; i < maxPredictions; i++) {
-            const name = predictions[i].className;
-            const prob = predictions[i].probability;
-            const row = document.getElementById("meter-row-" + i);
-            const g = GESTURES[name] || { symbol: "", name: name };
-            row.innerHTML = `<span>${g.symbol} ${g.name}</span><span>${(prob*100).toFixed(0)}%</span>`;
-            if (prob > topProb) { topProb = prob; topCls = name; topIdx = i; }
-            if (prob > 0.75) row.classList.add("matched");
-            else row.classList.remove("matched");
-        }
-
-        let explainIdx = topIdx;
-        if (isRunning && actionQueue.length > 0) {
-            const foundIdx = predictions.findIndex(p => p.className === actionQueue[0]);
-            if (foundIdx !== -1) explainIdx = foundIdx;
-        }
-
-        gradCamThrottle++;
-        const isXAI = document.getElementById("conditionType").value === "XAI_GradCAM";
-        if (isXAI && convSubModel && gradCamThrottle % 3 === 0) {
-            try {
-                const inputTensor = tf.tidy(() => {
-                    let img = tf.browser.fromPixels(webcam.canvas);
-                    return tf.image.resizeBilinear(img, [224, 224]).toFloat().div(127.5).sub(1.0).expandDims(0);
-                });
-                const heatmapTensor = await computeGradCAM(inputTensor, explainIdx);
-                inputTensor.dispose();
-                if (heatmapTensor) {
-                    const [h, w] = heatmapTensor.shape;
-                    const data = await heatmapTensor.data();
-                    heatmapTensor.dispose();
-                    if (!offCanvas) {
-                        offCanvas = document.createElement("canvas");
-                        offCanvas.width = w; offCanvas.height = h;
-                        offCtx = offCanvas.getContext("2d");
-                    }
-                    const imgData = offCtx.createImageData(w, h);
-                    for (let i = 0; i < data.length; i++) {
-                        const [r, g, b, a] = getJetColorAndAlpha(data[i]);
-                        imgData.data[i*4] = r; imgData.data[i*4+1] = g; imgData.data[i*4+2] = b; imgData.data[i*4+3] = a;
-                    }
-                    offCtx.putImageData(imgData, 0, 0);
-                    cachedHeatmapCanvas = offCanvas;
-                }
-            } catch(e) {}
-        }
-
-        if (displayCtx) {
-            displayCtx.drawImage(webcam.canvas, 0, 0, displayCanvas.width, displayCanvas.height);
-            if (isXAI && cachedHeatmapCanvas) {
-                displayCtx.save();
-                displayCtx.drawImage(cachedHeatmapCanvas, 0, 0, displayCanvas.width, displayCanvas.height);
-                displayCtx.restore();
-            }
-        }
-
-        if (isRunning && !isLocked && actionQueue.length > 0) {
-            if (topCls === actionQueue[0] && topProb > 0.75) handleSuccess(topCls);
-        }
-    }
-
-    function startGame() {
-        isRunning = true; isLocked = false; score = 0; combo = 0; eventLogs = [];
-        updateHUD();
-        const launchBtn = document.getElementById("btn-launch");
-        launchBtn.innerText = currentLang === 'zh' ? "🎮 競技進行中..." : "🎮 Competing...";
-        launchBtn.disabled = true;
-        actionQueue = [];
-        for (let i = 0; i < 5; i++) actionQueue.push(ACTIVE_TARGETS[Math.floor(Math.random() * ACTIVE_TARGETS.length)]);
-        renderQueue();
-        startTimer();
-    }
-
-    function renderQueue() {
-        const ribbon = document.getElementById("queue-ribbon");
-        ribbon.innerHTML = "";
-        actionQueue.forEach((clsKey, index) => {
-            const g = GESTURES[clsKey];
-            const card = document.createElement("div");
-            card.className = "action-card " + (index === 0 ? "active-target" : "upcoming");
-            card.innerHTML = `<div class="symbol">${g.symbol}</div><div class="c-name">${g.name}</div>`;
-            ribbon.appendChild(card);
-        });
-    }
-
-    function startTimer() {
-        clearInterval(timerLoop);
-        roundStart = performance.now();
-        const bar = document.getElementById("timer-bar");
-        timerLoop = setInterval(() => {
-            const elapsed = performance.now() - roundStart;
-            const remaining = Math.max(0, TIME_LIMIT_MS - elapsed);
-            bar.style.width = (remaining / TIME_LIMIT_MS) * 100 + "%";
-            if (remaining <= 0) { clearInterval(timerLoop); handleTimeout(); }
-        }, 30);
-    }
-
-    async function handleSuccess(matchedCls) {
-        isLocked = true; clearInterval(timerLoop);
-        score++; combo++;
-        if (combo >= 3) {
-            if (typeof confetti === "function") confetti({ particleCount: 25, spread: 60, origin: { y: 0.6 } });
-            popSplash("🔥 " + combo + "x COMBO!", "var(--game-amber)");
-        } else {
-            popSplash("PERFECT! ⚡", "var(--game-green)");
-        }
-        updateHUD();
-        sendRobotCommand("1");
-        eventLogs.push({ target: actionQueue[0], matched: matchedCls, status: "HIT", timestamp: new Date().toISOString() });
-        actionQueue.shift();
-        actionQueue.push(ACTIVE_TARGETS[Math.floor(Math.random() * ACTIVE_TARGETS.length)]);
-        renderQueue();
-
-        if (score >= 15) {
-            isRunning = false;
-            autoExportToGoogleSheet("Mode 1 (GTM)", score);
-            alert(currentLang === 'zh' ? "🎉 恭喜完成！成績已自動儲存至 Google Sheet！" : "🎉 Congratulations! Scores auto-saved to Google Sheet!");
-        } else {
-            setTimeout(() => { isLocked = false; if (isRunning) startTimer(); }, 800);
-        }
-    }
-
-    function handleTimeout() {
-        combo = 0; popSplash("MISS! ✖", "var(--game-pink)");
-        updateHUD();
-        actionQueue.shift();
-        actionQueue.push(ACTIVE_TARGETS[Math.floor(Math.random() * ACTIVE_TARGETS.length)]);
-        renderQueue();
-        if (isRunning) startTimer();
-    }
-
-    function popSplash(text, color) {
-        const el = document.getElementById("splash-text");
-        el.innerText = text; el.style.color = color; el.classList.add("show");
-        setTimeout(() => el.classList.remove("show"), 450);
-    }
-
-    function updateHUD() {
-        document.getElementById("score-counter").innerText = score;
-        document.getElementById("combo-display").innerText = combo + "x COMBO";
-        document.getElementById("robot-indicator").style.bottom = Math.min(92, (score / 15) * 92) + "%";
-    }
-
-    // =========================================================================
-    // 7. 模式二與模式三共用 MediaPipe Hands 引擎
-    // =========================================================================
-    let handsMP = null, cameraMP = null, videoElementMP;
-    let currentLandmarks = null, dataset = [], isSampling = false, samplingTarget = null, sampleInterval = null;
-    let step2MPReady = false, isMPRunning = false, isMPLocked = false, mpScore = 0, mpActionQueue = [], mpTimerLoop = null;
-
-    async function initMediaPipe(targetMode) {
-        if (!videoElementMP) {
-            videoElementMP = document.getElementById("webcam-video-mp");
-        }
-        if (!handsMP) {
-            handsMP = new Hands({ locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/hands/${file}` });
-            handsMP.setOptions({ maxNumHands: 1, modelComplexity: 1, minDetectionConfidence: 0.6, minTrackingConfidence: 0.6 });
-            handsMP.onResults(onHandResults);
-        }
-        if (!cameraMP) {
-            cameraMP = new Camera(videoElementMP, {
-                onFrame: async () => { 
-                    if (currentSystemMode === 2 || currentSystemMode === 3) {
-                        await handsMP.send({ image: videoElementMP }); 
-                    }
-                },
-                width: 320, height: 240
-            });
-            await cameraMP.start();
-        }
-
-        if (targetMode === 2) {
-            const btn = document.getElementById("btn-mp-start");
-            document.getElementById("tag-mp-engine").innerText = currentLang === 'zh' ? "21點鏡頭就緒 🟡" : "21-pt Ready 🟡";
-            btn.innerText = currentLang === 'zh' ? "按住上方按鈕錄製手勢" : "Hold buttons above to sample";
-            btn.classList.add("ready-btn");
-            btn.disabled = false;
-        } else if (targetMode === 3) {
-            document.getElementById("tag-mode3-cam").innerText = currentLang === 'zh' ? "就緒 🟢" : "Ready 🟢";
-            document.getElementById("card-mode3-step2").classList.add("done");
-            document.getElementById("btn-mode3-cam").innerText = currentLang === 'zh' ? "✔ 手勢鏡頭已啟動" : "✔ Cam Started";
-            document.getElementById("btn-mode3-cam").classList.add("ready-btn");
-            checkCanUnlockMode3Step3();
-        }
-
-        // 初始化指示器
-        ["meters-container-mp", "meters-container-mode3"].forEach(cid => {
-            const mBox = document.getElementById(cid);
-            mBox.innerHTML = "";
-            Object.keys(GESTURES).forEach((key) => {
-                const row = document.createElement("div");
-                row.className = "meter-row";
-                row.id = cid + "-row-" + key.replace(" ", "-");
-                const g = GESTURES[key];
-                row.innerHTML = `<span>${g.symbol} ${g.name}</span><span>0%</span>`;
-                mBox.appendChild(row);
-            });
-        });
-    }
-
-    function onHandResults(results) {
-        let activeCanvas = null;
-        if (currentSystemMode === 2) activeCanvas = document.getElementById("output-canvas-mp");
-        else if (currentSystemMode === 3) activeCanvas = document.getElementById("output-canvas-mode3");
-        if (!activeCanvas) return;
-
-        const ctx = activeCanvas.getContext("2d");
-        ctx.save();
-        ctx.clearRect(0, 0, activeCanvas.width, activeCanvas.height);
-        ctx.drawImage(results.image, 0, 0, activeCanvas.width, activeCanvas.height);
-
-        if (results.multiHandLandmarks && results.multiHandLandmarks.length > 0) {
-            currentLandmarks = results.multiHandLandmarks[0];
-            drawSkeleton(ctx, currentLandmarks, activeCanvas.width, activeCanvas.height);
-            classifyCurrentPose();
-        } else {
-            currentLandmarks = null;
-        }
-        ctx.restore();
-    }
-
-    function drawSkeleton(ctx, landmarks, w, h) {
-        const CONNECTIONS = [
-            [0,1],[1,2],[2,3],[3,4],[0,5],[5,6],[6,7],[7,8],[5,9],[9,10],[10,11],[11,12],
-            [9,13],[13,14],[14,15],[15,16],[13,17],[17,18],[18,19],[19,20],[0,17]
-        ];
-        ctx.strokeStyle = "#0284c7"; ctx.lineWidth = 3;
-        CONNECTIONS.forEach(([i, j]) => {
-            ctx.beginPath();
-            ctx.moveTo(landmarks[i].x * w, landmarks[i].y * h);
-            ctx.lineTo(landmarks[j].x * w, landmarks[j].y * h);
-            ctx.stroke();
-        });
-    }
-
-    function extractNormalizedFeatures(landmarks) {
-        const base = landmarks[0];
-        const scale = Math.hypot(landmarks[9].x - base.x, landmarks[9].y - base.y) || 1.0;
-        const featureVector = [];
-        for (let i = 0; i < 21; i++) {
-            featureVector.push((landmarks[i].x - base.x) / scale);
-            featureVector.push((landmarks[i].y - base.y) / scale);
-            featureVector.push((landmarks[i].z - base.z) / scale);
-        }
-        return featureVector;
-    }
-
-    function startSampling(label) {
-        if (!currentLandmarks) {
-            alert(currentLang === 'zh' ? "鏡頭前未偵測到手掌，請將手伸入畫面！" : "No hand detected in view!"); return;
-        }
-        isSampling = true; samplingTarget = label;
-        sampleInterval = setInterval(() => {
-            if (isSampling && currentLandmarks) {
-                const vector = extractNormalizedFeatures(currentLandmarks);
-                dataset.push({ label: samplingTarget, vector: vector });
-                document.getElementById("cnt-" + samplingTarget).innerText = dataset.filter(d => d.label === samplingTarget).length + " 幀";
-                checkModelReadiness();
-            }
-        }, 80);
-    }
-
-    function stopSampling() { isSampling = false; clearInterval(sampleInterval); }
-    function clearDataset() {
-        dataset = [];
-        Object.keys(GESTURES).forEach(key => document.getElementById("cnt-" + key).innerText = "0 幀");
-        step2MPReady = false;
-        document.getElementById("card-mp-step2").classList.remove("done");
-        document.getElementById("tag-mp-engine").innerText = "已重置 ⚪";
-        checkCanUnlockMPStep3();
-    }
-
-    function checkModelReadiness() {
-        const counts = Object.keys(GESTURES).map(k => dataset.filter(d => d.label === k).length);
-        if (counts.every(c => c >= 8) && !step2MPReady) {
-            step2MPReady = true;
-            document.getElementById("card-mp-step2").classList.add("done");
-            document.getElementById("tag-mp-engine").innerText = currentLang === 'zh' ? "訓練完成 🟢" : "Trained 🟢";
-            checkCanUnlockMPStep3();
-        }
-    }
-
-    // 智能手勢分類（KNN 匹配 + 內置特徵備援）
-    function classifyCurrentPose() {
-        if (!currentLandmarks) return;
-        let topCls = "Class 5", maxProb = 0.5;
-
-        if (dataset.length >= 20) {
-            const currentVec = extractNormalizedFeatures(currentLandmarks);
-            const distances = dataset.map(sample => {
-                let distSq = 0;
-                for (let i = 0; i < currentVec.length; i++) {
-                    const diff = currentVec[i] - sample.vector[i];
-                    distSq += diff * diff;
-                }
-                return { label: sample.label, dist: Math.sqrt(distSq) };
-            });
-            distances.sort((a, b) => a.dist - b.dist);
-            const k = Math.min(5, distances.length);
-            const topK = distances.slice(0, k);
-
-            const scores = {};
-            Object.keys(GESTURES).forEach(k => scores[k] = 0);
-            topK.forEach(item => scores[item.label]++);
-            Object.keys(scores).forEach(cls => {
-                const prob = scores[cls] / k;
-                if (scores[cls] > maxProb * k) { maxProb = prob; topCls = cls; }
-            });
-        } else {
-            // 備援幾何啟發式辨識（即使未訓練亦能即時玩！）
-            const isExtended = (tipIdx, pipIdx) => currentLandmarks[tipIdx].y < currentLandmarks[pipIdx].y;
-            const indexUp = isExtended(8, 6);
-            const middleUp = isExtended(12, 10);
-            const ringUp = isExtended(16, 14);
-            const pinkyUp = isExtended(20, 18);
-            const thumbUp = currentLandmarks[4].y < currentLandmarks[3].y;
-
-            if (!indexUp && !middleUp && !ringUp && !pinkyUp) { topCls = "Class 1"; maxProb = 0.85; } // 石頭
-            else if (indexUp && middleUp && !ringUp && !pinkyUp) { topCls = "Class 2"; maxProb = 0.85; } // 剪刀
-            else if (indexUp && middleUp && ringUp && pinkyUp) { topCls = "Class 3"; maxProb = 0.85; } // 布
-            else if (thumbUp && !indexUp && !middleUp && !ringUp && !pinkyUp) { topCls = "Class 4"; maxProb = 0.85; } // 讚好
-            else { topCls = "Class 5"; maxProb = 0.7; }
-        }
-
-        // 更新當前模式儀表板
-        const prefix = currentSystemMode === 2 ? "meters-container-mp-row-" : "meters-container-mode3-row-";
-        Object.keys(GESTURES).forEach(cls => {
-            const row = document.getElementById(prefix + cls.replace(" ", "-"));
-            if (row) {
-                const prob = cls === topCls ? maxProb : (1 - maxProb) / 4;
-                const g = GESTURES[cls];
-                row.innerHTML = `<span>${g.symbol} ${g.name}</span><span>${(prob * 100).toFixed(0)}%</span>`;
-                if (cls === topCls && prob >= 0.6) row.classList.add("matched");
-                else row.classList.remove("matched");
-            }
-        });
-
-        // 觸發模式二邏輯
-        if (currentSystemMode === 2 && isMPRunning && !isMPLocked && mpActionQueue.length > 0) {
-            if (topCls === mpActionQueue[0] && maxProb >= 0.6) handleMPSuccess();
-        }
-
-        // 觸發模式三紅綠燈邏輯
-        if (currentSystemMode === 3 && isMode3Running && !isMode3Locked && mode3ActionQueue.length > 0) {
-            handleTrafficLightAction(topCls, maxProb);
-        }
-    }
-
-    function checkCanUnlockMPStep3() {
-        if (step1Ready && step2MPReady && sharedMicrobitId) {
-            document.getElementById("card-mp-step3").classList.add("done");
-            document.getElementById("tag-mp-launch").innerText = currentLang === 'zh' ? "準備就緒 ✨" : "Ready ✨";
-            const launchBtn = document.getElementById("btn-launch-mp");
-            launchBtn.disabled = false;
-            launchBtn.innerText = currentLang === 'zh' ? "🚀 開始骨骼競技！" : "🚀 Start Skeleton Arena!";
-            launchBtn.classList.add("unlocked");
-        }
-    }
-
-    function startMPGame() {
-        isMPRunning = true; isMPLocked = false; mpScore = 0;
-        document.getElementById("score-counter-mp").innerText = mpScore;
-        const launchBtn = document.getElementById("btn-launch-mp");
-        launchBtn.innerText = currentLang === 'zh' ? "🎮 骨骼競技進行中..." : "🎮 Playing...";
-        launchBtn.disabled = true;
-        mpActionQueue = [];
-        for (let i = 0; i < 5; i++) mpActionQueue.push(ACTIVE_TARGETS[Math.floor(Math.random() * ACTIVE_TARGETS.length)]);
-        renderMPQueue();
-        startMPTimer();
-    }
-
-    function renderMPQueue() {
-        const ribbon = document.getElementById("queue-ribbon-mp");
-        ribbon.innerHTML = "";
-        mpActionQueue.forEach((clsKey, index) => {
-            const g = GESTURES[clsKey];
-            const card = document.createElement("div");
-            card.className = "action-card " + (index === 0 ? "active-target" : "upcoming");
-            card.innerHTML = `<div class="symbol">${g.symbol}</div><div class="c-name">${g.name}</div>`;
-            ribbon.appendChild(card);
-        });
-    }
-
-    function startMPTimer() {
-        clearInterval(mpTimerLoop);
-        const start = performance.now();
-        const bar = document.getElementById("timer-bar-mp");
-        mpTimerLoop = setInterval(() => {
-            const elapsed = performance.now() - start;
-            const remaining = Math.max(0, TIME_LIMIT_MS - elapsed);
-            bar.style.width = (remaining / TIME_LIMIT_MS) * 100 + "%";
-            if (remaining <= 0) {
-                clearInterval(mpTimerLoop);
-                mpActionQueue.shift();
-                mpActionQueue.push(ACTIVE_TARGETS[Math.floor(Math.random() * ACTIVE_TARGETS.length)]);
-                renderMPQueue();
-                if (isMPRunning) startMPTimer();
-            }
-        }, 30);
-    }
-
-    async function handleMPSuccess() {
-        isMPLocked = true; clearInterval(mpTimerLoop);
-        mpScore++;
-        document.getElementById("score-counter-mp").innerText = mpScore;
-        document.getElementById("robot-indicator-mp").style.bottom = Math.min(92, (mpScore / 15) * 92) + "%";
-        sendRobotCommand("1");
-        mpActionQueue.shift();
-        mpActionQueue.push(ACTIVE_TARGETS[Math.floor(Math.random() * ACTIVE_TARGETS.length)]);
-        renderMPQueue();
-
-        if (mpScore >= 15) {
-            isMPRunning = false;
-            autoExportToGoogleSheet("Mode 2 (MediaPipe)", mpScore);
-            alert(currentLang === 'zh' ? "🎉 恭喜完成！成績已自動儲存至 Google Sheet！" : "🎉 Mode 2 Finished! Auto-saved to Sheet!");
-        } else {
-            setTimeout(() => { isMPLocked = false; if (isMPRunning) startMPTimer(); }, 800);
-        }
-    }
-
-    // =========================================================================
-    // 8. 模式三：昂坪 360 紅綠燈 AI 執法賽 (5 秒罰凍結 + 零 Rx 負擔)
-    // =========================================================================
-    let isMode3Running = false, isMode3Locked = false, mode3Score = 0;
-    let mode3ActionQueue = [], mode3TimerLoop = null, trafficCycleTimer = null;
-    let trafficLightColor = "GREEN"; // "GREEN" or "RED"
-    let freezeTimer = null, freezeRemaining = 5;
-
-    function checkCanUnlockMode3Step3() {
-        if (step1Ready && sharedMicrobitId && cameraMP) {
-            document.getElementById("card-mode3-step3").classList.add("done");
-            document.getElementById("tag-mode3-game").innerText = currentLang === 'zh' ? "準備就緒 ✨" : "Ready ✨";
-            const launchBtn = document.getElementById("btn-launch-mode3");
-            launchBtn.disabled = false;
-            launchBtn.innerText = currentLang === 'zh' ? "🚦 開始紅綠燈競技！" : "🚦 Start Traffic Race!";
-            launchBtn.classList.add("unlocked");
-        }
-    }
-
-    function startTrafficGameMode3() {
-        isMode3Running = true; isMode3Locked = false; mode3Score = 0;
-        document.getElementById("score-counter-mode3").innerText = mode3Score;
-        const launchBtn = document.getElementById("btn-launch-mode3");
-        launchBtn.innerText = currentLang === 'zh' ? "🚦 紅綠燈競技中..." : "🚦 Game Active...";
-        launchBtn.disabled = true;
-
-        mode3ActionQueue = [];
-        for (let i = 0; i < 5; i++) mode3ActionQueue.push(ACTIVE_TARGETS[Math.floor(Math.random() * ACTIVE_TARGETS.length)]);
-        renderMode3Queue();
-        startMode3Timer();
-        runTrafficLightLoop();
-    }
-
-    function renderMode3Queue() {
-        const ribbon = document.getElementById("queue-ribbon-mode3");
-        ribbon.innerHTML = "";
-        mode3ActionQueue.forEach((clsKey, index) => {
-            const g = GESTURES[clsKey];
-            const card = document.createElement("div");
-            card.className = "action-card " + (index === 0 ? "active-target" : "upcoming");
-            card.innerHTML = `<div class="symbol">${g.symbol}</div><div class="c-name">${g.name}</div>`;
-            ribbon.appendChild(card);
-        });
-    }
-
-    function startMode3Timer() {
-        clearInterval(mode3TimerLoop);
-        const start = performance.now();
-        const bar = document.getElementById("timer-bar-mode3");
-        mode3TimerLoop = setInterval(() => {
-            if (isMode3Locked) return;
-            const elapsed = performance.now() - start;
-            const remaining = Math.max(0, TIME_LIMIT_MS - elapsed);
-            bar.style.width = (remaining / TIME_LIMIT_MS) * 100 + "%";
-            if (remaining <= 0) {
-                clearInterval(mode3TimerLoop);
-                mode3ActionQueue.shift();
-                mode3ActionQueue.push(ACTIVE_TARGETS[Math.floor(Math.random() * ACTIVE_TARGETS.length)]);
-                renderMode3Queue();
-                if (isMode3Running) startMode3Timer();
-            }
-        }, 30);
-    }
-
-    // 紅綠燈狀態機循環
-    function runTrafficLightLoop() {
-        if (!isMode3Running) return;
-        // 隨機綠燈 3.5 至 5.5 秒
-        trafficLightColor = "GREEN";
-        document.getElementById("m3-bulb-red").classList.remove("active");
-        document.getElementById("m3-bulb-green").classList.add("active");
-        document.getElementById("m3-traffic-status-text").innerText = currentLang === 'zh' ? "🟢 綠燈：出招前進！" : "🟢 GREEN: MATCH GESTURE!";
-        document.getElementById("m3-traffic-status-text").style.color = "#10b981";
-
-        const greenMs = Math.random() * 2000 + 3500;
-        trafficCycleTimer = setTimeout(() => {
-            if (!isMode3Running) return;
-            // 轉為紅燈 2.5 至 4 秒
-            trafficLightColor = "RED";
-            document.getElementById("m3-bulb-green").classList.remove("active");
-            document.getElementById("m3-bulb-red").classList.add("active");
-            document.getElementById("m3-traffic-status-text").innerText = currentLang === 'zh' ? "🛑 紅燈：收手定身！" : "🛑 RED: FREEZE HANDS!";
-            document.getElementById("m3-traffic-status-text").style.color = "#ef4444";
-
-            const redMs = Math.random() * 1500 + 2500;
-            trafficCycleTimer = setTimeout(() => {
-                if (isMode3Running) runTrafficLightLoop();
-            }, redMs);
-        }, greenMs);
-    }
-
-    // 核心執法與 5 秒懲罰邏輯
-    function handleTrafficLightAction(detectedCls, prob) {
-        const targetCls = mode3ActionQueue[0];
-
-        // 情況 A：綠燈且命中目標手勢 -> 正常得分推進！
-        if (trafficLightColor === "GREEN") {
-            if (detectedCls === targetCls && prob >= 0.65) {
-                isMode3Locked = true; clearInterval(mode3TimerLoop);
-                mode3Score++;
-                document.getElementById("score-counter-mode3").innerText = mode3Score;
-                document.getElementById("robot-indicator-mode3").style.bottom = Math.min(92, (mode3Score / 15) * 92) + "%";
-                sendRobotCommand("1"); // 綠燈才發送信號推進
-                popMode3Splash("PERFECT! ⚡", "var(--game-green)");
-
-                mode3ActionQueue.shift();
-                mode3ActionQueue.push(ACTIVE_TARGETS[Math.floor(Math.random() * ACTIVE_TARGETS.length)]);
-                renderMode3Queue();
-
-                if (mode3Score >= 15) {
-                    isMode3Running = false;
-                    clearTimeout(trafficCycleTimer);
-                    autoExportToGoogleSheet("Mode 3 (Traffic Race)", mode3Score);
-                    alert(currentLang === 'zh' ? "🎉 太厲害了！紅綠燈挑戰成功通關！" : "🎉 Victory! Traffic Arena Completed!");
-                } else {
-                    setTimeout(() => { isMode3Locked = false; if (isMode3Running) startMode3Timer(); }, 700);
-                }
-            }
-        } 
-        // 情況 B：紅燈時手痕出咗目標手勢 -> 🚨 違規抓拍！全螢幕結冰罰凍結 5 秒！
-        else if (trafficLightColor === "RED") {
-            if (detectedCls === targetCls && prob >= 0.65) {
-                trigger5SecondFreezePenalty();
-            }
-        }
-    }
-
-    // 觸發 5 秒懲罰凍結遮罩
-    function trigger5SecondFreezePenalty() {
-        isMode3Locked = true;
-        clearInterval(mode3TimerLoop);
-        clearTimeout(trafficCycleTimer);
-
-        // 懲罰扣 2 分
-        mode3Score = Math.max(0, mode3Score - 2);
-        document.getElementById("score-counter-mode3").innerText = mode3Score;
-        document.getElementById("robot-indicator-mode3").style.bottom = Math.min(92, (mode3Score / 15) * 92) + "%";
-
-        // 顯示結冰紅色遮罩
-        freezeRemaining = 5;
-        const overlay = document.getElementById("freeze-penalty-overlay");
-        const countEl = document.getElementById("freeze-seconds-left");
-        countEl.innerText = freezeRemaining;
-        overlay.style.display = "flex";
-
-        freezeTimer = setInterval(() => {
-            freezeRemaining--;
-            countEl.innerText = freezeRemaining;
-            if (freezeRemaining <= 0) {
-                clearInterval(freezeTimer);
-                overlay.style.display = "none";
-                isMode3Locked = false;
-                if (isMode3Running) {
-                    startMode3Timer();
-                    runTrafficLightLoop(); // 重啟紅綠燈放行
-                }
-            }
-        }, 1000);
-    }
-
-    function popMode3Splash(text, color) {
-        const el = document.getElementById("splash-text-mode3");
-        el.innerText = text; el.style.color = color; el.classList.add("show");
-        setTimeout(() => el.classList.remove("show"), 450);
-    }
-
-    // =========================================================================
-    // 9. 互動式反思 Chatbot
-    // =========================================================================
-    function toggleChatWindow() {
-        const win = document.getElementById("chat-window");
-        win.style.display = (win.style.display === "flex") ? "none" : "flex";
-    }
-
-    function handleChipClick(chipText) {
-        document.getElementById("chat-input").value = chipText;
-        sendChatMessage();
-    }
-
-    function sendChatMessage() {
-        const inp = document.getElementById("chat-input");
-        const msg = inp.value.trim();
-        if (!msg) return;
-
-        appendChatMsg(msg, "user");
-        inp.value = "";
-
-        setTimeout(() => {
-            if (chatStep === 0) {
-                chatReflectionData.difficulty = msg;
-                chatStep = 1;
-                appendChatMsg(
-                    currentLang === 'zh' 
-                    ? "收到！懂得除錯正是工程師思維 💡！<br><br><b>喺成個活動入面，你最鍾意或覺得最神奇、最想同同學分享嘅係邊部分？</b>" 
-                    : "Noted! Troubleshooting is the core of engineering! 💡<br><br><b>What was your favorite moment or discovery today that you'd love to share?</b>",
-                    "bot",
-                    currentLang === 'zh' ? ["看見 Grad-CAM 熱力圖", "用手勢隔空控制爬繩", "同拍檔一齊除錯成功", "紅綠燈極速剎手定身"] : ["Seeing Grad-CAM Heatmap", "Gesture Remote Control", "Fixing bugs with partner", "Red light instant freeze"]
-                );
-            } else if (chatStep === 1) {
-                chatReflectionData.favorite = msg;
-                chatStep = 2;
-                appendChatMsg(
-                    currentLang === 'zh' 
-                    ? "太棒了！同儕協同往往能事半功倍 👏！<br><br><b>最後，如果可以幫呢部爬繩機械人再升級一項功能，你會想加咩？</b>" 
-                    : "Wonderful insight! Peer collaboration makes learning faster! 👏<br><br><b>Lastly, if you could add one new feature or upgrade to your robot, what would it be?</b>",
-                    "bot"
-                );
-            } else if (chatStep === 2) {
-                chatReflectionData.comments = msg;
-                chatStep = 3;
-                autoExportToGoogleSheet("Chatbot Reflections", 100);
-                appendChatMsg(
-                    currentLang === 'zh' 
-                    ? "✨ 感謝你的精彩反思！你的學習心得已在背景自動儲存至 Google 雲端！隨時可以再次挑戰模式一或模式三哦 🚀" 
-                    : "✨ Thank you! All your reflections have been automatically saved to Google Sheet in the background! 🚀",
-                    "bot"
-                );
-            } else {
-                appendChatMsg(currentLang === 'zh' ? "心得已妥善保存！盡情享受競技樂趣吧 🎮！" : "Reflections saved! Enjoy the challenge 🎮!", "bot");
-            }
-        }, 500);
-    }
-
-    function appendChatMsg(text, sender, chips = null) {
-        const body = document.getElementById("chat-body");
-        const msgDiv = document.createElement("div");
-        msgDiv.className = `chat-msg ${sender}`;
-        msgDiv.innerHTML = `<div class="bubble">${text}</div>`;
-
-        if (chips && chips.length > 0) {
-            const chipGroup = document.createElement("div");
-            chipGroup.className = "chip-group";
-            chips.forEach(c => {
-                const sp = document.createElement("span");
-                sp.className = "quick-chip";
-                sp.innerText = c;
-                sp.onclick = () => handleChipClick(c);
-                chipGroup.appendChild(sp);
-            });
-            msgDiv.appendChild(chipGroup);
-        }
-        body.appendChild(msgDiv);
-        body.scrollTop = body.scrollHeight;
-    }
+    window.onload = initPlatform;
 </script>
 </body>
 </html>
