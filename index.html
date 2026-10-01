@@ -30,7 +30,7 @@
         body {
             margin: 0;
             padding: 16px;
-            padding-bottom: 80px;
+            padding-bottom: 90px;
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "PingFang HK", sans-serif;
             background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
             color: var(--text-main);
@@ -80,7 +80,7 @@
             box-shadow: 0 2px 8px rgba(2, 132, 199, 0.2);
         }
 
-        /* 頂部簡化控制條 (只保留 XAI 密碼驗證與手動上傳備援) */
+        /* 頂部全域資訊條 */
         .meta-strip {
             display: flex;
             justify-content: space-between;
@@ -216,7 +216,7 @@
         }
         .sample-count { font-size: 10px; color: var(--game-blue); }
 
-        /* 啟動大按鈕 */
+        /* 啟動按鈕 */
         .btn-launch {
             background: #e2e8f0;
             color: #94a3b8;
@@ -279,7 +279,7 @@
             box-shadow: 0 2px 8px rgba(236, 72, 153, 0.3);
         }
 
-        /* 動作流動軌道 */
+        /* 動作軌道 */
         .ribbon-track-wrapper {
             background: #f8fafc;
             border: 2px solid var(--border-ui);
@@ -510,7 +510,7 @@
         .val-speed { color: #059669; }
         .val-dist { color: #0284c7; }
 
-        /* 模式三停泊競技板 (Docking Game Board) */
+        /* 模式三停泊競技板 */
         .docking-panel {
             background: #eff6ff;
             border: 2px solid #93c5fd;
@@ -558,9 +558,7 @@
         }
         .jog-btn:active { transform: scale(0.95); background: var(--game-blue); }
 
-        /* =========================================================================
-           互動式蘇格拉底反思 Chatbot (Floating Widget)
-           ========================================================================= */
+        /* 互動式引導 Chatbot */
         .chatbot-bubble-btn {
             position: fixed;
             bottom: 20px;
@@ -629,9 +627,7 @@
             gap: 4px;
             max-width: 85%;
         }
-        .chat-msg.bot {
-            align-self: flex-start;
-        }
+        .chat-msg.bot { align-self: flex-start; }
         .chat-msg.bot .bubble {
             background: #ffffff;
             color: var(--text-main);
@@ -640,9 +636,7 @@
             border-radius: 12px 12px 12px 2px;
             line-height: 1.45;
         }
-        .chat-msg.user {
-            align-self: flex-end;
-        }
+        .chat-msg.user { align-self: flex-end; }
         .chat-msg.user .bubble {
             background: var(--game-blue);
             color: #ffffff;
@@ -708,7 +702,7 @@
         </button>
         <button class="mode-tab-btn" id="tab-mode-2" onclick="switchSystemMode(2)">
             <span>✋ 模式二：MediaPipe 訓練艙 🔒</span>
-            <span style="font-size: 11px; font-weight: normal; opacity: 0.85;">(21 關節點幾何特徵 + KNN)</span>
+            <span style="font-size: 11px; font-weight: normal; opacity: 0.85;">(密碼解鎖 + 21點骨骼幾何)</span>
         </button>
         <button class="mode-tab-btn" id="tab-mode-3" onclick="switchSystemMode(3)">
             <span>🚡 模式三：地面遙測與纜車停泊賽</span>
@@ -716,7 +710,7 @@
         </button>
     </div>
 
-    <!-- 頂部精簡控制條 -->
+    <!-- 頂部全域資訊條 (全自動同步編號) -->
     <div class="meta-strip">
         <div style="font-size: 13px; font-weight: 800; color: var(--game-blue); display: flex; align-items: center; gap: 8px;">
             <span>🤖 micro:bit 編號：<b id="shared-mb-id-display" style="color:var(--game-pink); font-size:16px;">未填寫</b></span>
@@ -856,7 +850,7 @@
                         <span class="step-title">🚀 步驟 3：開始競技</span>
                         <span class="step-tag" id="tag-mp-launch">待解鎖 🔒</span>
                     </div>
-                    <div style="font-size: 11px; color: var(--text-sub); margin-bottom: 10px;" id="desc-mp-step3">需連線並每款手勢錄製 ≥8 幀</div>
+                    <div style="font-size: 11px; color: var(--text-sub); margin-bottom: 10px;" id="desc-mp-step3">需填寫編號、連線並每款錄製 ≥8 幀</div>
                 </div>
                 <button class="btn-launch" id="btn-launch-mp" onclick="startMPGame()" disabled>等待準備...</button>
             </div>
@@ -895,6 +889,40 @@
          【模式三：地面遙測與「昂坪 360」纜車精準停泊大挑戰】
          ========================================================================= -->
     <div class="mode-section" id="section-mode-3">
+        <!-- 模式三專用步驟看板 (與模式一、二完全一致) -->
+        <div class="stepper-board">
+            <div class="step-card" id="card-mode3-step1">
+                <div>
+                    <div class="step-header">
+                        <span class="step-title">🔌 步驟 1：輸入編號與連接</span>
+                        <span class="step-tag" id="tag-mode3-serial">未完成 ⚪</span>
+                    </div>
+                    <input type="number" class="id-input-field" id="mb-input-3" placeholder="輸入 micro:bit 編號 (例: 12)" oninput="syncMicrobitId(this.value)">
+                </div>
+                <button class="step-btn" id="btn-mode3-serial" onclick="connectSerial()">連接 Tx micro:bit</button>
+            </div>
+            <div class="step-card" id="card-mode3-step2">
+                <div>
+                    <div class="step-header">
+                        <span class="step-title">📷 步驟 2：啟動 HC010 鏡頭</span>
+                        <span class="step-tag" id="tag-mode3-cam">未啟動 ⚪</span>
+                    </div>
+                    <div style="font-size: 11px; color: var(--text-sub); margin-bottom: 10px;">開啟廣角視角並框選機械人椴木板</div>
+                </div>
+                <button class="step-btn" id="btn-telemetry-cam" onclick="toggleTelemetryCamera()">📷 開啟/重啟鏡頭</button>
+            </div>
+            <div class="step-card" id="card-mode3-step3">
+                <div>
+                    <div class="step-header">
+                        <span class="step-title">🚡 步驟 3：停泊競技就緒</span>
+                        <span class="step-tag" id="tag-mode3-game">待命中 ⚪</span>
+                    </div>
+                    <div style="font-size: 11px; color: var(--text-sub); margin-bottom: 10px;">使用前後微調駛入目標月台範圍</div>
+                </div>
+                <button class="step-btn" style="background:#2563eb;" onclick="generateNewDockingTarget()">🎲 隨機更換月台目標</button>
+            </div>
+        </div>
+
         <div class="telemetry-layout">
             <div class="telemetry-cam-card">
                 <div style="display:flex; justify-content:space-between; align-items:center;">
@@ -921,12 +949,8 @@
                     <div style="display:flex; gap:6px;">
                         <button class="step-btn" style="width:auto; padding:6px 10px; font-size:11px; background:#059669;" onclick="calibrate50cmFocalLength()">📏 校準 50cm</button>
                         <button class="step-btn" style="width:auto; padding:6px 10px; font-size:11px; background:#475569;" onclick="resetROISelection()">🎯 重新框選</button>
+                        <button class="step-btn" style="width:auto; padding:6px 10px; font-size:11px; background:#64748b;" onclick="clearROITracker()">🗑️ 清除鎖定</button>
                     </div>
-                </div>
-
-                <div style="display:grid; grid-template-columns: 1fr 1fr; gap:8px;">
-                    <button class="step-btn" id="btn-telemetry-cam" onclick="toggleTelemetryCamera()">📷 開啟/重啟鏡頭</button>
-                    <button class="step-btn" style="background:#64748b;" onclick="clearROITracker()">🗑️ 清除目標鎖定</button>
                 </div>
             </div>
 
@@ -935,7 +959,7 @@
                 <div class="docking-panel">
                     <div style="display:flex; justify-content:space-between; align-items:center;">
                         <span style="font-weight:900; color:#1e40af; font-size:14px;">🚡「昂坪 360」月台停泊賽</span>
-                        <span id="docking-round-badge" style="font-size:11px; background:#bfdbfe; color:#1e3a8a; padding:2px 8px; border-radius:10px; font-weight:bold;">第 1 站</span>
+                        <span id="docking-round-badge" style="font-size:11px; background:#bfdbfe; color:#1e3a8a; padding:2px 8px; border-radius:10px; font-weight:bold;">停泊挑戰</span>
                     </div>
                     
                     <div class="docking-status-bar">
@@ -954,7 +978,6 @@
                         <button class="jog-btn" style="background:#dc2626;" onclick="sendRobotCommand('0')">⏹ 煞停 (Stop)</button>
                         <button class="jog-btn" onclick="sendRobotCommand('2')">▼ 倒退 (Back)</button>
                     </div>
-                    <button class="step-btn" style="background:#2563eb; font-size:12px; padding:8px;" onclick="generateNewDockingTarget()">🎲 隨機更換新月台距離</button>
                 </div>
 
                 <div class="metric-tile">
@@ -983,7 +1006,7 @@
 </div>
 
 <!-- =========================================================================
-     互動式蘇格拉底反思 Chatbot (無需 API，100% 穩定，記錄到 Drive)
+     互動式引導反思 Chatbot (無需 API，100% 穩定，記錄到 Drive)
      ========================================================================= -->
 <button class="chatbot-bubble-btn" onclick="toggleChatWindow()">
     💬 <span>學習反思小助手</span>
@@ -1030,10 +1053,12 @@
     };
     let chatStep = 0; // 0: Difficulty, 1: Favorite, 2: Comments, 3: Completed
 
+    // 全自動三模式 ID 同步
     function syncMicrobitId(val) {
         sharedMicrobitId = String(val).trim();
         document.getElementById("mb-input-1").value = sharedMicrobitId;
         document.getElementById("mb-input-2").value = sharedMicrobitId;
+        document.getElementById("mb-input-3").value = sharedMicrobitId;
         document.getElementById("shared-mb-id-display").innerText = sharedMicrobitId ? ("No. " + sharedMicrobitId) : "未填寫";
         checkCanUnlockStep3();
         checkCanUnlockMPStep3();
@@ -1108,19 +1133,25 @@
 
             step1Ready = true;
 
-            // 更新模式一 UI
+            // 同步更新模式一 UI
             document.getElementById("card-step1").classList.add("done");
             document.getElementById("tag-step1").innerText = "已連線 🟢";
             document.getElementById("btn-step1").innerText = "✔ 連線成功";
             document.getElementById("btn-step1").classList.add("ready-btn");
             checkCanUnlockStep3();
 
-            // 更新模式二 UI
+            // 同步更新模式二 UI
             document.getElementById("card-mp-step1").classList.add("done");
             document.getElementById("tag-mp-serial").innerText = "已連線 🟢";
             document.getElementById("btn-mp-serial").innerText = "✔ 連線成功";
             document.getElementById("btn-mp-serial").classList.add("ready-btn");
             checkCanUnlockMPStep3();
+
+            // 同步更新模式三 UI
+            document.getElementById("card-mode3-step1").classList.add("done");
+            document.getElementById("tag-mode3-serial").innerText = "已連線 🟢";
+            document.getElementById("btn-mode3-serial").innerText = "✔ 連線成功";
+            document.getElementById("btn-mode3-serial").classList.add("ready-btn");
         } catch (e) {
             alert("Serial 連接取消或失敗: " + e.message);
         }
@@ -1781,14 +1812,14 @@
     let currentSpeed = 0.0;
 
     // 停泊遊戲狀態變數
-    let targetDockDistance = 50.0; // 目標距離 cm
-    let dockingTolerance = 3.5;    // 容許誤差範圍 ±3.5cm
+    let targetDockDistance = 50.0;
+    let dockingTolerance = 3.5;    // 容許誤差 ±3.5cm
     let dockingHoldTimer = 0;
     const DOCK_HOLD_GOAL = 3000;   // 需連續停泊 3 秒
     let isDockingWon = false;
 
     function generateNewDockingTarget() {
-        targetDockDistance = (Math.random() * 35 + 35).toFixed(1); // 35cm 至 70cm 隨機
+        targetDockDistance = (Math.random() * 35 + 35).toFixed(1);
         document.getElementById("target-dock-dist").innerText = targetDockDistance + " cm";
         dockingHoldTimer = 0;
         isDockingWon = false;
@@ -1810,6 +1841,8 @@
 
             isTelemetryRunning = true;
             document.getElementById("track-status-tag").innerText = "HC010 就緒 🟢";
+            document.getElementById("tag-mode3-cam").innerText = "就緒 🟢";
+            document.getElementById("card-mode3-step2").classList.add("done");
             document.getElementById("btn-telemetry-cam").innerText = "⏹ 停止鏡頭";
             requestAnimationFrame(telemetryProcessLoop);
         } catch (err) { alert("鏡頭啟動失敗: " + err.message); }
@@ -1823,6 +1856,8 @@
             }
             isTelemetryRunning = false;
             document.getElementById("track-status-tag").innerText = "已暫停 ⚪";
+            document.getElementById("tag-mode3-cam").innerText = "未啟動 ⚪";
+            document.getElementById("card-mode3-step2").classList.remove("done");
             document.getElementById("btn-telemetry-cam").innerText = "📷 開啟鏡頭";
         } else {
             initTelemetryCamera();
@@ -2036,7 +2071,7 @@
     }
 
     // =========================================================================
-    // 互動式蘇格拉底反思 Chatbot 邏輯
+    // 互動式引導反思 Chatbot 邏輯
     // =========================================================================
     function toggleChatWindow() {
         const win = document.getElementById("chat-window");
@@ -2056,7 +2091,6 @@
         appendChatMsg(msg, "user");
         inp.value = "";
 
-        // 蘇格拉底式引導三步曲
         setTimeout(() => {
             if (chatStep === 0) {
                 chatReflectionData.difficulty = msg;
