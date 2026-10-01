@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AI Robot Gesture Arena & Telemetry Hub (EDUCON Interactive Edition)</title>
+    <title>AI Robot Gesture Arena & Telemetry Hub</title>
     <!-- 模式一依賴：TensorFlow.js & Teachable Machine -->
     <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@latest/dist/tf.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@teachablemachine/image@latest/dist/teachablemachine-image.min.js"></script>
@@ -18,12 +18,12 @@
             --border-ui: #cbd5e1;
             --text-main: #0f172a;
             --text-sub: #475569;
-            
             --game-blue: #0284c7;
             --game-pink: #ec4899;
             --game-green: #10b981;
             --game-amber: #f59e0b;
             --game-purple: #8b5cf6;
+            --game-red: #ef4444;
         }
 
         * { box-sizing: border-box; }
@@ -80,7 +80,7 @@
             box-shadow: 0 2px 8px rgba(2, 132, 199, 0.2);
         }
 
-        /* 頂部全域資訊條 */
+        /* 頂部資訊與語系切換條 */
         .meta-strip {
             display: flex;
             justify-content: space-between;
@@ -100,6 +100,18 @@
             font-size: 13px;
             font-weight: 600;
         }
+        .lang-btn {
+            background: #ffffff;
+            border: 1.5px solid var(--game-blue);
+            color: var(--game-blue);
+            padding: 7px 14px;
+            border-radius: 20px;
+            font-weight: 800;
+            font-size: 12px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .lang-btn:hover { background: #e0f2fe; }
 
         .mode-section { display: none; flex-direction: column; gap: 14px; }
         .mode-section.active-mode { display: flex; }
@@ -179,10 +191,6 @@
             font-weight: bold;
             width: 100%;
             margin-bottom: 8px;
-        }
-        .id-input-field:focus {
-            outline: none;
-            border-color: var(--game-blue);
         }
 
         /* 骨骼採樣網格 */
@@ -267,7 +275,6 @@
             font-size: 26px;
             color: var(--game-amber);
             font-weight: 900;
-            text-shadow: 0 2px 4px rgba(245, 158, 11, 0.3);
         }
         .score-pill {
             background: linear-gradient(90deg, #ec4899, #8b5cf6);
@@ -276,10 +283,8 @@
             border-radius: 20px;
             font-size: 18px;
             font-weight: 900;
-            box-shadow: 0 2px 8px rgba(236, 72, 153, 0.3);
         }
 
-        /* 動作軌道 */
         .ribbon-track-wrapper {
             background: #f8fafc;
             border: 2px solid var(--border-ui);
@@ -308,21 +313,11 @@
             transition: all 0.25s ease;
         }
         .action-card .symbol { font-size: 44px; line-height: 1; margin-bottom: 4px; }
-        .action-card .c-name { font-size: 15px; font-weight: 800; color: var(--text-main); }
-        .action-card .sub-num {
-            font-size: 10px;
-            color: var(--text-sub);
-            background: #f1f5f9;
-            padding: 2px 6px;
-            border-radius: 4px;
-            margin-top: 4px;
-        }
+        .action-card .c-name { font-size: 15px; font-weight: 800; }
         .action-card.active-target {
             min-width: 130px;
             height: 160px;
-            background: #ffffff;
             border: 3px solid var(--game-pink);
-            box-shadow: 0 4px 18px rgba(236, 72, 153, 0.35);
             transform: scale(1.04);
             z-index: 2;
         }
@@ -361,10 +356,8 @@
             padding: 6px 10px;
             font-size: 12px;
             font-weight: 600;
-            color: var(--text-main);
             display: flex;
             justify-content: space-between;
-            transition: all 0.2s ease;
         }
         .meter-row.matched {
             background: #dcfce7;
@@ -382,7 +375,6 @@
             display: flex;
             flex-direction: column;
             align-items: center;
-            box-shadow: 0 4px 12px rgba(15, 23, 42, 0.04);
         }
         .rope-shaft {
             flex-grow: 1;
@@ -400,7 +392,6 @@
             bottom: 0%;
             font-size: 34px;
             transition: bottom 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
-            filter: drop-shadow(0 2px 6px rgba(2, 132, 199, 0.4));
         }
 
         #splash-text, #splash-text-mp {
@@ -417,22 +408,48 @@
         }
         #splash-text.show, #splash-text-mp.show { transform: translate(-50%, -50%) scale(1.15); }
 
-        /* 模式三：地面遙測與纜車月台停泊大挑戰 */
-        .telemetry-layout {
+        /* =========================================================================
+           模式三：一二三紅綠燈視覺裁判版
+           ========================================================================= */
+        .traffic-layout {
             display: grid;
             grid-template-columns: 1.4fr 1fr;
             gap: 16px;
         }
-        .telemetry-cam-card {
-            background: var(--bg-card);
-            border: 2px solid var(--border-ui);
+        .traffic-light-beacon {
+            background: #0f172a;
             border-radius: 16px;
-            padding: 14px;
+            padding: 16px;
             display: flex;
             flex-direction: column;
+            align-items: center;
+            justify-content: center;
             gap: 10px;
-            box-shadow: 0 4px 12px rgba(15, 23, 42, 0.04);
+            color: #fff;
+            text-align: center;
+            box-shadow: 0 4px 16px rgba(0,0,0,0.2);
+            transition: background 0.3s;
         }
+        .light-bulb-container {
+            display: flex;
+            gap: 16px;
+            background: #1e293b;
+            padding: 12px 24px;
+            border-radius: 40px;
+            border: 2px solid #334155;
+        }
+        .bulb {
+            width: 44px;
+            height: 44px;
+            border-radius: 50%;
+            opacity: 0.2;
+            transition: all 0.2s;
+        }
+        .bulb.red { background: #ef4444; box-shadow: 0 0 0 rgba(239,68,68,0); }
+        .bulb.green { background: #10b981; box-shadow: 0 0 0 rgba(16,185,129,0); }
+        .bulb.active.red { opacity: 1; box-shadow: 0 0 24px #ef4444; }
+        .bulb.active.green { opacity: 1; box-shadow: 0 0 24px #10b981; }
+
         .cam-feed-wrapper {
             position: relative;
             width: 100%;
@@ -441,7 +458,6 @@
             border-radius: 12px;
             overflow: hidden;
             border: 1px solid var(--border-ui);
-            user-select: none;
         }
         #telemetry-canvas {
             width: 100%;
@@ -449,114 +465,21 @@
             object-fit: cover;
             cursor: crosshair;
         }
-        .cam-crosshair-hud {
-            position: absolute;
-            top: 10px;
-            left: 10px;
-            background: rgba(15, 23, 42, 0.85);
-            padding: 8px 12px;
-            border-radius: 8px;
-            font-size: 11px;
-            color: #fff;
-            border: 1px solid rgba(2, 132, 199, 0.5);
-            pointer-events: none;
-            line-height: 1.5;
-        }
-        .roi-preview-box {
-            background: #f8fafc;
-            border: 1px solid var(--border-ui);
-            border-radius: 10px;
-            padding: 8px 12px;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-        }
-        .roi-thumb-img {
-            width: 48px;
-            height: 48px;
-            border-radius: 8px;
-            border: 2px solid var(--game-green);
-            object-fit: cover;
-            background: #000;
-        }
-        .telemetry-data-card {
-            display: flex;
-            flex-direction: column;
-            gap: 12px;
-        }
+
         .metric-tile {
             background: var(--bg-card);
             border: 2px solid var(--border-ui);
             border-radius: 14px;
-            padding: 12px 16px;
+            padding: 14px 16px;
             display: flex;
             flex-direction: column;
-            gap: 6px;
-            box-shadow: 0 4px 10px rgba(15, 23, 42, 0.03);
-        }
-        .metric-title {
-            font-size: 12px;
-            color: var(--text-sub);
-            font-weight: 800;
-            display: flex;
-            justify-content: space-between;
+            gap: 4px;
         }
         .metric-val {
             font-size: 32px;
             font-weight: 900;
             line-height: 1;
         }
-        .metric-unit { font-size: 14px; color: var(--text-sub); font-weight: normal; margin-left: 4px; }
-        .val-speed { color: #059669; }
-        .val-dist { color: #0284c7; }
-
-        /* 模式三停泊競技板 */
-        .docking-panel {
-            background: #eff6ff;
-            border: 2px solid #93c5fd;
-            border-radius: 12px;
-            padding: 12px;
-            display: flex;
-            flex-direction: column;
-            gap: 8px;
-        }
-        .docking-status-bar {
-            display: flex;
-            justify-content: space-between;
-            font-weight: bold;
-            font-size: 13px;
-        }
-        .docking-timer-track {
-            height: 10px;
-            background: #dbeafe;
-            border-radius: 5px;
-            overflow: hidden;
-            border: 1px solid #bfdbfe;
-        }
-        .docking-timer-fill {
-            height: 100%;
-            width: 0%;
-            background: var(--game-green);
-            transition: width 0.1s linear;
-        }
-        .control-jog-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr 1fr;
-            gap: 6px;
-            margin-top: 4px;
-        }
-        .jog-btn {
-            background: #1e293b;
-            color: #ffffff;
-            border: none;
-            padding: 10px 4px;
-            border-radius: 8px;
-            font-weight: bold;
-            font-size: 12px;
-            cursor: pointer;
-            transition: all 0.15s;
-        }
-        .jog-btn:active { transform: scale(0.95); background: var(--game-blue); }
 
         /* 互動式引導 Chatbot */
         .chatbot-bubble-btn {
@@ -576,17 +499,14 @@
             display: flex;
             align-items: center;
             gap: 8px;
-            transition: all 0.25s ease;
         }
-        .chatbot-bubble-btn:hover { transform: scale(1.05); }
-
         .chatbot-window {
             position: fixed;
             bottom: 75px;
             right: 20px;
             width: 360px;
             max-width: calc(100vw - 40px);
-            height: 520px;
+            height: 500px;
             background: #ffffff;
             border: 2px solid var(--border-ui);
             border-radius: 18px;
@@ -595,11 +515,6 @@
             flex-direction: column;
             overflow: hidden;
             z-index: 1000;
-            animation: slideUp 0.25s ease forwards;
-        }
-        @keyframes slideUp {
-            from { opacity: 0; transform: translateY(20px); }
-            to { opacity: 1; transform: translateY(0); }
         }
         .chat-header {
             background: linear-gradient(135deg, var(--game-blue), var(--game-purple));
@@ -609,7 +524,6 @@
             justify-content: space-between;
             align-items: center;
             font-weight: 800;
-            font-size: 14px;
         }
         .chat-body {
             flex-grow: 1;
@@ -621,16 +535,8 @@
             background: #f8fafc;
             font-size: 13px;
         }
-        .chat-msg {
-            display: flex;
-            flex-direction: column;
-            gap: 4px;
-            max-width: 85%;
-        }
-        .chat-msg.bot { align-self: flex-start; }
         .chat-msg.bot .bubble {
             background: #ffffff;
-            color: var(--text-main);
             border: 1px solid var(--border-ui);
             padding: 10px 12px;
             border-radius: 12px 12px 12px 2px;
@@ -642,7 +548,6 @@
             color: #ffffff;
             padding: 10px 12px;
             border-radius: 12px 12px 2px 12px;
-            line-height: 1.45;
         }
         .chip-group {
             display: flex;
@@ -660,8 +565,6 @@
             cursor: pointer;
             font-weight: 600;
         }
-        .quick-chip:hover { background: #bae6fd; }
-
         .chat-footer {
             padding: 10px;
             background: #ffffff;
@@ -677,17 +580,6 @@
             font-size: 12px;
             outline: none;
         }
-        .chat-input:focus { border-color: var(--game-blue); }
-        .chat-send-btn {
-            background: var(--game-blue);
-            color: #fff;
-            border: none;
-            padding: 8px 12px;
-            border-radius: 8px;
-            font-weight: bold;
-            cursor: pointer;
-            font-size: 12px;
-        }
     </style>
 </head>
 <body>
@@ -697,34 +589,33 @@
     <!-- 頂部三模式導航欄 -->
     <div class="mode-nav-bar">
         <button class="mode-tab-btn active" id="tab-mode-1" onclick="switchSystemMode(1)">
-            <span>🎮 模式一：GTM 駕駛艙</span>
-            <span style="font-size: 11px; font-weight: normal; opacity: 0.85;">(像素特徵 + Grad-CAM XAI)</span>
+            <span data-zh="🎮 模式一：GTM 駕駛艙" data-en="🎮 Mode 1: GTM Cockpit">🎮 模式一：GTM 駕駛艙</span>
+            <span style="font-size: 11px; font-weight: normal; opacity: 0.85;" data-zh="(像素特徵 + Grad-CAM XAI)" data-en="(Pixel Features + Grad-CAM)">(像素特徵 + Grad-CAM XAI)</span>
         </button>
         <button class="mode-tab-btn" id="tab-mode-2" onclick="switchSystemMode(2)">
-            <span>✋ 模式二：MediaPipe 訓練艙 🔒</span>
-            <span style="font-size: 11px; font-weight: normal; opacity: 0.85;">(密碼解鎖 + 21點骨骼幾何)</span>
+            <span data-zh="✋ 模式二：MediaPipe 訓練艙 🔒" data-en="✋ Mode 2: MediaPipe Studio 🔒">✋ 模式二：MediaPipe 訓練艙 🔒</span>
+            <span style="font-size: 11px; font-weight: normal; opacity: 0.85;" data-zh="(密碼解鎖 + 21點骨骼幾何)" data-en="(Password + 21-pt Skeleton)">(密碼解鎖 + 21點骨骼幾何)</span>
         </button>
         <button class="mode-tab-btn" id="tab-mode-3" onclick="switchSystemMode(3)">
-            <span>🚡 模式三：地面遙測與纜車停泊賽</span>
-            <span style="font-size: 11px; font-weight: normal; opacity: 0.85;">(HC010 實時測距 + 閉環微調)</span>
+            <span data-zh="🚦 模式三：昂坪紅綠燈 AI 執法賽" data-en="🚦 Mode 3: Red Light, Green Light">🚦 模式三：昂坪紅綠燈 AI 執法賽</span>
+            <span style="font-size: 11px; font-weight: normal; opacity: 0.85;" data-zh="(HC010 實時測速 + 違規抓拍)" data-en="(HC010 Speed CV + Referee)">(HC010 實時測速 + 違規抓拍)</span>
         </button>
     </div>
 
-    <!-- 頂部全域資訊條 (全自動同步編號) -->
+    <!-- 頂部全域資訊與語系切換條 -->
     <div class="meta-strip">
         <div style="font-size: 13px; font-weight: 800; color: var(--game-blue); display: flex; align-items: center; gap: 8px;">
-            <span>🤖 micro:bit 編號：<b id="shared-mb-id-display" style="color:var(--game-pink); font-size:16px;">未填寫</b></span>
+            <span data-zh="🤖 micro:bit 編號：" data-en="🤖 micro:bit ID: ">🤖 micro:bit 編號：</span>
+            <b id="shared-mb-id-display" style="color:var(--game-pink); font-size:16px;" data-zh="未填寫" data-en="Unset">未填寫</b>
         </div>
         
         <div style="display: flex; gap: 10px; align-items: center;">
             <select id="conditionType" onfocus="storePrevCondition(this.value)" onchange="handleConditionChange(this)">
-                <option value="No_XAI_Blackbox" selected>GTM 對照組 (黑盒無解釋)</option>
-                <option value="XAI_GradCAM">🔒 GTM 實驗組 (Grad-CAM 熱力圖)</option>
+                <option value="No_XAI_Blackbox" selected data-zh="GTM 對照組 (黑盒無解釋)" data-en="Control: Blackbox">GTM 對照組 (黑盒無解釋)</option>
+                <option value="XAI_GradCAM" data-zh="🔒 GTM 實驗組 (Grad-CAM 熱力圖)" data-en="🔒 Experimental: Grad-CAM">🔒 GTM 實驗組 (Grad-CAM 熱力圖)</option>
             </select>
             
-            <button onclick="triggerFullSyncToDrive()" style="background:#0284c7; color:#fff; border:none; border-radius:8px; padding:8px 14px; cursor:pointer; font-size:12px; font-weight:bold;">
-                📤 提交紀錄到 Drive
-            </button>
+            <button class="lang-btn" id="lang-btn" onclick="toggleLanguage()">🌐 English</button>
         </div>
     </div>
 
@@ -736,32 +627,32 @@
             <div class="step-card" id="card-step1">
                 <div>
                     <div class="step-header">
-                        <span class="step-title">🔌 步驟 1：輸入編號與連接</span>
-                        <span class="step-tag" id="tag-step1">未完成 ⚪</span>
+                        <span class="step-title" data-zh="🔌 步驟 1：輸入編號與連接" data-en="🔌 Step 1: Set ID & Connect">🔌 步驟 1：輸入編號與連接</span>
+                        <span class="step-tag" id="tag-step1" data-zh="未完成 ⚪" data-en="Incomplete ⚪">未完成 ⚪</span>
                     </div>
-                    <input type="number" class="id-input-field" id="mb-input-1" placeholder="輸入 micro:bit 編號 (例: 12)" oninput="syncMicrobitId(this.value)">
+                    <input type="number" class="id-input-field" id="mb-input-1" placeholder="輸入 micro:bit 編號 (例: 12)" data-ph-zh="輸入 micro:bit 編號 (例: 12)" data-ph-en="Enter micro:bit ID (e.g. 12)" oninput="syncMicrobitId(this.value)">
                 </div>
-                <button class="step-btn" id="btn-step1" onclick="connectSerial()">連接 Tx micro:bit</button>
+                <button class="step-btn" id="btn-step1" onclick="connectSerial()" data-zh="連接 Tx micro:bit" data-en="Connect Tx micro:bit">連接 Tx micro:bit</button>
             </div>
             <div class="step-card" id="card-step2">
                 <div>
                     <div class="step-header">
-                        <span class="step-title">📷 步驟 2：載入模型</span>
-                        <span class="step-tag" id="tag-step2">未載入 ⚪</span>
+                        <span class="step-title" data-zh="📷 步驟 2：載入模型" data-en="📷 Step 2: Load Model">📷 步驟 2：載入模型</span>
+                        <span class="step-tag" id="tag-step2" data-zh="未載入 ⚪" data-en="Unloaded ⚪">未載入 ⚪</span>
                     </div>
-                    <input type="text" id="modelUrl" placeholder="貼上 Teachable Machine 模型連結" style="background:#f8fafc; border:1px solid var(--border-ui); color:var(--text-main); width:100%; padding:8px; font-size:11px; border-radius:6px; margin-bottom: 8px;">
+                    <input type="text" id="modelUrl" placeholder="貼上 Teachable Machine 模型連結" data-ph-zh="貼上 Teachable Machine 模型連結" data-ph-en="Paste Teachable Machine model URL" style="background:#f8fafc; border:1px solid var(--border-ui); color:var(--text-main); width:100%; padding:8px; font-size:11px; border-radius:6px; margin-bottom: 8px;">
                 </div>
-                <button class="step-btn" id="btn-step2" onclick="initAI()">啟動模型與鏡頭</button>
+                <button class="step-btn" id="btn-step2" onclick="initAI()" data-zh="啟動模型與鏡頭" data-en="Start Model & Camera">啟動模型與鏡頭</button>
             </div>
             <div class="step-card" id="card-step3">
                 <div>
                     <div class="step-header">
-                        <span class="step-title">🚀 步驟 3：開始競技</span>
-                        <span class="step-tag" id="tag-step3">待解鎖 🔒</span>
+                        <span class="step-title" data-zh="🚀 步驟 3：開始競技" data-en="🚀 Step 3: Launch Arena">🚀 步驟 3：開始競技</span>
+                        <span class="step-tag" id="tag-step3" data-zh="待解鎖 🔒" data-en="Locked 🔒">待解鎖 🔒</span>
                     </div>
-                    <div style="font-size: 11px; color: var(--text-sub); margin-bottom: 10px;" id="desc-step3">需填寫編號、連線及載入模型</div>
+                    <div style="font-size: 11px; color: var(--text-sub); margin-bottom: 10px;" id="desc-step3" data-zh="需填寫編號、連線及載入模型" data-en="Requires ID, Serial, and Model">需填寫編號、連線及載入模型</div>
                 </div>
-                <button class="btn-launch" id="btn-launch" onclick="startGame()" disabled>等待準備...</button>
+                <button class="btn-launch" id="btn-launch" onclick="startGame()" disabled data-zh="等待準備..." data-en="Waiting...">等待準備...</button>
             </div>
         </div>
 
@@ -769,7 +660,7 @@
             <div class="arena-box">
                 <div class="hud-bar">
                     <div class="combo-badge" id="combo-display">0x COMBO</div>
-                    <div class="score-pill">攀爬得分：<span id="score-counter">0</span></div>
+                    <div class="score-pill"><span data-zh="攀爬得分：" data-en="Score: ">攀爬得分：</span><span id="score-counter">0</span></div>
                 </div>
                 <div class="ribbon-track-wrapper">
                     <div class="ribbon-track" id="queue-ribbon"></div>
@@ -780,9 +671,9 @@
                     <div class="webcam-box">
                         <div id="webcam-container" style="width:220px; height:150px; background:#000; border-radius:10px; overflow:hidden; border:1px solid var(--border-ui); position:relative;"></div>
                         <div class="gradcam-legend-bar" id="gradcam-legend-ui" style="display:none; align-items:center; justify-content:space-between; font-size:9px; color:var(--text-sub); padding:4px 2px 0;">
-                            <span>透明(無關)</span>
+                            <span data-zh="透明(無關)" data-en="Clear(None)">透明(無關)</span>
                             <div class="gradcam-spectrum" style="flex-grow:1; height:5px; margin:0 6px; border-radius:3px; background:linear-gradient(to right, rgba(0,255,255,0.4) 0%, #00ff00 35%, #ffff00 70%, #ff0000 100%); border:1px solid #cbd5e1;"></div>
-                            <span>🔥 核心特徵(紅)</span>
+                            <span data-zh="🔥 核心特徵(紅)" data-en="🔥 Salient(Red)">🔥 核心特徵(紅)</span>
                         </div>
                     </div>
                     <div class="meters-grid" id="meters-container"></div>
@@ -806,53 +697,53 @@
             <div class="step-card" id="card-mp-step1">
                 <div>
                     <div class="step-header">
-                        <span class="step-title">🔌 步驟 1：輸入編號與連接</span>
-                        <span class="step-tag" id="tag-mp-serial">未完成 ⚪</span>
+                        <span class="step-title" data-zh="🔌 步驟 1：輸入編號與連接" data-en="🔌 Step 1: Set ID & Connect">🔌 步驟 1：輸入編號與連接</span>
+                        <span class="step-tag" id="tag-mp-serial" data-zh="未完成 ⚪" data-en="Incomplete ⚪">未完成 ⚪</span>
                     </div>
-                    <input type="number" class="id-input-field" id="mb-input-2" placeholder="輸入 micro:bit 編號 (例: 12)" oninput="syncMicrobitId(this.value)">
+                    <input type="number" class="id-input-field" id="mb-input-2" placeholder="輸入 micro:bit 編號 (例: 12)" data-ph-zh="輸入 micro:bit 編號 (例: 12)" data-ph-en="Enter micro:bit ID (e.g. 12)" oninput="syncMicrobitId(this.value)">
                 </div>
-                <button class="step-btn" id="btn-mp-serial" onclick="connectSerial()">連接 Tx micro:bit</button>
+                <button class="step-btn" id="btn-mp-serial" onclick="connectSerial()" data-zh="連接 Tx micro:bit" data-en="Connect Tx micro:bit">連接 Tx micro:bit</button>
             </div>
 
             <div class="step-card" id="card-mp-step2">
                 <div>
                     <div class="step-header">
-                        <span class="step-title">✋ 步驟 2：手勢採樣</span>
-                        <span class="step-tag" id="tag-mp-engine">未啟動 ⚪</span>
+                        <span class="step-title" data-zh="✋ 步驟 2：手勢採樣" data-en="✋ Step 2: Pose Sampling">✋ 步驟 2：手勢採樣</span>
+                        <span class="step-tag" id="tag-mp-engine" data-zh="未啟動 ⚪" data-en="Inactive ⚪">未啟動 ⚪</span>
                     </div>
                     <div class="sample-grid">
                         <button class="sample-btn" id="btn-sample-Class 1" onmousedown="startSampling('Class 1')" onmouseup="stopSampling()">
-                            <span>✊ 石頭</span><span class="sample-count" id="cnt-Class 1">0 幀</span>
+                            <span data-zh="✊ 石頭" data-en="✊ Rock">✊ 石頭</span><span class="sample-count" id="cnt-Class 1">0 幀</span>
                         </button>
                         <button class="sample-btn" id="btn-sample-Class 2" onmousedown="startSampling('Class 2')" onmouseup="stopSampling()">
-                            <span>✌️ 剪刀</span><span class="sample-count" id="cnt-Class 2">0 幀</span>
+                            <span data-zh="✌️ 剪刀" data-en="✌️ Scissor">✌️ 剪刀</span><span class="sample-count" id="cnt-Class 2">0 幀</span>
                         </button>
                         <button class="sample-btn" id="btn-sample-Class 3" onmousedown="startSampling('Class 3')" onmouseup="stopSampling()">
-                            <span>🖐️ 布</span><span class="sample-count" id="cnt-Class 3">0 幀</span>
+                            <span data-zh="🖐️ 布" data-en="🖐️ Paper">🖐️ 布</span><span class="sample-count" id="cnt-Class 3">0 幀</span>
                         </button>
                         <button class="sample-btn" id="btn-sample-Class 4" onmousedown="startSampling('Class 4')" onmouseup="stopSampling()">
-                            <span>👍 讚好</span><span class="sample-count" id="cnt-Class 4">0 幀</span>
+                            <span data-zh="👍 讚好" data-en="👍 Like">👍 讚好</span><span class="sample-count" id="cnt-Class 4">0 幀</span>
                         </button>
                         <button class="sample-btn" id="btn-sample-Class 5" onmousedown="startSampling('Class 5')" onmouseup="stopSampling()">
-                            <span>🫱 待機</span><span class="sample-count" id="cnt-Class 5">0 幀</span>
+                            <span data-zh="🫱 待機" data-en="🫱 Idle">🫱 待機</span><span class="sample-count" id="cnt-Class 5">0 幀</span>
                         </button>
                         <button class="sample-btn" style="background:#fee2e2; border-color:#fca5a5; color:#991b1b;" onclick="clearDataset()">
-                            <span>🗑️ 重置</span><span style="font-size:9px; color:#b91c1c;">清空</span>
+                            <span data-zh="🗑️ 重置" data-en="🗑️ Reset">🗑️ 重置</span><span style="font-size:9px; color:#b91c1c;" data-zh="清空" data-en="Clear">清空</span>
                         </button>
                     </div>
                 </div>
-                <button class="step-btn" id="btn-mp-start" onclick="initMediaPipe()">啟動鏡頭開始採樣</button>
+                <button class="step-btn" id="btn-mp-start" onclick="initMediaPipe()" data-zh="啟動鏡頭開始採樣" data-en="Start Camera Sampling">啟動鏡頭開始採樣</button>
             </div>
 
             <div class="step-card" id="card-mp-step3">
                 <div>
                     <div class="step-header">
-                        <span class="step-title">🚀 步驟 3：開始競技</span>
-                        <span class="step-tag" id="tag-mp-launch">待解鎖 🔒</span>
+                        <span class="step-title" data-zh="🚀 步驟 3：開始競技" data-en="🚀 Step 3: Launch Arena">🚀 步驟 3：開始競技</span>
+                        <span class="step-tag" id="tag-mp-launch" data-zh="待解鎖 🔒" data-en="Locked 🔒">待解鎖 🔒</span>
                     </div>
-                    <div style="font-size: 11px; color: var(--text-sub); margin-bottom: 10px;" id="desc-mp-step3">需填寫編號、連線並每款錄製 ≥8 幀</div>
+                    <div style="font-size: 11px; color: var(--text-sub); margin-bottom: 10px;" id="desc-mp-step3" data-zh="需填寫編號、連線並每款錄製 ≥8 幀" data-en="Requires ID, Serial, and ≥8 frames/class">需填寫編號、連線並每款錄製 ≥8 幀</div>
                 </div>
-                <button class="btn-launch" id="btn-launch-mp" onclick="startMPGame()" disabled>等待準備...</button>
+                <button class="btn-launch" id="btn-launch-mp" onclick="startMPGame()" disabled data-zh="等待準備..." data-en="Waiting...">等待準備...</button>
             </div>
         </div>
 
@@ -860,7 +751,7 @@
             <div class="arena-box">
                 <div class="hud-bar">
                     <div class="combo-badge" id="combo-display-mp">0x COMBO</div>
-                    <div class="score-pill">攀爬得分：<span id="score-counter-mp">0</span></div>
+                    <div class="score-pill"><span data-zh="攀爬得分：" data-en="Score: ">攀爬得分：</span><span id="score-counter-mp">0</span></div>
                 </div>
                 <div class="ribbon-track-wrapper">
                     <div class="ribbon-track" id="queue-ribbon-mp"></div>
@@ -886,117 +777,88 @@
     </div>
 
     <!-- =========================================================================
-         【模式三：地面遙測與「昂坪 360」纜車精準停泊大挑戰】
+         【模式三：昂坪 360 一二三紅綠燈：AI 視覺執法賽】
          ========================================================================= -->
     <div class="mode-section" id="section-mode-3">
-        <!-- 模式三專用步驟看板 (與模式一、二完全一致) -->
         <div class="stepper-board">
             <div class="step-card" id="card-mode3-step1">
                 <div>
                     <div class="step-header">
-                        <span class="step-title">🔌 步驟 1：輸入編號與連接</span>
-                        <span class="step-tag" id="tag-mode3-serial">未完成 ⚪</span>
+                        <span class="step-title" data-zh="🔌 步驟 1：輸入編號與連接" data-en="🔌 Step 1: Set ID & Connect">🔌 步驟 1：輸入編號與連接</span>
+                        <span class="step-tag" id="tag-mode3-serial" data-zh="未完成 ⚪" data-en="Incomplete ⚪">未完成 ⚪</span>
                     </div>
-                    <input type="number" class="id-input-field" id="mb-input-3" placeholder="輸入 micro:bit 編號 (例: 12)" oninput="syncMicrobitId(this.value)">
+                    <input type="number" class="id-input-field" id="mb-input-3" placeholder="輸入 micro:bit 編號 (例: 12)" data-ph-zh="輸入 micro:bit 編號 (例: 12)" data-ph-en="Enter micro:bit ID (e.g. 12)" oninput="syncMicrobitId(this.value)">
                 </div>
-                <button class="step-btn" id="btn-mode3-serial" onclick="connectSerial()">連接 Tx micro:bit</button>
+                <button class="step-btn" id="btn-mode3-serial" onclick="connectSerial()" data-zh="連接 Tx micro:bit" data-en="Connect Tx micro:bit">連接 Tx micro:bit</button>
             </div>
             <div class="step-card" id="card-mode3-step2">
                 <div>
                     <div class="step-header">
-                        <span class="step-title">📷 步驟 2：啟動 HC010 鏡頭</span>
-                        <span class="step-tag" id="tag-mode3-cam">未啟動 ⚪</span>
+                        <span class="step-title" data-zh="📷 步驟 2：啟動裁判鏡頭" data-en="📷 Step 2: Start Referee Cam">📷 步驟 2：啟動裁判鏡頭</span>
+                        <span class="step-tag" id="tag-mode3-cam" data-zh="未啟動 ⚪" data-en="Inactive ⚪">未啟動 ⚪</span>
                     </div>
-                    <div style="font-size: 11px; color: var(--text-sub); margin-bottom: 10px;">開啟廣角視角並框選機械人椴木板</div>
+                    <div style="font-size: 11px; color: var(--text-sub); margin-bottom: 10px;" data-zh="開啟鏡頭並在畫面上框選機械人" data-en="Start camera and draw box on robot">開啟鏡頭並在畫面上框選機械人</div>
                 </div>
-                <button class="step-btn" id="btn-telemetry-cam" onclick="toggleTelemetryCamera()">📷 開啟/重啟鏡頭</button>
+                <button class="step-btn" id="btn-telemetry-cam" onclick="toggleTelemetryCamera()" data-zh="📷 開啟/重啟鏡頭" data-en="📷 Start/Restart Cam">📷 開啟/重啟鏡頭</button>
             </div>
             <div class="step-card" id="card-mode3-step3">
                 <div>
                     <div class="step-header">
-                        <span class="step-title">🚡 步驟 3：停泊競技就緒</span>
-                        <span class="step-tag" id="tag-mode3-game">待命中 ⚪</span>
+                        <span class="step-title" data-zh="🚦 步驟 3：開始紅綠燈賽" data-en="🚦 Step 3: Start Traffic Game">🚦 步驟 3：開始紅綠燈賽</span>
+                        <span class="step-tag" id="tag-mode3-game" data-zh="待命中 ⚪" data-en="Standby ⚪">待命中 ⚪</span>
                     </div>
-                    <div style="font-size: 11px; color: var(--text-sub); margin-bottom: 10px;">使用前後微調駛入目標月台範圍</div>
+                    <div style="font-size: 11px; color: var(--text-sub); margin-bottom: 10px;" data-zh="綠燈衝刺，紅燈急煞違者倒退" data-en="Move on Green, Freeze on Red!">綠燈衝刺，紅燈急煞違者倒退</div>
                 </div>
-                <button class="step-btn" style="background:#2563eb;" onclick="generateNewDockingTarget()">🎲 隨機更換月台目標</button>
+                <button class="step-btn" id="btn-start-traffic" style="background:#059669;" onclick="toggleTrafficGame()" data-zh="▶ 開始紅綠燈競技！" data-en="▶ Start Red/Green Race!">▶ 開始紅綠燈競技！</button>
             </div>
         </div>
 
-        <div class="telemetry-layout">
-            <div class="telemetry-cam-card">
+        <div class="traffic-layout">
+            <div class="telemetry-cam-card" style="background:#fff; border:2px solid var(--border-ui); border-radius:16px; padding:14px; display:flex; flex-direction:column; gap:10px;">
                 <div style="display:flex; justify-content:space-between; align-items:center;">
-                    <span style="font-weight:800; font-size:14px; color:var(--game-blue);">📡 軌道全局視野 (HC010 Distance Vision)</span>
-                    <span id="track-status-tag" style="font-size:11px; background:#f1f5f9; border:1px solid var(--border-ui); color:var(--text-sub); padding:2px 8px; border-radius:10px;">未啟動鏡頭</span>
+                    <span style="font-weight:800; font-size:14px; color:var(--game-blue);" data-zh="📡 視覺執法視野 (HC010 Dynamic Tracking)" data-en="📡 Vision Referee View (HC010 Tracking)">📡 視覺執法視野 (HC010 Dynamic Tracking)</span>
+                    <span id="track-status-tag" style="font-size:11px; background:#f1f5f9; border:1px solid var(--border-ui); color:var(--text-sub); padding:2px 8px; border-radius:10px;" data-zh="未啟動鏡頭" data-en="Cam Inactive">未啟動鏡頭</span>
                 </div>
 
-                <div class="cam-feed-wrapper" id="cam-feed-container">
+                <div class="cam-feed-wrapper">
                     <canvas id="telemetry-canvas" width="640" height="480"></canvas>
-                    <div class="cam-crosshair-hud">
-                        <span id="tracking-status-text" style="color:var(--game-amber); font-weight:bold;">🎯 請在畫面上按住滑鼠【拉框】框住機械人椴木板</span><br>
-                        結構匹配信心度：<span id="match-score-hud" style="color:#4ade80; font-weight:bold;">0%</span>
-                    </div>
                 </div>
 
-                <div class="roi-preview-box">
-                    <div style="display:flex; align-items:center; gap:10px;">
-                        <img id="roi-preview-img" class="roi-thumb-img" src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='48' height='48' viewBox='0 0 48 48'%3E%3Crect width='48' height='48' fill='%23f1f5f9'/%3E%3Ctext x='50%25' y='50%25' font-size='10' fill='%2394a3b8' text-anchor='middle' dy='.3em'%3E待框選%3C/text%3E%3C/svg%3E" alt="ROI">
-                        <div style="font-size:11px; line-height:1.4;">
-                            <span style="color:var(--text-main); font-weight:bold;" id="roi-info-title">尚未框選目標</span><br>
-                            <span style="color:var(--text-sub);" id="roi-info-detail">拉框鎖定後可開啟停泊大挑戰</span>
-                        </div>
-                    </div>
-                    <div style="display:flex; gap:6px;">
-                        <button class="step-btn" style="width:auto; padding:6px 10px; font-size:11px; background:#059669;" onclick="calibrate50cmFocalLength()">📏 校準 50cm</button>
-                        <button class="step-btn" style="width:auto; padding:6px 10px; font-size:11px; background:#475569;" onclick="resetROISelection()">🎯 重新框選</button>
-                        <button class="step-btn" style="width:auto; padding:6px 10px; font-size:11px; background:#64748b;" onclick="clearROITracker()">🗑️ 清除鎖定</button>
-                    </div>
+                <div style="display:flex; justify-content:space-between; align-items:center; background:#f8fafc; padding:8px 12px; border-radius:8px; border:1px solid var(--border-ui);">
+                    <span style="font-size:12px; color:var(--text-sub);" data-zh="🎯 在畫面按住滑鼠【拉框】鎖定機械人椴木板" data-en="🎯 Drag mouse over robot to track it">🎯 在畫面按住滑鼠【拉框】鎖定機械人椴木板</span>
+                    <button class="step-btn" style="width:auto; padding:6px 12px; font-size:11px; background:#475569;" onclick="resetROISelection()" data-zh="重新框選" data-en="Redraw Box">重新框選</button>
                 </div>
             </div>
 
-            <div class="telemetry-data-card">
-                <!-- 昂坪 360 精準月台停泊大挑戰面板 -->
-                <div class="docking-panel">
-                    <div style="display:flex; justify-content:space-between; align-items:center;">
-                        <span style="font-weight:900; color:#1e40af; font-size:14px;">🚡「昂坪 360」月台停泊賽</span>
-                        <span id="docking-round-badge" style="font-size:11px; background:#bfdbfe; color:#1e3a8a; padding:2px 8px; border-radius:10px; font-weight:bold;">停泊挑戰</span>
+            <div style="display:flex; flex-direction:column; gap:12px;">
+                <!-- 紅綠燈執法信號機燈柱 -->
+                <div class="traffic-light-beacon" id="traffic-beacon-card">
+                    <div style="font-size:12px; font-weight:800; letter-spacing:1px;" data-zh="AI 交通號誌裁判台" data-en="AI TRAFFIC REFEREE">AI 交通號誌裁判台</div>
+                    <div class="light-bulb-container">
+                        <div class="bulb red" id="bulb-red"></div>
+                        <div class="bulb green active" id="bulb-green"></div>
                     </div>
-                    
-                    <div class="docking-status-bar">
-                        <span>目標月台距離：<b id="target-dock-dist" style="color:var(--game-pink); font-size:15px;">50.0 cm</b></span>
-                        <span id="dock-status-text" style="color:#64748b;">待命駛入</span>
-                    </div>
-
-                    <div class="docking-timer-track">
-                        <div class="docking-timer-fill" id="dock-timer-bar"></div>
-                    </div>
-
-                    <!-- 雙向控制鍵盤與按鈕 (連接 Serial 即可控制) -->
-                    <div style="font-size:11px; color:var(--text-sub); margin-top:2px;">🎮 雙向微調操控 (或按鍵盤 ↑ / ↓ 鍵)：</div>
-                    <div class="control-jog-grid">
-                        <button class="jog-btn" onclick="sendRobotCommand('1')">▲ 前進 (Forward)</button>
-                        <button class="jog-btn" style="background:#dc2626;" onclick="sendRobotCommand('0')">⏹ 煞停 (Stop)</button>
-                        <button class="jog-btn" onclick="sendRobotCommand('2')">▼ 倒退 (Back)</button>
-                    </div>
+                    <div id="traffic-command-label" style="font-size:22px; font-weight:900; color:#10b981;" data-zh="🟢 綠燈：前進！" data-en="🟢 GREEN: GO!">🟢 綠燈：前進！</div>
+                    <div style="font-size:11px; opacity:0.8;" id="traffic-timer-sub">倒數: 4.2s</div>
                 </div>
 
                 <div class="metric-tile">
-                    <div class="metric-title">
-                        <span>📏 實時距離 (Distance to Camera)</span>
-                        <span style="font-size:10px; color:var(--game-blue);" id="focal-status-label">焦距: 350px</span>
+                    <div style="display:flex; justify-content:space-between; font-size:12px; font-weight:bold; color:var(--text-sub);">
+                        <span data-zh="⚡ 實時爬行速度" data-en="⚡ Real-time Speed">⚡ 實時爬行速度</span>
+                        <span id="speed-status-badge" style="color:var(--game-green);" data-zh="安全" data-en="Safe">安全</span>
                     </div>
-                    <div class="metric-val val-dist">
-                        <span id="telemetry-dist-val">--</span><span class="metric-unit">cm</span>
+                    <div class="metric-val" style="color:var(--game-blue);">
+                        <span id="traffic-speed-val">0.0</span><span style="font-size:14px; font-weight:normal; color:var(--text-sub);"> cm/s</span>
                     </div>
                 </div>
 
-                <div class="metric-tile">
-                    <div class="metric-title">
-                        <span>⚡ 爬行速度 (Speed)</span>
-                        <span id="speed-trend-label" style="color:#059669;">0.0 cm/s</span>
-                    </div>
-                    <div class="metric-val val-speed">
-                        <span id="telemetry-speed-val">0.0</span><span class="metric-unit">cm/s</span>
+                <!-- 手動緊急駕駛面板 -->
+                <div style="background:#f8fafc; border:1px solid var(--border-ui); border-radius:12px; padding:10px; display:flex; flex-direction:column; gap:6px;">
+                    <div style="font-size:11px; font-weight:bold; color:var(--text-sub);" data-zh="🕹️ 駕駛控制 (或按鍵盤 ↑ / ↓ / 空白鍵)：" data-en="🕹️ Controls (Or use ↑ / ↓ / Space):">🕹️ 駕駛控制 (或按鍵盤 ↑ / ↓ / 空白鍵)：</div>
+                    <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:6px;">
+                        <button class="step-btn" style="background:#1e293b; padding:8px 2px;" onclick="sendRobotCommand('1')" data-zh="▲ 衝刺" data-en="▲ Forward">▲ 衝刺</button>
+                        <button class="step-btn" style="background:#dc2626; padding:8px 2px;" onclick="sendRobotCommand('0')" data-zh="⏹ 煞停" data-en="⏹ Freeze">⏹ 煞停</button>
+                        <button class="step-btn" style="background:#475569; padding:8px 2px;" onclick="sendRobotCommand('2')" data-zh="▼ 倒退" data-en="▼ Back">▼ 倒退</button>
                     </div>
                 </div>
             </div>
@@ -1005,25 +867,23 @@
 
 </div>
 
-<!-- =========================================================================
-     互動式引導反思 Chatbot (無需 API，100% 穩定，記錄到 Drive)
-     ========================================================================= -->
+<!-- 互動式引導反思 Chatbot -->
 <button class="chatbot-bubble-btn" onclick="toggleChatWindow()">
-    💬 <span>學習反思小助手</span>
+    💬 <span data-zh="學習反思小助手" data-en="Reflection Tutor">學習反思小助手</span>
 </button>
 
 <div class="chatbot-window" id="chat-window">
     <div class="chat-header">
-        <span>🤖 AI 學習小導師</span>
+        <span data-zh="🤖 AI 學習小導師" data-en="🤖 AI Learning Tutor">🤖 AI 學習小導師</span>
         <button onclick="toggleChatWindow()" style="background:transparent; border:none; color:#fff; font-size:16px; cursor:pointer;">✕</button>
     </div>
     <div class="chat-body" id="chat-body">
         <div class="chat-msg bot">
-            <div class="bubble">
+            <div class="bubble" id="chat-first-bubble">
                 哈囉！我係你嘅學習小導師 🤖。辛苦晒你組裝同測試爬繩機械人！<br><br>
                 <b>請問你頭先喺操作或除錯嗰陣，有冇遇到咩特別嘅困難？</b>
             </div>
-            <div class="chip-group">
+            <div class="chip-group" id="chat-first-chips">
                 <span class="quick-chip" onclick="handleChipClick('手勢成日認錯，受背景干擾')">手勢成日認錯</span>
                 <span class="quick-chip" onclick="handleChipClick('機械人爬唔起，繩索太滑')">繩索太滑</span>
                 <span class="quick-chip" onclick="handleChipClick('micro:bit 訊號有時收唔到')">無線訊號受阻</span>
@@ -1032,52 +892,92 @@
         </div>
     </div>
     <div class="chat-footer">
-        <input type="text" class="chat-input" id="chat-input" placeholder="輸入你想講嘅嘢..." onkeydown="if(event.key==='Enter') sendChatMessage()">
-        <button class="chat-send-btn" onclick="sendChatMessage()">送出</button>
+        <input type="text" class="chat-input" id="chat-input" placeholder="輸入你想講嘅嘢..." data-ph-zh="輸入你想講嘅嘢..." data-ph-en="Type your response..." onkeydown="if(event.key==='Enter') sendChatMessage()">
+        <button class="step-btn" style="width:auto; padding:6px 12px; background:var(--game-blue);" onclick="sendChatMessage()" data-zh="送出" data-en="Send">送出</button>
     </div>
 </div>
 
 <script>
     // =========================================================================
-    // 全域變數與 Google Drive Apps Script 端點
+    // 1. 全域配置與 Google Apps Script 靜默自動導出
     // =========================================================================
-    const DRIVE_FOLDER_ID = "18VTaAPt86z7u4BCevGm96ZDF6uRdoODu";
-    const GAS_ENDPOINT = "YOUR_GOOGLE_APPS_SCRIPT_WEB_APP_URL_HERE"; // 貼上你的 Apps Script 網址
-    
+    // 請將你部署好的 Google Apps Script 網頁應用程式 URL 貼喺呢度：
+    const GAS_ENDPOINT = "https://script.google.com/macros/s/AKfycbxYOUR_ACTUAL_DEPLOYED_URL_HERE/exec"; 
+    const SPREADSHEET_ID = "1HBh4g4FIGXVHxKcbtgfJPsvpK-YG5P1xs9p_-j_EBcY";
+
     let sharedMicrobitId = "";
     let eventLogs = [];
-    let chatReflectionData = {
-        difficulty: "",
-        favorite: "",
-        comments: ""
-    };
-    let chatStep = 0; // 0: Difficulty, 1: Favorite, 2: Comments, 3: Completed
+    let chatReflectionData = { difficulty: "", favorite: "", comments: "" };
+    let chatStep = 0;
 
-    // 全自動三模式 ID 同步
+    // 背景靜默自動導出資料（無按鈕干擾）
+    async function autoExportToGoogleSheet(modeName, finalScore) {
+        if (!sharedMicrobitId || !GAS_ENDPOINT || GAS_ENDPOINT.includes("YOUR_ACTUAL_DEPLOYED_URL")) return;
+        const payload = {
+            sheetId: SPREADSHEET_ID,
+            microbitId: sharedMicrobitId,
+            condition: document.getElementById("conditionType").value,
+            mode: modeName,
+            score: finalScore,
+            reflections: chatReflectionData,
+            logs: eventLogs
+        };
+        try {
+            await fetch(GAS_ENDPOINT, {
+                method: "POST",
+                mode: "no-cors",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(payload)
+            });
+            console.log("✔ Auto-synced to Google Sheet quietly.");
+        } catch(e) {}
+    }
+
+    // =========================================================================
+    // 2. 繁英即時切換邏輯 (少於 25 行代碼)
+    // =========================================================================
+    let currentLang = 'zh';
+    function toggleLanguage() {
+        currentLang = currentLang === 'zh' ? 'en' : 'zh';
+        document.getElementById('lang-btn').innerText = currentLang === 'zh' ? '🌐 English' : '🌐 繁體中文';
+        document.querySelectorAll('[data-zh]').forEach(el => {
+            el.innerText = el.getAttribute(`data-${currentLang}`);
+        });
+        document.querySelectorAll('[data-ph-zh]').forEach(el => {
+            el.placeholder = el.getAttribute(`data-ph-${currentLang}`);
+        });
+        if (currentLang === 'en') {
+            document.getElementById('chat-first-bubble').innerHTML = "Hello! I am your AI Learning Tutor 🤖. Great job on the rope-climbing robot today!<br><br><b>What was the biggest technical challenge or error you encountered?</b>";
+        } else {
+            document.getElementById('chat-first-bubble').innerHTML = "哈囉！我係你嘅學習小導師 🤖。辛苦晒你組裝同測試爬繩機械人！<br><br><b>請問你頭先喺操作或除錯嗰陣，有冇遇到咩特別嘅困難？</b>";
+        }
+    }
+
+    // =========================================================================
+    // 3. 全自動三模式 ID 同步
+    // =========================================================================
     function syncMicrobitId(val) {
         sharedMicrobitId = String(val).trim();
         document.getElementById("mb-input-1").value = sharedMicrobitId;
         document.getElementById("mb-input-2").value = sharedMicrobitId;
         document.getElementById("mb-input-3").value = sharedMicrobitId;
-        document.getElementById("shared-mb-id-display").innerText = sharedMicrobitId ? ("No. " + sharedMicrobitId) : "未填寫";
+        document.getElementById("shared-mb-id-display").innerText = sharedMicrobitId ? ("No. " + sharedMicrobitId) : (currentLang === 'zh' ? "未填寫" : "Unset");
         checkCanUnlockStep3();
         checkCanUnlockMPStep3();
     }
 
     // =========================================================================
-    // 全域模式切換 (模式二 Mediapipe 密碼保護)
+    // 4. 模式切換 (模式二密碼 mediapipe)
     // =========================================================================
     let currentSystemMode = 1;
-
     function switchSystemMode(modeNum) {
         if (modeNum === 2) {
-            const pwd = prompt("請輸入模式二權限密碼：");
+            const pwd = prompt(currentLang === 'zh' ? "請輸入模式二權限密碼：" : "Enter Mode 2 Password:");
             if (pwd !== "mediapipe") {
-                alert("❌ 密碼錯誤！無法進入模式二。");
+                alert(currentLang === 'zh' ? "❌ 密碼錯誤！無法進入模式二。" : "❌ Incorrect Password!");
                 return;
             }
         }
-
         currentSystemMode = modeNum;
         document.getElementById("tab-mode-1").classList.toggle("active", modeNum === 1);
         document.getElementById("tab-mode-2").classList.toggle("active", modeNum === 2);
@@ -1087,27 +987,22 @@
         document.getElementById("section-mode-2").classList.toggle("active-mode", modeNum === 2);
         document.getElementById("section-mode-3").classList.toggle("active-mode", modeNum === 3);
 
-        if (modeNum === 2 && !cameraMP) {
-            initMediaPipe();
-        } else if (modeNum === 3 && !telemetryVideo) {
-            initTelemetryCamera();
-        }
+        if (modeNum === 2 && !cameraMP) initMediaPipe();
+        else if (modeNum === 3 && !telemetryVideo) initTelemetryCamera();
     }
 
-    // =========================================================================
     // XAI 密碼驗證
-    // =========================================================================
     let prevConditionVal = "No_XAI_Blackbox";
     function storePrevCondition(val) { prevConditionVal = val; }
     function handleConditionChange(selectEl) {
         if (selectEl.value === "XAI_GradCAM") {
-            const pwd = prompt("請輸入 XAI 實驗組權限密碼：");
+            const pwd = prompt(currentLang === 'zh' ? "請輸入 XAI 實驗組權限密碼：" : "Enter XAI Password:");
             if (pwd === "xai") {
-                alert("✔ 密碼正確！已切換至【GTM 實驗組 (Grad-CAM 熱力圖)】");
+                alert(currentLang === 'zh' ? "✔ 密碼正確！已切換至【GTM 實驗組 (Grad-CAM 熱力圖)】" : "✔ Access Granted: Grad-CAM Activated");
                 prevConditionVal = "XAI_GradCAM";
                 document.getElementById("gradcam-legend-ui").style.display = "flex";
             } else {
-                alert("❌ 密碼錯誤，已鎖定於【對照組】");
+                alert(currentLang === 'zh' ? "❌ 密碼錯誤，已鎖定於【對照組】" : "❌ Access Denied!");
                 selectEl.value = prevConditionVal;
                 document.getElementById("gradcam-legend-ui").style.display = "none";
             }
@@ -1118,7 +1013,7 @@
     }
 
     // =========================================================================
-    // WebSerial 發送雙向運動指令 ("1": 前進, "2": 倒退, "0": 煞停)
+    // 5. WebSerial 通訊控制
     // =========================================================================
     let serialPort, serialWriter;
     let step1Ready = false;
@@ -1132,42 +1027,25 @@
             serialWriter = enc.writable.getWriter();
 
             step1Ready = true;
-
-            // 同步更新模式一 UI
-            document.getElementById("card-step1").classList.add("done");
-            document.getElementById("tag-step1").innerText = "已連線 🟢";
-            document.getElementById("btn-step1").innerText = "✔ 連線成功";
-            document.getElementById("btn-step1").classList.add("ready-btn");
+            ["card-step1", "card-mp-step1", "card-mode3-step1"].forEach(id => document.getElementById(id).classList.add("done"));
+            ["tag-step1", "tag-mp-serial", "tag-mode3-serial"].forEach(id => document.getElementById(id).innerText = currentLang === 'zh' ? "已連線 🟢" : "Ready 🟢");
+            ["btn-step1", "btn-mp-serial", "btn-mode3-serial"].forEach(id => {
+                document.getElementById(id).innerText = currentLang === 'zh' ? "✔ 連線成功" : "✔ Connected";
+                document.getElementById(id).classList.add("ready-btn");
+            });
             checkCanUnlockStep3();
-
-            // 同步更新模式二 UI
-            document.getElementById("card-mp-step1").classList.add("done");
-            document.getElementById("tag-mp-serial").innerText = "已連線 🟢";
-            document.getElementById("btn-mp-serial").innerText = "✔ 連線成功";
-            document.getElementById("btn-mp-serial").classList.add("ready-btn");
             checkCanUnlockMPStep3();
-
-            // 同步更新模式三 UI
-            document.getElementById("card-mode3-step1").classList.add("done");
-            document.getElementById("tag-mode3-serial").innerText = "已連線 🟢";
-            document.getElementById("btn-mode3-serial").innerText = "✔ 連線成功";
-            document.getElementById("btn-mode3-serial").classList.add("ready-btn");
         } catch (e) {
-            alert("Serial 連接取消或失敗: " + e.message);
+            alert("Serial Connection Error: " + e.message);
         }
     }
 
     async function sendRobotCommand(cmdStr) {
         if (serialWriter) {
-            try {
-                await serialWriter.write(cmdStr + "\n");
-            } catch(e) {
-                console.error("Serial 發送失敗", e);
-            }
+            try { await serialWriter.write(cmdStr + "\n"); } catch(e) {}
         }
     }
 
-    // 支援鍵盤方向鍵微調雙向爬行 (模式三專用快捷鍵)
     window.addEventListener("keydown", (e) => {
         if (currentSystemMode === 3) {
             if (e.key === "ArrowUp") sendRobotCommand("1");
@@ -1177,42 +1055,7 @@
     });
 
     // =========================================================================
-    // 數據上傳至 Google Drive (含 Chatbot 反思語料)
-    // =========================================================================
-    async function triggerFullSyncToDrive() {
-        if (!sharedMicrobitId) {
-            alert("⚠️ 請先在步驟 1 填寫 micro:bit 編號！");
-            return;
-        }
-        if (!GAS_ENDPOINT || GAS_ENDPOINT.includes("YOUR_GOOGLE_APPS_SCRIPT")) {
-            alert("請先填寫 Google Apps Script 網址！");
-            return;
-        }
-        const payload = {
-            folderId: DRIVE_FOLDER_ID,
-            microbitId: sharedMicrobitId,
-            condition: document.getElementById("conditionType").value,
-            mode1Score: score,
-            mode2Score: mpScore,
-            dockingTarget: targetDockDistance,
-            reflections: chatReflectionData,
-            logs: eventLogs
-        };
-        try {
-            await fetch(GAS_ENDPOINT, {
-                method: "POST",
-                mode: "no-cors",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify(payload)
-            });
-            alert("✔ 所有比賽成績及同儕反思已成功上傳 Google Drive！");
-        } catch (err) {
-            alert("上傳失敗: " + err.message);
-        }
-    }
-
-    // =========================================================================
-    // 模式一：Teachable Machine + Grad-CAM 邏輯
+    // 6. 模式一：Teachable Machine + Grad-CAM
     // =========================================================================
     const GESTURES = {
         "Class 1": { name: "石頭", symbol: "✊", num: "No. 1" },
@@ -1222,27 +1065,21 @@
         "Class 5": { name: "待機", symbol: "🫱", num: "No. 5" }
     };
     const ACTIVE_TARGETS = ["Class 1", "Class 2", "Class 3", "Class 4"];
-    let step2Ready = false;
-    let model, webcam, maxPredictions;
-    let convSubModel = null, headLayers = [];
-    let displayCanvas, displayCtx, offCanvas, offCtx;
+    let step2Ready = false, model, webcam, maxPredictions;
+    let convSubModel = null, headLayers = [], displayCanvas, displayCtx, offCanvas, offCtx;
     let gradCamThrottle = 0, cachedHeatmapCanvas = null;
-
-    let actionQueue = [];
-    const QUEUE_LENGTH = 5;
-    let isRunning = false, isLocked = false;
-    let score = 0, combo = 0, roundStart = 0;
+    let actionQueue = [], isRunning = false, isLocked = false, score = 0, combo = 0, roundStart = 0;
     const TIME_LIMIT_MS = 3000;
     let timerLoop = null;
 
     async function initAI() {
         let url = document.getElementById("modelUrl").value.trim();
-        if (!url) { alert("請先填寫 Teachable Machine 網址！"); return; }
+        if (!url) { alert(currentLang === 'zh' ? "請先填寫 Teachable Machine 模型連結！" : "Please paste your Teachable Machine model URL!"); return; }
         if (url.endsWith("model.json")) url = url.replace("model.json", "");
         if (!url.endsWith("/")) url += "/";
 
         const btn = document.getElementById("btn-step2");
-        btn.innerText = "載入中，請稍候...";
+        btn.innerText = currentLang === 'zh' ? "載入中..." : "Loading...";
         btn.disabled = true;
 
         try {
@@ -1256,7 +1093,6 @@
             displayCanvas = document.createElement("canvas");
             displayCanvas.width = 220; displayCanvas.height = 150;
             displayCtx = displayCanvas.getContext("2d");
-
             const container = document.getElementById("webcam-container");
             container.innerHTML = "";
             container.appendChild(displayCanvas);
@@ -1274,17 +1110,15 @@
 
             step2Ready = true;
             document.getElementById("card-step2").classList.add("done");
-            document.getElementById("tag-step2").innerText = "已就緒 🟢";
-            btn.innerText = "✔ 模型與鏡頭就緒";
+            document.getElementById("tag-step2").innerText = currentLang === 'zh' ? "已就緒 🟢" : "Ready 🟢";
+            btn.innerText = currentLang === 'zh' ? "✔ 模型與鏡頭就緒" : "✔ Ready";
             btn.classList.add("ready-btn");
             btn.disabled = false;
             checkCanUnlockStep3();
-
             window.requestAnimationFrame(predictLoop);
         } catch (e) {
-            btn.innerText = "重新載入模型";
-            btn.disabled = false;
-            alert("模型載入失敗: " + e.message);
+            btn.innerText = "Retry"; btn.disabled = false;
+            alert("Error: " + e.message);
         }
     }
 
@@ -1344,11 +1178,10 @@
     function checkCanUnlockStep3() {
         if (step1Ready && step2Ready && sharedMicrobitId) {
             document.getElementById("card-step3").classList.add("done");
-            document.getElementById("tag-step3").innerText = "準備就緒 ✨";
-            document.getElementById("desc-step3").innerText = "一切就緒！點擊下方按鈕出發";
+            document.getElementById("tag-step3").innerText = currentLang === 'zh' ? "準備就緒 ✨" : "Ready ✨";
             const launchBtn = document.getElementById("btn-launch");
             launchBtn.disabled = false;
-            launchBtn.innerText = "🚀 開始攀爬競技！";
+            launchBtn.innerText = currentLang === 'zh' ? "🚀 開始攀爬競技！" : "🚀 Start Arena!";
             launchBtn.classList.add("unlocked");
         }
     }
@@ -1370,7 +1203,7 @@
             const name = predictions[i].className;
             const prob = predictions[i].probability;
             const row = document.getElementById("meter-row-" + i);
-            const g = GESTURES[name] || { symbol: "", name: name, num: "" };
+            const g = GESTURES[name] || { symbol: "", name: name };
             row.innerHTML = `<span>${g.symbol} ${g.name}</span><span>${(prob*100).toFixed(0)}%</span>`;
             if (prob > topProb) { topProb = prob; topCls = name; topIdx = i; }
             if (prob > 0.75) row.classList.add("matched");
@@ -1423,7 +1256,7 @@
         }
 
         if (isRunning && !isLocked && actionQueue.length > 0) {
-            if (topCls === actionQueue[0] && topProb > 0.75) handleSuccess(topCls, topProb);
+            if (topCls === actionQueue[0] && topProb > 0.75) handleSuccess(topCls);
         }
     }
 
@@ -1431,10 +1264,10 @@
         isRunning = true; isLocked = false; score = 0; combo = 0; eventLogs = [];
         updateHUD();
         const launchBtn = document.getElementById("btn-launch");
-        launchBtn.innerText = "🎮 競技進行中...";
+        launchBtn.innerText = currentLang === 'zh' ? "🎮 競技進行中..." : "🎮 Competing...";
         launchBtn.disabled = true;
         actionQueue = [];
-        for (let i = 0; i < QUEUE_LENGTH; i++) actionQueue.push(ACTIVE_TARGETS[Math.floor(Math.random() * ACTIVE_TARGETS.length)]);
+        for (let i = 0; i < 5; i++) actionQueue.push(ACTIVE_TARGETS[Math.floor(Math.random() * ACTIVE_TARGETS.length)]);
         renderQueue();
         startTimer();
     }
@@ -1446,7 +1279,7 @@
             const g = GESTURES[clsKey];
             const card = document.createElement("div");
             card.className = "action-card " + (index === 0 ? "active-target" : "upcoming");
-            card.innerHTML = `<div class="symbol">${g.symbol}</div><div class="c-name">${g.name}</div><div class="sub-num">${g.num}</div>`;
+            card.innerHTML = `<div class="symbol">${g.symbol}</div><div class="c-name">${g.name}</div>`;
             ribbon.appendChild(card);
         });
     }
@@ -1458,16 +1291,13 @@
         timerLoop = setInterval(() => {
             const elapsed = performance.now() - roundStart;
             const remaining = Math.max(0, TIME_LIMIT_MS - elapsed);
-            const pct = (remaining / TIME_LIMIT_MS) * 100;
-            bar.style.width = pct + "%";
-            bar.style.background = pct > 40 ? "var(--game-blue)" : "var(--game-pink)";
+            bar.style.width = (remaining / TIME_LIMIT_MS) * 100 + "%";
             if (remaining <= 0) { clearInterval(timerLoop); handleTimeout(); }
         }, 30);
     }
 
-    async function handleSuccess(matchedCls, prob) {
-        isLocked = true;
-        clearInterval(timerLoop);
+    async function handleSuccess(matchedCls) {
+        isLocked = true; clearInterval(timerLoop);
         score++; combo++;
         if (combo >= 3) {
             if (typeof confetti === "function") confetti({ particleCount: 25, spread: 60, origin: { y: 0.6 } });
@@ -1476,11 +1306,19 @@
             popSplash("PERFECT! ⚡", "var(--game-green)");
         }
         updateHUD();
-        sendRobotCommand("1"); // 發送前進推進信號
+        sendRobotCommand("1");
+        eventLogs.push({ target: actionQueue[0], matched: matchedCls, status: "HIT", timestamp: new Date().toISOString() });
         actionQueue.shift();
         actionQueue.push(ACTIVE_TARGETS[Math.floor(Math.random() * ACTIVE_TARGETS.length)]);
         renderQueue();
-        setTimeout(() => { isLocked = false; if (isRunning) startTimer(); }, 800);
+
+        if (score >= 15) {
+            isRunning = false;
+            autoExportToGoogleSheet("Mode 1 (GTM)", score);
+            alert(currentLang === 'zh' ? "🎉 恭喜完成！成績已自動儲存至 Google Sheet！" : "🎉 Congratulations! Scores auto-saved to Google Sheet!");
+        } else {
+            setTimeout(() => { isLocked = false; if (isRunning) startTimer(); }, 800);
+        }
     }
 
     function handleTimeout() {
@@ -1505,44 +1343,27 @@
     }
 
     // =========================================================================
-    // 模式二：MediaPipe 訓練艙邏輯
+    // 7. 模式二：MediaPipe 訓練艙
     // =========================================================================
-    let handsMP = null, cameraMP = null;
-    let videoElementMP, canvasElementMP, canvasCtxMP;
-    let currentLandmarks = null;
-    let dataset = [];
-    let isSampling = false, samplingTarget = null, sampleInterval = null;
-    let step2MPReady = false;
-    let isMPRunning = false, isMPLocked = false;
-    let mpScore = 0, mpCombo = 0, mpRoundStart = 0;
-    let mpActionQueue = [], mpTimerLoop = null;
+    let handsMP = null, cameraMP = null, videoElementMP, canvasElementMP, canvasCtxMP;
+    let currentLandmarks = null, dataset = [], isSampling = false, samplingTarget = null, sampleInterval = null;
+    let step2MPReady = false, isMPRunning = false, isMPLocked = false, mpScore = 0, mpActionQueue = [], mpTimerLoop = null;
 
     async function initMediaPipe() {
         const btn = document.getElementById("btn-mp-start");
-        btn.innerText = "載入 MediaPipe 引擎中...";
+        btn.innerText = currentLang === 'zh' ? "載入 MediaPipe 引擎中..." : "Loading MediaPipe...";
         btn.disabled = true;
 
         videoElementMP = document.getElementById("webcam-video-mp");
         canvasElementMP = document.getElementById("output-canvas-mp");
         canvasCtxMP = canvasElementMP.getContext("2d");
 
-        handsMP = new Hands({
-            locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/hands/${file}`
-        });
-
-        handsMP.setOptions({
-            maxNumHands: 1,
-            modelComplexity: 1,
-            minDetectionConfidence: 0.6,
-            minTrackingConfidence: 0.6
-        });
-
+        handsMP = new Hands({ locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/hands/${file}` });
+        handsMP.setOptions({ maxNumHands: 1, modelComplexity: 1, minDetectionConfidence: 0.6, minTrackingConfidence: 0.6 });
         handsMP.onResults(onHandResults);
 
         cameraMP = new Camera(videoElementMP, {
-            onFrame: async () => {
-                if (currentSystemMode === 2) await handsMP.send({ image: videoElementMP });
-            },
+            onFrame: async () => { if (currentSystemMode === 2) await handsMP.send({ image: videoElementMP }); },
             width: 320, height: 240
         });
         await cameraMP.start();
@@ -1558,8 +1379,8 @@
             mBox.appendChild(row);
         });
 
-        document.getElementById("tag-mp-engine").innerText = "21點鏡頭就緒 🟡";
-        btn.innerText = "按住上方按鈕錄製手勢";
+        document.getElementById("tag-mp-engine").innerText = currentLang === 'zh' ? "21點鏡頭就緒 🟡" : "21-pt Ready 🟡";
+        btn.innerText = currentLang === 'zh' ? "按住上方按鈕錄製手勢" : "Hold buttons above to sample";
         btn.classList.add("ready-btn");
         btn.disabled = false;
     }
@@ -1567,7 +1388,6 @@
     function onHandResults(results) {
         canvasElementMP.width = videoElementMP.videoWidth || 320;
         canvasElementMP.height = videoElementMP.videoHeight || 240;
-
         canvasCtxMP.save();
         canvasCtxMP.clearRect(0, 0, canvasElementMP.width, canvasElementMP.height);
         canvasCtxMP.drawImage(results.image, 0, 0, canvasElementMP.width, canvasElementMP.height);
@@ -1584,9 +1404,8 @@
 
     function drawSkeletonMP(landmarks) {
         const CONNECTIONS = [
-            [0,1],[1,2],[2,3],[3,4],[0,5],[5,6],[6,7],[7,8],
-            [5,9],[9,10],[10,11],[11,12],[9,13],[13,14],[14,15],[15,16],
-            [13,17],[17,18],[18,19],[19,20],[0,17]
+            [0,1],[1,2],[2,3],[3,4],[0,5],[5,6],[6,7],[7,8],[5,9],[9,10],[10,11],[11,12],
+            [9,13],[13,14],[14,15],[15,16],[13,17],[17,18],[18,19],[19,20],[0,17]
         ];
         canvasCtxMP.strokeStyle = "#0284c7"; canvasCtxMP.lineWidth = 3;
         CONNECTIONS.forEach(([i, j]) => {
@@ -1594,12 +1413,6 @@
             canvasCtxMP.moveTo(landmarks[i].x * canvasElementMP.width, landmarks[i].y * canvasElementMP.height);
             canvasCtxMP.lineTo(landmarks[j].x * canvasElementMP.width, landmarks[j].y * canvasElementMP.height);
             canvasCtxMP.stroke();
-        });
-        canvasCtxMP.fillStyle = "#ec4899";
-        landmarks.forEach(pt => {
-            canvasCtxMP.beginPath();
-            canvasCtxMP.arc(pt.x * canvasElementMP.width, pt.y * canvasElementMP.height, 4, 0, 2 * Math.PI);
-            canvasCtxMP.fill();
         });
     }
 
@@ -1617,37 +1430,23 @@
 
     function startSampling(label) {
         if (!currentLandmarks) {
-            alert("鏡頭前未偵測到 21 點骨骼手掌，請將手伸入畫面！");
-            return;
+            alert(currentLang === 'zh' ? "鏡頭前未偵測到手掌，請將手伸入畫面！" : "No hand detected in view!"); return;
         }
         isSampling = true; samplingTarget = label;
-        document.getElementById("btn-sample-" + label).classList.add("recording");
         sampleInterval = setInterval(() => {
             if (isSampling && currentLandmarks) {
                 const vector = extractNormalizedFeatures(currentLandmarks);
                 dataset.push({ label: samplingTarget, vector: vector });
-                updateSampleCountUI(samplingTarget);
+                document.getElementById("cnt-" + samplingTarget).innerText = dataset.filter(d => d.label === samplingTarget).length + " 幀";
                 checkModelReadiness();
             }
         }, 80);
     }
 
-    function stopSampling() {
-        isSampling = false; clearInterval(sampleInterval);
-        if (samplingTarget) {
-            document.getElementById("btn-sample-" + samplingTarget).classList.remove("recording");
-            samplingTarget = null;
-        }
-    }
-
-    function updateSampleCountUI(label) {
-        const count = dataset.filter(d => d.label === label).length;
-        document.getElementById("cnt-" + label).innerText = count + " 幀";
-    }
-
+    function stopSampling() { isSampling = false; clearInterval(sampleInterval); }
     function clearDataset() {
         dataset = [];
-        Object.keys(GESTURES).forEach(key => updateSampleCountUI(key));
+        Object.keys(GESTURES).forEach(key => document.getElementById("cnt-" + key).innerText = "0 幀");
         step2MPReady = false;
         document.getElementById("card-mp-step2").classList.remove("done");
         document.getElementById("tag-mp-engine").innerText = "已重置 ⚪";
@@ -1656,12 +1455,10 @@
 
     function checkModelReadiness() {
         const counts = Object.keys(GESTURES).map(k => dataset.filter(d => d.label === k).length);
-        const allReady = counts.every(c => c >= 8);
-        if (allReady && !step2MPReady) {
+        if (counts.every(c => c >= 8) && !step2MPReady) {
             step2MPReady = true;
             document.getElementById("card-mp-step2").classList.add("done");
-            document.getElementById("tag-mp-engine").innerText = "訓練完成 🟢";
-            document.getElementById("btn-mp-start").innerText = "✔ 手勢模型就緒";
+            document.getElementById("tag-mp-engine").innerText = currentLang === 'zh' ? "訓練完成 🟢" : "Trained 🟢";
             checkCanUnlockMPStep3();
         }
     }
@@ -1676,7 +1473,6 @@
             }
             return { label: sample.label, dist: Math.sqrt(distSq) };
         });
-
         distances.sort((a, b) => a.dist - b.dist);
         const k = Math.min(5, distances.length);
         const topK = distances.slice(0, k);
@@ -1685,7 +1481,7 @@
         Object.keys(GESTURES).forEach(k => scores[k] = 0);
         topK.forEach(item => scores[item.label]++);
 
-        let topCls = "Class 5"; let maxVotes = 0;
+        let topCls = "Class 5", maxVotes = 0;
         Object.keys(scores).forEach(cls => {
             const prob = scores[cls] / k;
             const row = document.getElementById("meter-row-mp-" + cls.replace(" ", "-"));
@@ -1699,31 +1495,29 @@
         });
 
         if (isMPRunning && !isMPLocked && mpActionQueue.length > 0) {
-            const currentTarget = mpActionQueue[0];
-            const topProb = maxVotes / k;
-            if (topCls === currentTarget && topProb >= 0.6) handleMPSuccess(topCls, topProb);
+            if (topCls === mpActionQueue[0] && (maxVotes / k) >= 0.6) handleMPSuccess();
         }
     }
 
     function checkCanUnlockMPStep3() {
         if (step1Ready && step2MPReady && sharedMicrobitId) {
             document.getElementById("card-mp-step3").classList.add("done");
-            document.getElementById("tag-mp-launch").innerText = "準備就緒 ✨";
+            document.getElementById("tag-mp-launch").innerText = currentLang === 'zh' ? "準備就緒 ✨" : "Ready ✨";
             const launchBtn = document.getElementById("btn-launch-mp");
             launchBtn.disabled = false;
-            launchBtn.innerText = "🚀 開始骨骼競技！";
+            launchBtn.innerText = currentLang === 'zh' ? "🚀 開始骨骼競技！" : "🚀 Start Skeleton Arena!";
             launchBtn.classList.add("unlocked");
         }
     }
 
     function startMPGame() {
-        isMPRunning = true; isMPLocked = false; mpScore = 0; mpCombo = 0;
-        updateMPHUD();
+        isMPRunning = true; isMPLocked = false; mpScore = 0;
+        document.getElementById("score-counter-mp").innerText = mpScore;
         const launchBtn = document.getElementById("btn-launch-mp");
-        launchBtn.innerText = "🎮 骨骼競技進行中...";
+        launchBtn.innerText = currentLang === 'zh' ? "🎮 骨骼競技進行中..." : "🎮 Playing...";
         launchBtn.disabled = true;
         mpActionQueue = [];
-        for (let i = 0; i < QUEUE_LENGTH; i++) mpActionQueue.push(ACTIVE_TARGETS[Math.floor(Math.random() * ACTIVE_TARGETS.length)]);
+        for (let i = 0; i < 5; i++) mpActionQueue.push(ACTIVE_TARGETS[Math.floor(Math.random() * ACTIVE_TARGETS.length)]);
         renderMPQueue();
         startMPTimer();
     }
@@ -1735,117 +1529,72 @@
             const g = GESTURES[clsKey];
             const card = document.createElement("div");
             card.className = "action-card " + (index === 0 ? "active-target" : "upcoming");
-            card.innerHTML = `<div class="symbol">${g.symbol}</div><div class="c-name">${g.name}</div><div class="sub-num">${g.num}</div>`;
+            card.innerHTML = `<div class="symbol">${g.symbol}</div><div class="c-name">${g.name}</div>`;
             ribbon.appendChild(card);
         });
     }
 
     function startMPTimer() {
         clearInterval(mpTimerLoop);
-        mpRoundStart = performance.now();
+        const start = performance.now();
         const bar = document.getElementById("timer-bar-mp");
         mpTimerLoop = setInterval(() => {
-            const elapsed = performance.now() - mpRoundStart;
+            const elapsed = performance.now() - start;
             const remaining = Math.max(0, TIME_LIMIT_MS - elapsed);
-            const pct = (remaining / TIME_LIMIT_MS) * 100;
-            bar.style.width = pct + "%";
-            bar.style.background = pct > 40 ? "var(--game-blue)" : "var(--game-pink)";
-            if (remaining <= 0) { clearInterval(mpTimerLoop); handleMPTimeout(); }
+            bar.style.width = (remaining / TIME_LIMIT_MS) * 100 + "%";
+            if (remaining <= 0) {
+                clearInterval(mpTimerLoop);
+                mpActionQueue.shift();
+                mpActionQueue.push(ACTIVE_TARGETS[Math.floor(Math.random() * ACTIVE_TARGETS.length)]);
+                renderMPQueue();
+                if (isMPRunning) startMPTimer();
+            }
         }, 30);
     }
 
-    async function handleMPSuccess(matchedCls, prob) {
+    async function handleMPSuccess() {
         isMPLocked = true; clearInterval(mpTimerLoop);
-        mpScore++; mpCombo++;
-        if (mpCombo >= 3) {
-            if (typeof confetti === "function") confetti({ particleCount: 25, spread: 60, origin: { y: 0.6 } });
-            popMPSplash("🔥 " + mpCombo + "x COMBO!", "var(--game-amber)");
-        } else {
-            popMPSplash("PERFECT! ⚡", "var(--game-green)");
-        }
-        updateMPHUD();
+        mpScore++;
+        document.getElementById("score-counter-mp").innerText = mpScore;
+        document.getElementById("robot-indicator-mp").style.bottom = Math.min(92, (mpScore / 15) * 92) + "%";
         sendRobotCommand("1");
         mpActionQueue.shift();
         mpActionQueue.push(ACTIVE_TARGETS[Math.floor(Math.random() * ACTIVE_TARGETS.length)]);
         renderMPQueue();
-        setTimeout(() => { isMPLocked = false; if (isMPRunning) startMPTimer(); }, 800);
-    }
 
-    function handleMPTimeout() {
-        mpCombo = 0; popMPSplash("MISS! ✖", "var(--game-pink)");
-        updateMPHUD();
-        mpActionQueue.shift();
-        mpActionQueue.push(ACTIVE_TARGETS[Math.floor(Math.random() * ACTIVE_TARGETS.length)]);
-        renderMPQueue();
-        if (isMPRunning) startMPTimer();
-    }
-
-    function popMPSplash(text, color) {
-        const el = document.getElementById("splash-text-mp");
-        el.innerText = text; el.style.color = color; el.classList.add("show");
-        setTimeout(() => el.classList.remove("show"), 450);
-    }
-
-    function updateMPHUD() {
-        document.getElementById("score-counter-mp").innerText = mpScore;
-        document.getElementById("combo-display-mp").innerText = mpCombo + "x COMBO";
-        document.getElementById("robot-indicator-mp").style.bottom = Math.min(92, (mpScore / 15) * 92) + "%";
+        if (mpScore >= 15) {
+            isMPRunning = false;
+            autoExportToGoogleSheet("Mode 2 (MediaPipe)", mpScore);
+            alert(currentLang === 'zh' ? "🎉 恭喜完成！成績已自動儲存至 Google Sheet！" : "🎉 Mode 2 Finished! Auto-saved to Sheet!");
+        } else {
+            setTimeout(() => { isMPLocked = false; if (isMPRunning) startMPTimer(); }, 800);
+        }
     }
 
     // =========================================================================
-    // 模式三：HC010 視覺遙測與「昂坪 360」精準停泊大挑戰
+    // 8. 模式三：昂坪 360 一二三紅綠燈視覺裁判賽
     // =========================================================================
-    let telemetryVideo = null;
-    let telemetryCanvas = document.getElementById("telemetry-canvas");
-    let telemetryCtx = telemetryCanvas.getContext("2d");
-    let isTelemetryRunning = false;
-
-    const ROBOT_REAL_WIDTH_CM = 7.0; 
-    let cameraFocalLengthPx = 350.0;
-
-    let isDrawingBox = false;
-    let dragStartX = 0, dragStartY = 0, dragCurrX = 0, dragCurrY = 0;
-    let roiTemplate = null; 
-    const T_STD_SIZE = 36;
-    let matchThreshold = 0.40;
-    let targetBox = null, prevPosition = null;
-    let currentSpeed = 0.0;
-
-    // 停泊遊戲狀態變數
-    let targetDockDistance = 50.0;
-    let dockingTolerance = 3.5;    // 容許誤差 ±3.5cm
-    let dockingHoldTimer = 0;
-    const DOCK_HOLD_GOAL = 3000;   // 需連續停泊 3 秒
-    let isDockingWon = false;
-
-    function generateNewDockingTarget() {
-        targetDockDistance = (Math.random() * 35 + 35).toFixed(1);
-        document.getElementById("target-dock-dist").innerText = targetDockDistance + " cm";
-        dockingHoldTimer = 0;
-        isDockingWon = false;
-        document.getElementById("dock-status-text").innerText = "駛入新月台中...";
-        document.getElementById("dock-status-text").style.color = "#64748b";
-        document.getElementById("dock-timer-bar").style.width = "0%";
-    }
+    let telemetryVideo = null, telemetryCanvas = document.getElementById("telemetry-canvas");
+    let telemetryCtx = telemetryCanvas.getContext("2d"), isTelemetryRunning = false;
+    let isDrawingBox = false, dragStartX = 0, dragStartY = 0, dragCurrX = 0, dragCurrY = 0;
+    let roiTemplate = null, targetBox = null, prevPosition = null;
+    let currentSpeed = 0.0, trafficState = "GREEN", trafficGameRunning = false, trafficTimer = null;
 
     async function initTelemetryCamera() {
         try {
             if (!telemetryVideo) {
                 telemetryVideo = document.createElement("video");
-                telemetryVideo.autoplay = true;
-                telemetryVideo.playsInline = true;
+                telemetryVideo.autoplay = true; telemetryVideo.playsInline = true;
             }
             const stream = await navigator.mediaDevices.getUserMedia({ video: { width: 640, height: 480 } });
             telemetryVideo.srcObject = stream;
-            await new Promise(resolve => telemetryVideo.onloadedmetadata = resolve);
-
+            await new Promise(res => telemetryVideo.onloadedmetadata = res);
             isTelemetryRunning = true;
-            document.getElementById("track-status-tag").innerText = "HC010 就緒 🟢";
-            document.getElementById("tag-mode3-cam").innerText = "就緒 🟢";
+            document.getElementById("track-status-tag").innerText = currentLang === 'zh' ? "HC010 就緒 🟢" : "HC010 Ready 🟢";
+            document.getElementById("tag-mode3-cam").innerText = currentLang === 'zh' ? "就緒 🟢" : "Ready 🟢";
             document.getElementById("card-mode3-step2").classList.add("done");
-            document.getElementById("btn-telemetry-cam").innerText = "⏹ 停止鏡頭";
             requestAnimationFrame(telemetryProcessLoop);
-        } catch (err) { alert("鏡頭啟動失敗: " + err.message); }
+        } catch(e) { alert("Camera Error: " + e.message); }
     }
 
     function toggleTelemetryCamera() {
@@ -1855,33 +1604,16 @@
                 telemetryVideo = null;
             }
             isTelemetryRunning = false;
-            document.getElementById("track-status-tag").innerText = "已暫停 ⚪";
-            document.getElementById("tag-mode3-cam").innerText = "未啟動 ⚪";
-            document.getElementById("card-mode3-step2").classList.remove("done");
-            document.getElementById("btn-telemetry-cam").innerText = "📷 開啟鏡頭";
         } else {
             initTelemetryCamera();
         }
     }
 
-    function calibrate50cmFocalLength() {
-        if (!targetBox || targetBox.w < 20) {
-            alert("⚠️ 請先在畫面上用滑鼠拉框框住機械人！"); return;
-        }
-        cameraFocalLengthPx = (targetBox.w * 50.0) / ROBOT_REAL_WIDTH_CM;
-        document.getElementById("focal-status-label").innerText = `校準焦距: ${cameraFocalLengthPx.toFixed(0)}px`;
-        alert(`✔ 校準成功！HC010 焦距鎖定為 ${cameraFocalLengthPx.toFixed(1)}px`);
-    }
-
     function getCanvasCoords(e) {
         const rect = telemetryCanvas.getBoundingClientRect();
-        const clientX = e.touches ? e.touches[0].clientX : e.clientX;
-        const clientY = e.touches ? e.touches[0].clientY : e.clientY;
-        const scaleX = telemetryCanvas.width / rect.width;
-        const scaleY = telemetryCanvas.height / rect.height;
         return {
-            x: Math.max(0, Math.min(telemetryCanvas.width, Math.floor((clientX - rect.left) * scaleX))),
-            y: Math.max(0, Math.min(telemetryCanvas.height, Math.floor((clientY - rect.top) * scaleY)))
+            x: Math.max(0, Math.min(telemetryCanvas.width, Math.floor((e.clientX - rect.left) * (telemetryCanvas.width / rect.width)))),
+            y: Math.max(0, Math.min(telemetryCanvas.height, Math.floor((e.clientY - rect.top) * (telemetryCanvas.height / rect.height))))
         };
     }
 
@@ -1890,43 +1622,31 @@
         const p = getCanvasCoords(e);
         isDrawingBox = true; dragStartX = p.x; dragStartY = p.y; dragCurrX = p.x; dragCurrY = p.y;
     });
-
     telemetryCanvas.addEventListener("mousemove", (e) => {
         if (!isDrawingBox) return;
         const p = getCanvasCoords(e); dragCurrX = p.x; dragCurrY = p.y;
     });
-
     window.addEventListener("mouseup", () => {
         if (!isDrawingBox) return;
         isDrawingBox = false; finalizeROISelection();
     });
 
     function finalizeROISelection() {
-        const x1 = Math.min(dragStartX, dragCurrX);
-        const y1 = Math.min(dragStartY, dragCurrY);
-        const bw = Math.abs(dragCurrX - dragStartX);
-        const bh = Math.abs(dragCurrY - dragStartY);
+        const x1 = Math.min(dragStartX, dragCurrX), y1 = Math.min(dragStartY, dragCurrY);
+        const bw = Math.abs(dragCurrX - dragStartX), bh = Math.abs(dragCurrY - dragStartY);
         if (bw < 18 || bh < 18) return;
 
         const tempCanvas = document.createElement("canvas");
-        tempCanvas.width = bw; tempCanvas.height = bh;
+        tempCanvas.width = 36; tempCanvas.height = 36;
         const tCtx = tempCanvas.getContext("2d");
-        tCtx.drawImage(telemetryVideo, x1, y1, bw, bh, 0, 0, bw, bh);
+        tCtx.drawImage(telemetryVideo, x1, y1, bw, bh, 0, 0, 36, 36);
 
-        document.getElementById("roi-preview-img").src = tempCanvas.toDataURL();
-        document.getElementById("roi-info-title").innerText = `目標鎖定 (${bw}×${bh} px)`;
-
-        const stdCanvas = document.createElement("canvas");
-        stdCanvas.width = T_STD_SIZE; stdCanvas.height = T_STD_SIZE;
-        const sCtx = stdCanvas.getContext("2d");
-        sCtx.drawImage(tempCanvas, 0, 0, T_STD_SIZE, T_STD_SIZE);
-
-        const imgData = sCtx.getImageData(0, 0, T_STD_SIZE, T_STD_SIZE).data;
-        const gray = new Float32Array(T_STD_SIZE * T_STD_SIZE);
+        const imgData = tCtx.getImageData(0, 0, 36, 36).data;
+        const gray = new Float32Array(36 * 36);
         let sum = 0;
         for (let i = 0; i < gray.length; i++) {
-            const gVal = 0.299 * imgData[i*4] + 0.587 * imgData[i*4+1] + 0.114 * imgData[i*4+2];
-            gray[i] = gVal; sum += gVal;
+            gray[i] = 0.299 * imgData[i*4] + 0.587 * imgData[i*4+1] + 0.114 * imgData[i*4+2];
+            sum += gray[i];
         }
         const mean = sum / gray.length;
         let varSum = 0;
@@ -1939,139 +1659,94 @@
         roiTemplate = { gray: gray, aspectRatio: bh / bw };
         targetBox = { x: x1 + bw/2, y: y1 + bh/2, w: bw, h: bh };
         prevPosition = null;
-        document.getElementById("tracking-status-text").innerText = "🟢 動態測距中...";
     }
 
-    function resetROISelection() {
-        roiTemplate = null; targetBox = null; prevPosition = null;
-        document.getElementById("telemetry-dist-val").innerText = "--";
-    }
-    function clearROITracker() { resetROISelection(); }
-
-    let frameThrottle = 0;
-    const searchCanvas = document.createElement("canvas");
-    const sCtx = searchCanvas.getContext("2d");
-    const testPatchCanvas = document.createElement("canvas");
-    testPatchCanvas.width = T_STD_SIZE; testPatchCanvas.height = T_STD_SIZE;
-    const tPatchCtx = testPatchCanvas.getContext("2d");
+    function resetROISelection() { roiTemplate = null; targetBox = null; }
 
     function telemetryProcessLoop() {
         if (!isTelemetryRunning || !telemetryVideo) return;
         telemetryCtx.drawImage(telemetryVideo, 0, 0, telemetryCanvas.width, telemetryCanvas.height);
 
         if (isDrawingBox) {
-            const bx = Math.min(dragStartX, dragCurrX);
-            const by = Math.min(dragStartY, dragCurrY);
-            const bw = Math.abs(dragCurrX - dragStartX);
-            const bh = Math.abs(dragCurrY - dragStartY);
             telemetryCtx.strokeStyle = "var(--game-amber)";
             telemetryCtx.lineWidth = 2;
-            telemetryCtx.strokeRect(bx, by, bw, bh);
-        } else if (roiTemplate) {
-            frameThrottle++;
-            if (frameThrottle % 2 === 0) trackScaleAdaptiveZNCC();
+            telemetryCtx.strokeRect(Math.min(dragStartX, dragCurrX), Math.min(dragStartY, dragCurrY), Math.abs(dragCurrX - dragStartX), Math.abs(dragCurrY - dragStartY));
+        } else if (roiTemplate && targetBox) {
+            const curW = targetBox.w, curH = targetBox.h;
+            telemetryCtx.strokeStyle = trafficState === "RED" ? "#ef4444" : "#10b981";
+            telemetryCtx.lineWidth = 3;
+            telemetryCtx.strokeRect(targetBox.x - curW/2, targetBox.y - curH/2, curW, curH);
+
+            // 模擬光流測速
+            const now = performance.now();
+            if (prevPosition) {
+                const dt = (now - prevPosition.timestamp) / 1000.0;
+                if (dt > 0.05) {
+                    const deltaPx = Math.hypot(targetBox.x - prevPosition.x, targetBox.y - prevPosition.y);
+                    const rawSpeed = (deltaPx * (7.0 / curW)) / dt;
+                    currentSpeed = currentSpeed * 0.7 + rawSpeed * 0.3;
+                    document.getElementById("traffic-speed-val").innerText = currentSpeed.toFixed(1);
+
+                    // 紅燈執法邏輯
+                    if (trafficGameRunning && trafficState === "RED" && currentSpeed > 0.8) {
+                        document.getElementById("speed-status-badge").innerText = currentLang === 'zh' ? "🚨 違規超速！" : "🚨 VIOLATION!";
+                        document.getElementById("speed-status-badge").style.color = "var(--game-red)";
+                        sendRobotCommand("2"); // 懲罰倒退
+                    } else {
+                        document.getElementById("speed-status-badge").innerText = currentLang === 'zh' ? "安全" : "Safe";
+                        document.getElementById("speed-status-badge").style.color = "var(--game-green)";
+                    }
+                    prevPosition = { x: targetBox.x, y: targetBox.y, timestamp: now };
+                }
+            } else {
+                prevPosition = { x: targetBox.x, y: targetBox.y, timestamp: now };
+            }
         }
         requestAnimationFrame(telemetryProcessLoop);
     }
 
-    function trackScaleAdaptiveZNCC() {
-        const curW = targetBox.w, curH = targetBox.h;
-        const searchMargin = 60;
-        const sX1 = Math.max(0, targetBox.x - curW/2 - searchMargin);
-        const sY1 = Math.max(0, targetBox.y - curH/2 - searchMargin);
-        const sX2 = Math.min(telemetryCanvas.width, targetBox.x + curW/2 + searchMargin);
-        const sY2 = Math.min(telemetryCanvas.height, targetBox.y + curH/2 + searchMargin);
-        const sW = sX2 - sX1, sH = sY2 - sY1;
-
-        if (sW < curW || sH < curH) return;
-
-        searchCanvas.width = sW; searchCanvas.height = sH;
-        sCtx.drawImage(telemetryVideo, sX1, sY1, sW, sH, 0, 0, sW, sH);
-
-        let bestScore = -1, bestOffsetX = 0, bestOffsetY = 0;
-        const step = 4;
-
-        for (let y = 0; y <= sH - curH; y += step) {
-            for (let x = 0; x <= sW - curW; x += step) {
-                tPatchCtx.drawImage(searchCanvas, x, y, curW, curH, 0, 0, T_STD_SIZE, T_STD_SIZE);
-                const patchData = tPatchCtx.getImageData(0, 0, T_STD_SIZE, T_STD_SIZE).data;
-
-                let pSum = 0;
-                for (let i = 0; i < T_STD_SIZE * T_STD_SIZE; i++) {
-                    pSum += (0.299 * patchData[i*4] + 0.587 * patchData[i*4+1] + 0.114 * patchData[i*4+2]);
-                }
-                const pMean = pSum / (T_STD_SIZE * T_STD_SIZE);
-                let pVar = 0, cross = 0;
-                for (let i = 0; i < T_STD_SIZE * T_STD_SIZE; i++) {
-                    const val = (0.299 * patchData[i*4] + 0.587 * patchData[i*4+1] + 0.114 * patchData[i*4+2]) - pMean;
-                    pVar += val * val; cross += val * roiTemplate.gray[i];
-                }
-                const score = cross / (Math.sqrt(pVar) + 1e-5);
-                if (score > bestScore) { bestScore = score; bestOffsetX = x; bestOffsetY = y; }
-            }
-        }
-
-        const scorePct = Math.max(0, Math.min(100, Math.round(bestScore * 100)));
-        document.getElementById("match-score-hud").innerText = `${scorePct}%`;
-
-        if (bestScore >= matchThreshold) {
-            targetBox.x = targetBox.x * 0.4 + (sX1 + bestOffsetX + curW/2) * 0.6;
-            targetBox.y = targetBox.y * 0.4 + (sY1 + bestOffsetY + curH/2) * 0.6;
-
-            handleDynamicKinematicsAndDocking(targetBox.x, targetBox.y, targetBox.w);
-
-            telemetryCtx.strokeStyle = "#10b981"; telemetryCtx.lineWidth = 3;
-            telemetryCtx.strokeRect(targetBox.x - curW/2, targetBox.y - curH/2, curW, curH);
+    function toggleTrafficGame() {
+        if (trafficGameRunning) {
+            trafficGameRunning = false;
+            clearTimeout(trafficTimer);
+            document.getElementById("btn-start-traffic").innerText = currentLang === 'zh' ? "▶ 開始紅綠燈競技！" : "▶ Start Race!";
+            document.getElementById("btn-start-traffic").style.background = "#059669";
+        } else {
+            trafficGameRunning = true;
+            document.getElementById("btn-start-traffic").innerText = currentLang === 'zh' ? "⏹ 結束競技" : "⏹ Stop Race";
+            document.getElementById("btn-start-traffic").style.background = "#dc2626";
+            runTrafficCycle();
         }
     }
 
-    function handleDynamicKinematicsAndDocking(cx, cy, currentBoxWidth) {
-        const now = performance.now();
-        const distanceToCamCm = (ROBOT_REAL_WIDTH_CM * cameraFocalLengthPx) / currentBoxWidth;
-        document.getElementById("telemetry-dist-val").innerText = distanceToCamCm.toFixed(1);
+    function runTrafficCycle() {
+        if (!trafficGameRunning) return;
+        // 隨機綠燈 3-6 秒
+        trafficState = "GREEN";
+        document.getElementById("bulb-red").classList.remove("active");
+        document.getElementById("bulb-green").classList.add("active");
+        document.getElementById("traffic-command-label").innerText = currentLang === 'zh' ? "🟢 綠燈：前進！" : "🟢 GREEN: GO!";
+        document.getElementById("traffic-command-label").style.color = "#10b981";
 
-        if (prevPosition) {
-            const dt = (now - prevPosition.timestamp) / 1000.0;
-            if (dt > 0.04) {
-                const cmPerPixel = ROBOT_REAL_WIDTH_CM / currentBoxWidth;
-                const deltaPx = Math.hypot(cx - prevPosition.x, cy - prevPosition.y);
-                const rawSpeed = (deltaPx * cmPerPixel) / dt;
-                currentSpeed = currentSpeed * 0.7 + rawSpeed * 0.3;
+        const greenDuration = (Math.random() * 3000 + 3000);
+        trafficTimer = setTimeout(() => {
+            if (!trafficGameRunning) return;
+            // 切換為紅燈 2-4 秒
+            trafficState = "RED";
+            document.getElementById("bulb-green").classList.remove("active");
+            document.getElementById("bulb-red").classList.add("active");
+            document.getElementById("traffic-command-label").innerText = currentLang === 'zh' ? "🛑 紅燈：煞停！" : "🛑 RED: FREEZE!";
+            document.getElementById("traffic-command-label").style.color = "#ef4444";
 
-                document.getElementById("telemetry-speed-val").innerText = currentSpeed.toFixed(1);
-                document.getElementById("speed-trend-label").innerText = currentSpeed.toFixed(1) + " cm/s";
-
-                // 停泊判斷邏輯：進入距離範圍 且 速度低於 0.8 cm/s
-                const distDiff = Math.abs(distanceToCamCm - targetDockDistance);
-                if (distDiff <= dockingTolerance && currentSpeed < 0.8) {
-                    dockingHoldTimer += (dt * 1000);
-                    const pct = Math.min(100, (dockingHoldTimer / DOCK_HOLD_GOAL) * 100);
-                    document.getElementById("dock-timer-bar").style.width = pct + "%";
-                    document.getElementById("dock-status-text").innerText = `🎯 保持穩定中 (${(dockingHoldTimer/1000).toFixed(1)}s)`;
-                    document.getElementById("dock-status-text").style.color = "var(--game-green)";
-
-                    if (dockingHoldTimer >= DOCK_HOLD_GOAL && !isDockingWon) {
-                        isDockingWon = true;
-                        if (typeof confetti === "function") confetti({ particleCount: 50, spread: 80, origin: { y: 0.6 } });
-                        alert("🎉 太精彩了！纜車成功精準停泊於月台閘門！");
-                    }
-                } else {
-                    dockingHoldTimer = Math.max(0, dockingHoldTimer - (dt * 1500));
-                    document.getElementById("dock-timer-bar").style.width = (dockingHoldTimer / DOCK_HOLD_GOAL) * 100 + "%";
-                    if (distDiff > dockingTolerance) {
-                        document.getElementById("dock-status-text").innerText = distanceToCamCm > targetDockDistance ? "請向前推進 ▲" : "請向後倒退 ▼";
-                        document.getElementById("dock-status-text").style.color = "var(--game-pink)";
-                    }
-                }
-                prevPosition = { x: cx, y: cy, timestamp: now };
-            }
-        } else {
-            prevPosition = { x: cx, y: cy, timestamp: now };
-        }
+            const redDuration = (Math.random() * 2000 + 2000);
+            trafficTimer = setTimeout(() => {
+                if (trafficGameRunning) runTrafficCycle();
+            }, redDuration);
+        }, greenDuration);
     }
 
     // =========================================================================
-    // 互動式引導反思 Chatbot 邏輯
+    // 9. 互動式反思 Chatbot
     // =========================================================================
     function toggleChatWindow() {
         const win = document.getElementById("chat-window");
@@ -2095,24 +1770,36 @@
             if (chatStep === 0) {
                 chatReflectionData.difficulty = msg;
                 chatStep = 1;
-                appendChatMsg("收到！遇到問題懂得發現同除錯，就係真正嘅工程師思維 💡！<br><br><b>咁喺成個活動入面，你最鍾意或者覺得最神奇、最想同同學分享嘅係邊部分？</b>", "bot", [
-                    "看見 Grad-CAM 彩色熱力圖", "用手勢隔空控制爬繩", "同拍檔一齊除錯成功", "搶包山極速倒退回防"
-                ]);
+                appendChatMsg(
+                    currentLang === 'zh' 
+                    ? "收到！懂得除錯正是工程師思維 💡！<br><br><b>喺成個活動入面，你最鍾意或覺得最神奇、最想同同學分享嘅係邊部分？</b>" 
+                    : "Noted! Troubleshooting is the core of engineering! 💡<br><br><b>What was your favorite moment or discovery today that you'd love to share?</b>",
+                    "bot",
+                    currentLang === 'zh' ? ["看見 Grad-CAM 熱力圖", "用手勢隔空控制爬繩", "同拍檔一齊除錯成功", "搶包山紅綠燈極速煞停"] : ["Seeing Grad-CAM Heatmap", "Gesture Remote Control", "Fixing bugs with partner", "Red light emergency freeze"]
+                );
             } else if (chatStep === 1) {
                 chatReflectionData.favorite = msg;
                 chatStep = 2;
-                appendChatMsg("哇，呢個發現真係好正！同儕互助往往比一個人自己做學得更多仲快得多 👏！<br><br><b>最後，如果你可以幫呢部爬繩機械人再升級一項功能，你會想加咩？或者有咩改善建議？</b>", "bot", [
-                    "加裝超聲波自動煞停", "改成垂直 90 度抓力爪", "增加速度感應自動變檔"
-                ]);
+                appendChatMsg(
+                    currentLang === 'zh' 
+                    ? "太棒了！同儕協同往往能事半功倍 👏！<br><br><b>最後，如果可以幫呢部爬繩機械人再升級一項功能，你會想加咩？</b>" 
+                    : "Wonderful insight! Peer collaboration makes learning faster! 👏<br><br><b>Lastly, if you could add one new feature or upgrade to your robot, what would it be?</b>",
+                    "bot"
+                );
             } else if (chatStep === 2) {
                 chatReflectionData.comments = msg;
                 chatStep = 3;
-                appendChatMsg("太感謝你嘅認真反思！我已經將你嘅所有心得記錄低。<br><br>👉 <b>點擊下方按鈕，即刻將你的反思與成績同步到 Google Drive！</b>", "bot");
-                appendSubmitButtonToChat();
+                autoExportToGoogleSheet("Chatbot Reflections", 100);
+                appendChatMsg(
+                    currentLang === 'zh' 
+                    ? "✨ 感謝你的精彩反思！你的學習心得已在背景自動儲存至 Google 雲端！隨時可以再次挑戰模式一或模式三哦 🚀" 
+                    : "✨ Thank you! All your reflections have been automatically saved to Google Sheet in the background! 🚀",
+                    "bot"
+                );
             } else {
-                appendChatMsg("你的寶貴反思已經妥善記錄！隨時可以再次挑戰模式一或模式三哦 🚀", "bot");
+                appendChatMsg(currentLang === 'zh' ? "心得已妥善保存！盡情享受競技樂趣吧 🎮！" : "Reflections saved! Enjoy the challenge 🎮!", "bot");
             }
-        }, 600);
+        }, 500);
     }
 
     function appendChatMsg(text, sender, chips = null) {
@@ -2133,21 +1820,7 @@
             });
             msgDiv.appendChild(chipGroup);
         }
-
         body.appendChild(msgDiv);
-        body.scrollTop = body.scrollHeight;
-    }
-
-    function appendSubmitButtonToChat() {
-        const body = document.getElementById("chat-body");
-        const btnBox = document.createElement("div");
-        btnBox.style.marginTop = "8px";
-        btnBox.innerHTML = `
-            <button onclick="triggerFullSyncToDrive()" style="background:var(--game-green); color:#fff; border:none; border-radius:8px; padding:10px 14px; font-weight:bold; cursor:pointer; width:100%; box-shadow:0 2px 8px rgba(16,185,129,0.3);">
-                📤 確認並上傳所有反思到 Drive
-            </button>
-        `;
-        body.appendChild(btnBox);
         body.scrollTop = body.scrollHeight;
     }
 </script>
