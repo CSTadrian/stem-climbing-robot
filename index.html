@@ -3,8 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>In-Browser Few-Shot CNN & Grad-CAM Data Quality Diagnostic Studio</title>
-    <!-- 核心依賴：TensorFlow.js 官方庫 -->
+    <title>In-Browser CNN Training & Grad-CAM Quality Studio</title>
+    <!-- 核心依賴：TensorFlow.js -->
     <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@latest/dist/tf.min.js"></script>
     <style>
         :root {
@@ -48,7 +48,7 @@
             box-shadow: 0 2px 8px rgba(15, 23, 42, 0.05);
         }
         .header-title {
-            font-size: 18px;
+            font-size: 17px;
             font-weight: 900;
             color: var(--accent-blue);
             display: flex;
@@ -62,7 +62,7 @@
             gap: 16px;
         }
 
-        /* 左側鏡頭與推論看板 */
+        /* 左側鏡頭看板 */
         .camera-card {
             background: var(--bg-card);
             border: 2px solid var(--border-ui);
@@ -82,9 +82,7 @@
             overflow: hidden;
             border: 1px solid var(--border-ui);
         }
-        #webcam-video {
-            display: none;
-        }
+        #webcam-video { display: none; }
         #main-canvas {
             width: 100%;
             height: 100%;
@@ -127,7 +125,7 @@
             box-shadow: 0 2px 8px rgba(16, 185, 129, 0.2);
         }
 
-        /* 右側樣本採集與訓練面板 */
+        /* 右側多圖採樣工作台 */
         .workbench-card {
             background: var(--bg-card);
             border: 2px solid var(--border-ui);
@@ -139,37 +137,9 @@
             box-shadow: 0 4px 12px rgba(15, 23, 42, 0.04);
         }
 
-        .action-toolbar {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 10px;
-        }
-        .btn {
-            background: #334155;
-            color: #ffffff;
-            border: none;
-            padding: 10px 14px;
-            border-radius: 8px;
-            font-weight: bold;
-            font-size: 13px;
-            cursor: pointer;
-            transition: all 0.2s;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 6px;
-        }
-        .btn:hover { background: #1e293b; }
-        .btn.primary { background: var(--accent-blue); }
-        .btn.primary:hover { background: #0369a1; }
-        .btn.success { background: var(--accent-green); }
-        .btn.success:hover { background: #059669; }
-        .btn:disabled { opacity: 0.5; cursor: not-allowed; }
-
-        /* 類別採樣網格 */
         .classes-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+            grid-template-columns: repeat(auto-fit, minmax(135px, 1fr));
             gap: 10px;
         }
         .class-box {
@@ -183,14 +153,7 @@
             align-items: center;
             text-align: center;
         }
-        .class-box.active {
-            border-color: var(--accent-blue);
-            background: #f0f9ff;
-        }
-        .class-title {
-            font-weight: 800;
-            font-size: 13px;
-        }
+        .class-title { font-weight: 800; font-size: 13px; }
         .sample-thumb-slot {
             width: 80px;
             height: 80px;
@@ -208,21 +171,30 @@
             height: 100%;
             object-fit: cover;
         }
+        .sample-count-badge {
+            font-size: 11px;
+            font-weight: 800;
+            color: var(--accent-blue);
+        }
         .quality-tag {
             font-size: 10px;
             font-weight: bold;
             padding: 2px 6px;
             border-radius: 10px;
-            margin-top: 2px;
         }
         .quality-tag.good { background: #dcfce7; color: #15803d; }
         .quality-tag.noise { background: #fee2e2; color: #b91c1c; }
         .quality-tag.empty { background: #f1f5f9; color: #94a3b8; }
 
-        .btn-capture-slot {
+        .btn-group-mini {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 4px;
             width: 100%;
-            padding: 6px;
-            font-size: 11px;
+        }
+        .btn-mini {
+            padding: 6px 2px;
+            font-size: 10px;
             font-weight: bold;
             background: #ffffff;
             border: 1px solid var(--border-ui);
@@ -230,10 +202,36 @@
             cursor: pointer;
             transition: all 0.15s;
         }
-        .btn-capture-slot:hover { background: #e2e8f0; }
-        .btn-capture-slot:active { background: var(--accent-blue); color: #fff; }
+        .btn-mini:hover { background: #e2e8f0; }
+        .btn-mini.danger:hover { background: #fee2e2; color: #b91c1c; }
 
-        /* 底部診斷說明 */
+        .action-toolbar {
+            display: grid;
+            grid-template-columns: 1.2fr 1fr;
+            gap: 10px;
+        }
+        .btn {
+            background: #334155;
+            color: #ffffff;
+            border: none;
+            padding: 12px 14px;
+            border-radius: 8px;
+            font-weight: bold;
+            font-size: 13px;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+        }
+        .btn:hover { background: #1e293b; }
+        .btn.primary { background: var(--accent-blue); }
+        .btn.primary:hover { background: #0369a1; }
+        .btn.success { background: var(--accent-green); }
+        .btn.success:hover { background: #059669; }
+        .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
         .diagnostic-card {
             background: #eff6ff;
             border: 1px solid #bfdbfe;
@@ -249,21 +247,20 @@
 
 <div class="container">
 
-    <!-- 頂部資訊列 -->
     <div class="header-strip">
         <div class="header-title">
-            <span>🔬 本地卷積特徵提取與 Grad-CAM 樣本質素診斷室</span>
+            <span>🔬 本地 CNN 多圖訓練與 Grad-CAM 樣本質素診斷室</span>
         </div>
         <div id="engine-status" style="font-size: 12px; font-weight: bold; color: var(--accent-amber);">
-            正在下載 MobileNet 基礎卷積網絡...
+            正在下載 MobileNet 基礎特徵網絡...
         </div>
     </div>
 
     <div class="main-grid">
-        <!-- 左側：實時鏡頭與預測 Grad-CAM -->
+        <!-- 左側：即時推論與即時熱力圖 -->
         <div class="camera-card">
             <div style="display:flex; justify-content:space-between; align-items:center;">
-                <span style="font-weight:800; font-size:14px;">📷 實時推論熱力圖視野</span>
+                <span style="font-weight:800; font-size:14px;">📷 即時推論與熱力圖</span>
                 <label style="font-size:11px; color:var(--text-sub); display:flex; align-items:center; gap:4px; cursor:pointer;">
                     <input type="checkbox" id="toggle-gradcam" checked> 開啟熱力圖
                 </label>
@@ -275,37 +272,31 @@
                 <div class="hud-status" id="hud-status">模型待訓練</div>
             </div>
 
-            <div class="meters-list" id="meters-box">
-                <!-- 預測機率即時列表 -->
-            </div>
+            <div class="meters-list" id="meters-box"></div>
         </div>
 
-        <!-- 右側：採樣工作台與樣本質素診斷 -->
+        <!-- 右側：多圖採樣與訓練工作台 -->
         <div class="workbench-card">
             <div style="display:flex; justify-content:space-between; align-items:center;">
-                <span style="font-weight:800; font-size:14px;">🖐️ 數據集工作台（支援一類一張樣本）</span>
-                <span style="font-size:11px; color:var(--text-sub);">鏡頭前擺好手勢，按下方「📸 拍攝」即可截取</span>
+                <span style="font-weight:800; font-size:14px;">🖐️ 數據集採樣區（建議每款手勢採集 5–8 張）</span>
+                <span style="font-size:11px; color:var(--text-sub);">按「連拍 5 張」時請稍微微調手腕角度</span>
             </div>
 
-            <!-- 5 款類別採樣區 -->
-            <div class="classes-grid" id="classes-grid">
-                <!-- 動態注入類別卡片 -->
-            </div>
+            <div class="classes-grid" id="classes-grid"></div>
 
             <div class="action-toolbar">
                 <button class="btn primary" id="btn-train" onclick="trainModel()" disabled>
-                    ⚡ 一鍵本地訓練模型 (Transfer Learning)
+                    ⚡ 一鍵極速訓練模型 (Transfer Learning)
                 </button>
                 <button class="btn success" id="btn-diagnose" onclick="diagnoseDatasetQuality()" disabled>
-                    🔍 檢驗訓練樣本 Grad-CAM 質素
+                    🔍 檢驗樣本 Grad-CAM 質素
                 </button>
             </div>
 
             <div class="diagnostic-card">
-                <b>💡 學生除錯指引（點解準確率得 50–75%？）：</b><br>
-                1. <b>採樣後按「檢驗質素」：</b> 系統會回頭為你的訓練照片計算 Grad-CAM 熱力圖。<br>
-                2. <b>紅點如果在手勢上（🟢 數據優質）：</b> 代表特徵正確抓取。<br>
-                3. <b>紅點如果落在背後窗簾、花衣服或書架（🔴 背景雜音）：</b> 這就是 CNN 誤判的核心成因！請學生清理背景或將鏡頭轉向純白牆，即可親身見證命中率重回 90% 以上！
+                <b>💡 學生除錯操作指引：</b><br>
+                1. <b>多角度採集：</b> 影相時嘗試前後微調距離、手腕左右輕微偏轉，讓 CNN 學習泛化特徵。<br>
+                2. <b>點擊「檢驗樣本質素」：</b> 縮圖會覆蓋熱力圖。如果紅點落在手部（🟢 聚焦手勢），代表樣本高質；如果紅點落在花衣服或背後雜物（🔴 背景干擾），請按「清空」並將鏡頭轉向白牆重影！
             </div>
         </div>
     </div>
@@ -327,11 +318,10 @@
     let mainCanvas = document.getElementById("main-canvas");
     let mainCtx = mainCanvas.getContext("2d");
 
-    let classSamples = {}; // 儲存各類別已採樣的 Canvas 元素
+    // 數據集結構：每個類別儲存多張圖片 Canvas 的 Array
+    let classDatasets = {}; 
     let isModelTrained = false;
-    let isPredicting = false;
 
-    // 1. 初始化頁面結構與鏡頭
     async function initPlatform() {
         renderClassBoxes();
         renderMeters();
@@ -342,8 +332,8 @@
     function renderClassBoxes() {
         const grid = document.getElementById("classes-grid");
         grid.innerHTML = "";
-        CLASSES.forEach((c, idx) => {
-            classSamples[c.id] = null;
+        CLASSES.forEach(c => {
+            classDatasets[c.id] = [];
             const box = document.createElement("div");
             box.className = "class-box";
             box.id = `box-${c.id}`;
@@ -352,8 +342,13 @@
                 <div class="sample-thumb-slot" id="slot-${c.id}">
                     <span style="color:#94a3b8; font-size:10px;">未採樣</span>
                 </div>
+                <div class="sample-count-badge" id="count-${c.id}">0 張照片</div>
                 <span class="quality-tag empty" id="tag-${c.id}">等待數據</span>
-                <button class="btn-capture-slot" onclick="captureSample('${c.id}')">📸 拍攝此類別</button>
+                <div class="btn-group-mini">
+                    <button class="btn-mini" onclick="captureSingle('${c.id}')">📸 單張</button>
+                    <button class="btn-mini" onclick="burstCapture('${c.id}', 5)">⚡ 連拍 5 張</button>
+                </div>
+                <button class="btn-mini danger" style="width:100%;" onclick="clearClassData('${c.id}')">🗑️ 清空</button>
             `;
             grid.appendChild(box);
         });
@@ -385,116 +380,156 @@
         }
     }
 
-    // 2. 本地直接載入 MobileNet 卷積基底（毋須任何 GTM 檔案）
+    // 載入輕量 MobileNet v1 (0.25 寬度系數，下載僅 1.8MB)
     async function loadFeatureExtractor() {
         const statusEl = document.getElementById("engine-status");
         try {
-            // 直接載入官方輕量 MobileNet v1 (0.25 寬度系數，極致輕量，下載僅約 1.8MB)
             const mobilenet = await tf.loadLayersModel('https://storage.googleapis.com/tfjs-models/tfjs/mobilenet_v1_0.25_224/model.json');
-            
-            // 截取至最後一層核心卷積層 conv_pw_13_relu (Shape: [1, 7, 7, 256])
             const layer = mobilenet.getLayer('conv_pw_13_relu');
             truncatedMobileNet = tf.model({ inputs: mobilenet.inputs, outputs: layer.output });
 
-            statusEl.innerText = "✔ MobileNet 卷積基底就緒！請為各類別拍攝樣本";
+            statusEl.innerText = "✔ MobileNet 基底就緒！請採集手勢照片";
             statusEl.style.color = "var(--accent-green)";
         } catch (err) {
-            statusEl.innerText = "基底下載失敗，請檢查網絡連線: " + err.message;
+            statusEl.innerText = "基底下載失敗，請檢查網絡: " + err.message;
             statusEl.style.color = "var(--accent-rose)";
         }
     }
 
-    // 3. 採樣邏輯：從畫面上截取正方形影像
-    function captureSample(classId) {
-        const slot = document.getElementById(`slot-${classId}`);
-        const tag = document.getElementById(`tag-${classId}`);
-
+    // 單張拍攝
+    function captureSingle(classId) {
         const canvas = document.createElement("canvas");
-        canvas.width = 224;
-        canvas.height = 224;
+        canvas.width = 224; canvas.height = 224;
         const ctx = canvas.getContext("2d");
         ctx.drawImage(videoEl, 0, 0, 224, 224);
 
-        classSamples[classId] = canvas;
-        slot.innerHTML = "";
-        slot.appendChild(canvas);
+        classDatasets[classId].push(canvas);
+        updateClassCardUI(classId);
+    }
 
+    // 連拍多張（每 200ms 抓一張，引導微調角度）
+    function burstCapture(classId, count) {
+        let captured = 0;
+        const interval = setInterval(() => {
+            captureSingle(classId);
+            captured++;
+            if (captured >= count) clearInterval(interval);
+        }, 200);
+    }
+
+    function clearClassData(classId) {
+        classDatasets[classId] = [];
+        const slot = document.getElementById(`slot-${classId}`);
+        slot.innerHTML = `<span style="color:#94a3b8; font-size:10px;">未採樣</span>`;
+        document.getElementById(`count-${classId}`).innerText = "0 張照片";
+        const tag = document.getElementById(`tag-${classId}`);
         tag.className = "quality-tag empty";
-        tag.innerText = "已採樣 1 張";
+        tag.innerText = "等待數據";
+        checkCanTrain();
+    }
 
-        // 檢查是否至少有 2 個類別已拍照
-        const capturedCount = Object.values(classSamples).filter(v => v !== null).length;
-        if (capturedCount >= 2) {
-            document.getElementById("btn-train").disabled = false;
+    function updateClassCardUI(classId) {
+        const list = classDatasets[classId];
+        document.getElementById(`count-${classId}`).innerText = `${list.length} 張照片`;
+        
+        // 更新縮圖為最新拍攝的一張
+        const slot = document.getElementById(`slot-${classId}`);
+        slot.innerHTML = "";
+        const previewCanvas = document.createElement("canvas");
+        previewCanvas.width = 80; previewCanvas.height = 80;
+        previewCanvas.getContext("2d").drawImage(list[list.length - 1], 0, 0, 80, 80);
+        slot.appendChild(previewCanvas);
+
+        checkCanTrain();
+    }
+
+    function checkCanTrain() {
+        const classesWithData = Object.values(classDatasets).filter(arr => arr.length > 0).length;
+        document.getElementById("btn-train").disabled = (classesWithData < 2);
+    }
+
+    // 核心修復：極速且防記憶體崩潰的遷移學習 (Transfer Learning)
+    async function trainModel() {
+        const btnTrain = document.getElementById("btn-train");
+        btnTrain.innerText = "⚡ 本地極速學習中...";
+        btnTrain.disabled = true;
+
+        try {
+            // 1. 提取所有圖片的 [256] 維度池化特徵（正確保留 tensor，絕不提前銷毀）
+            const featureList = [];
+            const labelList = [];
+
+            CLASSES.forEach((c, classIdx) => {
+                const images = classDatasets[c.id];
+                images.forEach(imgCanvas => {
+                    const feat = tf.tidy(() => {
+                        const imgTensor = tf.browser.fromPixels(imgCanvas).toFloat().div(127.5).sub(1.0).expandDims(0);
+                        const convOut = truncatedMobileNet.predict(imgTensor); // [1, 7, 7, 256]
+                        return convOut.mean([1, 2]); // GAP 池化為 [1, 256]
+                    });
+                    featureList.push(feat);
+
+                    const oneHot = new Array(CLASSES.length).fill(0);
+                    oneHot[classIdx] = 1.0;
+                    labelList.push(oneHot);
+                });
+            });
+
+            if (featureList.length === 0) return;
+
+            const xs = tf.concat(featureList, 0); // [TotalSamples, 256]
+            const ys = tf.tensor2d(labelList);
+
+            // 清理臨時特徵列表
+            featureList.forEach(f => f.dispose());
+
+            // 2. 構建輕量頂層分類器 (直接接收 256 維向量，訓練只需 0.3 秒)
+            customTopModel = tf.sequential({
+                layers: [
+                    tf.layers.dense({
+                        inputShape: [256],
+                        units: CLASSES.length,
+                        activation: 'softmax',
+                        kernelInitializer: 'varianceScaling'
+                    })
+                ]
+            });
+
+            customTopModel.compile({
+                optimizer: tf.train.adam(0.01),
+                loss: 'categoricalCrossentropy'
+            });
+
+            // 3. 快速擬合 (25 Epochs)
+            await customTopModel.fit(xs, ys, {
+                epochs: 25,
+                batchSize: Math.min(16, featureList.length),
+                shuffle: true
+            });
+
+            xs.dispose();
+            ys.dispose();
+
+            isModelTrained = true;
+            btnTrain.innerText = "✔ 學習完成！實時預測中";
+            btnTrain.classList.add("success");
+            btnTrain.disabled = false;
+            document.getElementById("btn-diagnose").disabled = false;
+            document.getElementById("hud-status").innerText = "實時推論中";
+        } catch (err) {
+            alert("訓練過程發生錯誤: " + err.message);
+            btnTrain.innerText = "重新訓練";
+            btnTrain.disabled = false;
         }
     }
 
-    // 4. 一鍵本地遷移訓練（Transfer Learning）
-    async function trainModel() {
-        const btnTrain = document.getElementById("btn-train");
-        btnTrain.innerText = "⚡ 本地學習中 (約 1 秒)...";
-        btnTrain.disabled = true;
-
-        // 構建特徵張量與標籤
-        const features = [];
-        const labels = [];
-        const activeClassIndices = [];
-
-        CLASSES.forEach((c, idx) => {
-            if (classSamples[c.id]) {
-                activeClassIndices.push(idx);
-                tf.tidy(() => {
-                    const imgTensor = tf.browser.fromPixels(classSamples[c.id]).toFloat().div(127.5).sub(1.0).expandDims(0);
-                    const feat = truncatedMobileNet.predict(imgTensor);
-                    features.push(feat);
-                });
-                // One-hot 標籤
-                const l = new Array(CLASSES.length).fill(0);
-                l[idx] = 1.0;
-                labels.push(l);
-            }
-        });
-
-        const xs = tf.concat(features, 0);
-        const ys = tf.tensor2d(labels);
-
-        // 構建頂層分類器 (GAP + Dense Softmax)
-        customTopModel = tf.sequential({
-            layers: [
-                tf.layers.globalAveragePooling2d({ inputShape: [7, 7, 256] }),
-                tf.layers.dense({ units: CLASSES.length, activation: 'softmax', kernelInitializer: 'varianceScaling' })
-            ]
-        });
-
-        customTopModel.compile({
-            optimizer: tf.train.adam(0.01),
-            loss: 'categoricalCrossentropy'
-        });
-
-        await customTopModel.fit(xs, ys, {
-            epochs: 35,
-            batchSize: Math.max(1, features.length),
-            shuffle: true
-        });
-
-        xs.dispose();
-        ys.dispose();
-        features.forEach(f => f.dispose());
-
-        isModelTrained = true;
-        btnTrain.innerText = "✔ 學習完成！實時預測中";
-        btnTrain.classList.add("success");
-        document.getElementById("btn-diagnose").disabled = false;
-        document.getElementById("hud-status").innerText = "實時推論中";
-    }
-
-    // 5. 核心：Grad-CAM 計算演算法
+    // 穩健的 Grad-CAM 計算演算法（以純數學平均池化確保梯度精確回傳）
     function computeGradCAM(inputTensor, targetClassIdx) {
         return tf.tidy(() => {
             const convOutput = truncatedMobileNet.predict(inputTensor); // [1, 7, 7, 256]
             const scoreFn = (act) => {
-                const pooled = act.mean([1, 2]); // GAP
-                const logits = customTopModel.apply(act);
+                const pooled = act.mean([1, 2]); // [1, 256]
+                const logits = customTopModel.apply(pooled); // [1, numClasses]
                 return logits.gather([targetClassIdx], 1).as1D();
             };
             const gradFn = tf.grad(scoreFn);
@@ -504,50 +539,49 @@
             const reluCam = tf.relu(cam);
             const min = reluCam.min();
             const max = reluCam.max();
-            return reluCam.sub(min).div(max.sub(min).add(1e-8)); // 歸一化 [7, 7]
+            return reluCam.sub(min).div(max.sub(min).add(1e-8));
         });
     }
 
-    // 6. 訓練樣本質素診斷（解決「點解準確率得 50-75%」的關鍵功能）
+    // 樣本質素 Grad-CAM 診斷：為每個類別最新的一張照片驗證特徵聚焦點
     async function diagnoseDatasetQuality() {
         if (!isModelTrained) return;
 
-        CLASSES.forEach(async (c, idx) => {
-            const canvas = classSamples[c.id];
-            if (!canvas) return;
+        CLASSES.forEach(async (c, classIdx) => {
+            const list = classDatasets[c.id];
+            if (!list || list.length === 0) return;
 
+            const targetImg = list[list.length - 1]; // 檢驗最新的一張
             const inputTensor = tf.tidy(() => {
-                return tf.browser.fromPixels(canvas).toFloat().div(127.5).sub(1.0).expandDims(0);
+                return tf.browser.fromPixels(targetImg).toFloat().div(127.5).sub(1.0).expandDims(0);
             });
 
-            const camTensor = computeGradCAM(inputTensor, idx);
+            const camTensor = computeGradCAM(inputTensor, classIdx);
             inputTensor.dispose();
 
             const camData = await camTensor.data();
             camTensor.dispose();
 
-            // 在樣本縮圖上繪製熱力圖疊加
-            const ctx = canvas.getContext("2d");
-            ctx.drawImage(videoEl, 0, 0, 224, 224); // 重繪原圖
+            // 在縮圖槽上繪製熱力圖疊加
+            const slot = document.getElementById(`slot-${c.id}`);
+            slot.innerHTML = "";
+            const diagCanvas = document.createElement("canvas");
+            diagCanvas.width = 80; diagCanvas.height = 80;
+            const dCtx = diagCanvas.getContext("2d");
+            dCtx.drawImage(targetImg, 0, 0, 80, 80);
 
+            // 生成 7x7 彩色熱力圖
             const heatCanvas = document.createElement("canvas");
-            heatCanvas.width = 7;
-            heatCanvas.height = 7;
+            heatCanvas.width = 7; heatCanvas.height = 7;
             const hCtx = heatCanvas.getContext("2d");
             const imgData = hCtx.createImageData(7, 7);
 
-            let centerActivationSum = 0;
-            let totalActivationSum = 0;
-
+            let centerSum = 0, totalSum = 0;
             for (let i = 0; i < 49; i++) {
                 const val = camData[i];
-                totalActivationSum += val;
-                const x = i % 7;
-                const y = Math.floor(i / 7);
-                // 檢查是否落在畫面中心手勢區域 (x: 2~4, y: 2~4)
-                if (x >= 2 && x <= 4 && y >= 2 && y <= 4) {
-                    centerActivationSum += val;
-                }
+                totalSum += val;
+                const x = i % 7, y = Math.floor(i / 7);
+                if (x >= 2 && x <= 4 && y >= 2 && y <= 4) centerSum += val; // 中心手勢區域
                 const [r, g, b, a] = getJetColor(val);
                 imgData.data[i * 4] = r;
                 imgData.data[i * 4 + 1] = g;
@@ -556,27 +590,28 @@
             }
             hCtx.putImageData(imgData, 0, 0);
 
-            // 平滑放大疊加於樣本照片
-            ctx.save();
-            ctx.globalAlpha = 0.65;
-            ctx.imageSmoothingEnabled = true;
-            ctx.drawImage(heatCanvas, 0, 0, 224, 224);
-            ctx.restore();
+            dCtx.save();
+            dCtx.globalAlpha = 0.65;
+            dCtx.imageSmoothingEnabled = true;
+            dCtx.drawImage(heatCanvas, 0, 0, 80, 80);
+            dCtx.restore();
 
-            // 評判數據品質：中央權重 vs 背景雜音
+            slot.appendChild(diagCanvas);
+
+            // 評判診斷結果
             const tag = document.getElementById(`tag-${c.id}`);
-            const centerRatio = centerActivationSum / (totalActivationSum + 1e-5);
-            if (centerRatio > 0.45) {
+            const centerRatio = centerSum / (totalSum + 1e-5);
+            if (centerRatio > 0.40) {
                 tag.className = "quality-tag good";
                 tag.innerText = "🟢 聚焦手勢 (優質)";
             } else {
                 tag.className = "quality-tag noise";
-                tag.innerText = "🔴 背景干擾 (需重拍)";
+                tag.innerText = "🔴 背景干擾 (需重影)";
             }
         });
     }
 
-    // 7. 即時推論與相機疊加 Loop
+    // 即時推論與相機疊加 Loop
     let predictThrottle = 0;
     let cachedLiveCamCanvas = null;
 
@@ -603,10 +638,10 @@
             return tf.browser.fromPixels(videoEl).toFloat().div(127.5).sub(1.0).expandDims(0);
         });
 
-        // 預測機率
         const probsTensor = tf.tidy(() => {
-            const feat = truncatedMobileNet.predict(inputTensor);
-            return customTopModel.predict(feat);
+            const convOut = truncatedMobileNet.predict(inputTensor);
+            const pooled = convOut.mean([1, 2]);
+            return customTopModel.predict(pooled);
         });
 
         const probs = await probsTensor.data();
@@ -623,7 +658,7 @@
             if (p > topProb) { topProb = p; topIdx = idx; }
         });
 
-        // 計算 Live Grad-CAM
+        // 即時 Grad-CAM 計算
         if (document.getElementById("toggle-gradcam").checked) {
             const camTensor = computeGradCAM(inputTensor, topIdx);
             const camData = await camTensor.data();
@@ -631,8 +666,7 @@
 
             if (!cachedLiveCamCanvas) {
                 cachedLiveCamCanvas = document.createElement("canvas");
-                cachedLiveCamCanvas.width = 7;
-                cachedLiveCamCanvas.height = 7;
+                cachedLiveCamCanvas.width = 7; cachedLiveCamCanvas.height = 7;
             }
             const hCtx = cachedLiveCamCanvas.getContext("2d");
             const imgData = hCtx.createImageData(7, 7);
@@ -651,7 +685,7 @@
 
     function getJetColor(val) {
         val = Math.max(0, Math.min(1, val));
-        if (val < 0.2) return [0, 0, 0, 0]; // 弱激活完全透明
+        if (val < 0.2) return [0, 0, 0, 0];
         const norm = (val - 0.2) / 0.8;
         let r = 0, g = 0, b = 0;
         if (norm < 0.25) { r = 0; g = Math.round(255 * (norm / 0.25)); b = 255; }
