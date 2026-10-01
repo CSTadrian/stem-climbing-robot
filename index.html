@@ -8,7 +8,7 @@
     <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@latest/dist/tf.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@teachablemachine/image@latest/dist/teachablemachine-image.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
-    <!-- 模式二依賴：MediaPipe Hands -->
+    <!-- 模式二與三依賴：MediaPipe Hands -->
     <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js" crossorigin="anonymous"></script>
     <script src="https://cdn.jsdelivr.net/npm/@mediapipe/hands/hands.js" crossorigin="anonymous"></script>
     <style>
@@ -80,7 +80,7 @@
             box-shadow: 0 2px 8px rgba(2, 132, 199, 0.2);
         }
 
-        /* 頂部資訊與語系切換條 */
+        /* 頂部全域資訊與語系切換條 */
         .meta-strip {
             display: flex;
             justify-content: space-between;
@@ -265,6 +265,7 @@
             flex-direction: column;
             gap: 14px;
             box-shadow: 0 4px 14px rgba(15, 23, 42, 0.04);
+            position: relative;
         }
         .hud-bar {
             display: flex;
@@ -394,7 +395,7 @@
             transition: bottom 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
         }
 
-        #splash-text, #splash-text-mp {
+        #splash-text, #splash-text-mp, #splash-text-mode3 {
             position: absolute;
             top: 40%;
             left: 50%;
@@ -406,79 +407,71 @@
             transition: all 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
             z-index: 10;
         }
-        #splash-text.show, #splash-text-mp.show { transform: translate(-50%, -50%) scale(1.15); }
+        #splash-text.show, #splash-text-mp.show, #splash-text-mode3.show { transform: translate(-50%, -50%) scale(1.15); }
 
         /* =========================================================================
-           模式三：一二三紅綠燈視覺裁判版
+           模式三：昂坪紅綠燈 AI 執法機 + 5 秒定身遮罩
            ========================================================================= */
-        .traffic-layout {
-            display: grid;
-            grid-template-columns: 1.4fr 1fr;
-            gap: 16px;
-        }
-        .traffic-light-beacon {
-            background: #0f172a;
-            border-radius: 16px;
-            padding: 16px;
+        .traffic-hud-bar {
             display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: #0f172a;
+            border-radius: 12px;
+            padding: 10px 16px;
+            color: #fff;
+        }
+        .traffic-lights-box {
+            display: flex;
+            gap: 12px;
+            align-items: center;
+            background: #1e293b;
+            padding: 6px 16px;
+            border-radius: 30px;
+        }
+        .bulb-circle {
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            opacity: 0.2;
+            transition: all 0.2s ease;
+        }
+        .bulb-circle.red { background: #ef4444; }
+        .bulb-circle.green { background: #10b981; }
+        .bulb-circle.active.red { opacity: 1; box-shadow: 0 0 18px #ef4444; }
+        .bulb-circle.active.green { opacity: 1; box-shadow: 0 0 18px #10b981; }
+
+        /* 5 秒定身懲罰全域遮罩 */
+        .freeze-overlay {
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(220, 38, 38, 0.92);
+            backdrop-filter: blur(4px);
+            display: none;
             flex-direction: column;
             align-items: center;
             justify-content: center;
-            gap: 10px;
-            color: #fff;
-            text-align: center;
-            box-shadow: 0 4px 16px rgba(0,0,0,0.2);
-            transition: background 0.3s;
+            color: #ffffff;
+            z-index: 100;
+            border-radius: 16px;
+            animation: pulse-freeze 0.5s infinite alternate;
         }
-        .light-bulb-container {
-            display: flex;
-            gap: 16px;
-            background: #1e293b;
-            padding: 12px 24px;
-            border-radius: 40px;
-            border: 2px solid #334155;
+        @keyframes pulse-freeze {
+            0% { background: rgba(220, 38, 38, 0.90); }
+            100% { background: rgba(185, 28, 28, 0.96); }
         }
-        .bulb {
-            width: 44px;
-            height: 44px;
-            border-radius: 50%;
-            opacity: 0.2;
-            transition: all 0.2s;
+        .freeze-title {
+            font-size: 28px;
+            font-weight: 900;
+            letter-spacing: 2px;
+            margin-bottom: 6px;
         }
-        .bulb.red { background: #ef4444; box-shadow: 0 0 0 rgba(239,68,68,0); }
-        .bulb.green { background: #10b981; box-shadow: 0 0 0 rgba(16,185,129,0); }
-        .bulb.active.red { opacity: 1; box-shadow: 0 0 24px #ef4444; }
-        .bulb.active.green { opacity: 1; box-shadow: 0 0 24px #10b981; }
-
-        .cam-feed-wrapper {
-            position: relative;
-            width: 100%;
-            height: 320px;
-            background: #000;
-            border-radius: 12px;
-            overflow: hidden;
-            border: 1px solid var(--border-ui);
-        }
-        #telemetry-canvas {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-            cursor: crosshair;
-        }
-
-        .metric-tile {
-            background: var(--bg-card);
-            border: 2px solid var(--border-ui);
-            border-radius: 14px;
-            padding: 14px 16px;
-            display: flex;
-            flex-direction: column;
-            gap: 4px;
-        }
-        .metric-val {
-            font-size: 32px;
+        .freeze-timer-count {
+            font-size: 72px;
             font-weight: 900;
             line-height: 1;
+            color: #fef08a;
+            text-shadow: 0 4px 14px rgba(0,0,0,0.4);
         }
 
         /* 互動式引導 Chatbot */
@@ -598,11 +591,11 @@
         </button>
         <button class="mode-tab-btn" id="tab-mode-3" onclick="switchSystemMode(3)">
             <span data-zh="🚦 模式三：昂坪紅綠燈 AI 執法賽" data-en="🚦 Mode 3: Red Light, Green Light">🚦 模式三：昂坪紅綠燈 AI 執法賽</span>
-            <span style="font-size: 11px; font-weight: normal; opacity: 0.85;" data-zh="(HC010 實時測速 + 違規抓拍)" data-en="(HC010 Speed CV + Referee)">(HC010 實時測速 + 違規抓拍)</span>
+            <span style="font-size: 11px; font-weight: normal; opacity: 0.85;" data-zh="(MediaPipe 骨骼 + 5秒罰凍結)" data-en="(MediaPipe + 5s Freeze Penalty)">(MediaPipe 骨骼 + 5秒罰凍結)</span>
         </button>
     </div>
 
-    <!-- 頂部全域資訊與語系切換條 -->
+    <!-- 頂部資訊與語系切換條 -->
     <div class="meta-strip">
         <div style="font-size: 13px; font-weight: 800; color: var(--game-blue); display: flex; align-items: center; gap: 8px;">
             <span data-zh="🤖 micro:bit 編號：" data-en="🤖 micro:bit ID: ">🤖 micro:bit 編號：</span>
@@ -732,7 +725,7 @@
                         </button>
                     </div>
                 </div>
-                <button class="step-btn" id="btn-mp-start" onclick="initMediaPipe()" data-zh="啟動鏡頭開始採樣" data-en="Start Camera Sampling">啟動鏡頭開始採樣</button>
+                <button class="step-btn" id="btn-mp-start" onclick="initMediaPipe(2)" data-zh="啟動鏡頭開始採樣" data-en="Start Camera Sampling">啟動鏡頭開始採樣</button>
             </div>
 
             <div class="step-card" id="card-mp-step3">
@@ -777,7 +770,7 @@
     </div>
 
     <!-- =========================================================================
-         【模式三：昂坪 360 一二三紅綠燈：AI 視覺執法賽】
+         【模式三：昂坪 360 紅綠燈 AI 執法賽 (MediaPipe 骨骼 + 5 秒罰凍結)】
          ========================================================================= -->
     <div class="mode-section" id="section-mode-3">
         <div class="stepper-board">
@@ -794,73 +787,65 @@
             <div class="step-card" id="card-mode3-step2">
                 <div>
                     <div class="step-header">
-                        <span class="step-title" data-zh="📷 步驟 2：啟動裁判鏡頭" data-en="📷 Step 2: Start Referee Cam">📷 步驟 2：啟動裁判鏡頭</span>
+                        <span class="step-title" data-zh="📷 步驟 2：啟動 MediaPipe 鏡頭" data-en="📷 Step 2: Start Hand Cam">📷 步驟 2：啟動 MediaPipe 鏡頭</span>
                         <span class="step-tag" id="tag-mode3-cam" data-zh="未啟動 ⚪" data-en="Inactive ⚪">未啟動 ⚪</span>
                     </div>
-                    <div style="font-size: 11px; color: var(--text-sub); margin-bottom: 10px;" data-zh="開啟鏡頭並在畫面上框選機械人" data-en="Start camera and draw box on robot">開啟鏡頭並在畫面上框選機械人</div>
+                    <div style="font-size: 11px; color: var(--text-sub); margin-bottom: 10px;" data-zh="啟動 21 節點骨骼手勢識別" data-en="Start 21-pt gesture tracking">啟動 21 節點骨骼手勢識別</div>
                 </div>
-                <button class="step-btn" id="btn-telemetry-cam" onclick="toggleTelemetryCamera()" data-zh="📷 開啟/重啟鏡頭" data-en="📷 Start/Restart Cam">📷 開啟/重啟鏡頭</button>
+                <button class="step-btn" id="btn-mode3-cam" onclick="initMediaPipe(3)" data-zh="📷 開啟手勢鏡頭" data-en="📷 Start Hand Cam">📷 開啟手勢鏡頭</button>
             </div>
             <div class="step-card" id="card-mode3-step3">
                 <div>
                     <div class="step-header">
-                        <span class="step-title" data-zh="🚦 步驟 3：開始紅綠燈賽" data-en="🚦 Step 3: Start Traffic Game">🚦 步驟 3：開始紅綠燈賽</span>
-                        <span class="step-tag" id="tag-mode3-game" data-zh="待命中 ⚪" data-en="Standby ⚪">待命中 ⚪</span>
+                        <span class="step-title" data-zh="🚦 步驟 3：開始紅綠燈賽" data-en="🚦 Step 3: Start Traffic Race">🚦 步驟 3：開始紅綠燈賽</span>
+                        <span class="step-tag" id="tag-mode3-game" data-zh="待解鎖 🔒" data-en="Locked 🔒">待解鎖 🔒</span>
                     </div>
-                    <div style="font-size: 11px; color: var(--text-sub); margin-bottom: 10px;" data-zh="綠燈衝刺，紅燈急煞違者倒退" data-en="Move on Green, Freeze on Red!">綠燈衝刺，紅燈急煞違者倒退</div>
+                    <div style="font-size: 11px; color: var(--text-sub); margin-bottom: 10px;" id="desc-mode3-step3" data-zh="綠燈出目標手勢，紅燈違者罰凍結 5 秒！" data-en="Move on Green! Freeze on Red (5s penalty)!">綠燈出目標手勢，紅燈違者罰凍結 5 秒！</div>
                 </div>
-                <button class="step-btn" id="btn-start-traffic" style="background:#059669;" onclick="toggleTrafficGame()" data-zh="▶ 開始紅綠燈競技！" data-en="▶ Start Red/Green Race!">▶ 開始紅綠燈競技！</button>
+                <button class="btn-launch" id="btn-launch-mode3" onclick="startTrafficGameMode3()" disabled data-zh="等待準備..." data-en="Waiting...">等待準備...</button>
             </div>
         </div>
 
-        <div class="traffic-layout">
-            <div class="telemetry-cam-card" style="background:#fff; border:2px solid var(--border-ui); border-radius:16px; padding:14px; display:flex; flex-direction:column; gap:10px;">
-                <div style="display:flex; justify-content:space-between; align-items:center;">
-                    <span style="font-weight:800; font-size:14px; color:var(--game-blue);" data-zh="📡 視覺執法視野 (HC010 Dynamic Tracking)" data-en="📡 Vision Referee View (HC010 Tracking)">📡 視覺執法視野 (HC010 Dynamic Tracking)</span>
-                    <span id="track-status-tag" style="font-size:11px; background:#f1f5f9; border:1px solid var(--border-ui); color:var(--text-sub); padding:2px 8px; border-radius:10px;" data-zh="未啟動鏡頭" data-en="Cam Inactive">未啟動鏡頭</span>
+        <div class="stage-layout">
+            <div class="arena-box" id="arena-box-mode3">
+                <!-- 5 秒定身懲罰全域遮罩 -->
+                <div class="freeze-overlay" id="freeze-penalty-overlay">
+                    <div class="freeze-title" data-zh="🚨 違規！急煞失敗罰凍結" data-en="🚨 VIOLATION! FREEZE PENALTY">🚨 違規！急煞失敗罰凍結</div>
+                    <div class="freeze-timer-count" id="freeze-seconds-left">5</div>
+                    <div style="font-size:14px; font-weight:bold; margin-top:8px;" data-zh="🚫 扣除 2 分，全畫面鎖定中..." data-en="🚫 -2 Points, Screen Locked...">🚫 扣除 2 分，全畫面鎖定中...</div>
                 </div>
 
-                <div class="cam-feed-wrapper">
-                    <canvas id="telemetry-canvas" width="640" height="480"></canvas>
+                <!-- 頂部信號燈 HUD -->
+                <div class="traffic-hud-bar">
+                    <div class="traffic-lights-box">
+                        <div class="bulb-circle red" id="m3-bulb-red"></div>
+                        <div class="bulb-circle green active" id="m3-bulb-green"></div>
+                    </div>
+                    <div style="font-size: 18px; font-weight: 900;" id="m3-traffic-status-text" data-zh="🟢 綠燈：出招前進！" data-en="🟢 GREEN: MATCH GESTURE!">🟢 綠燈：出招前進！</div>
+                    <div class="score-pill"><span data-zh="攀爬得分：" data-en="Score: ">攀爬得分：</span><span id="score-counter-mode3">0</span></div>
                 </div>
 
-                <div style="display:flex; justify-content:space-between; align-items:center; background:#f8fafc; padding:8px 12px; border-radius:8px; border:1px solid var(--border-ui);">
-                    <span style="font-size:12px; color:var(--text-sub);" data-zh="🎯 在畫面按住滑鼠【拉框】鎖定機械人椴木板" data-en="🎯 Drag mouse over robot to track it">🎯 在畫面按住滑鼠【拉框】鎖定機械人椴木板</span>
-                    <button class="step-btn" style="width:auto; padding:6px 12px; font-size:11px; background:#475569;" onclick="resetROISelection()" data-zh="重新框選" data-en="Redraw Box">重新框選</button>
+                <!-- 目標手勢流動軌道 -->
+                <div class="ribbon-track-wrapper">
+                    <div class="ribbon-track" id="queue-ribbon-mode3"></div>
+                    <div class="timer-bg"><div class="timer-fill" id="timer-bar-mode3"></div></div>
+                    <div id="splash-text-mode3">PERFECT!</div>
+                </div>
+
+                <div class="arena-footer">
+                    <div style="width: 220px; height: 150px; background: #000; border-radius: 10px; overflow: hidden; border: 1px solid var(--border-ui); position: relative;">
+                        <canvas id="output-canvas-mode3" width="320" height="240" style="width: 100%; height: 100%; transform: scaleX(-1);"></canvas>
+                    </div>
+                    <div class="meters-grid" id="meters-container-mode3"></div>
                 </div>
             </div>
 
-            <div style="display:flex; flex-direction:column; gap:12px;">
-                <!-- 紅綠燈執法信號機燈柱 -->
-                <div class="traffic-light-beacon" id="traffic-beacon-card">
-                    <div style="font-size:12px; font-weight:800; letter-spacing:1px;" data-zh="AI 交通號誌裁判台" data-en="AI TRAFFIC REFEREE">AI 交通號誌裁判台</div>
-                    <div class="light-bulb-container">
-                        <div class="bulb red" id="bulb-red"></div>
-                        <div class="bulb green active" id="bulb-green"></div>
-                    </div>
-                    <div id="traffic-command-label" style="font-size:22px; font-weight:900; color:#10b981;" data-zh="🟢 綠燈：前進！" data-en="🟢 GREEN: GO!">🟢 綠燈：前進！</div>
-                    <div style="font-size:11px; opacity:0.8;" id="traffic-timer-sub">倒數: 4.2s</div>
-                </div>
-
-                <div class="metric-tile">
-                    <div style="display:flex; justify-content:space-between; font-size:12px; font-weight:bold; color:var(--text-sub);">
-                        <span data-zh="⚡ 實時爬行速度" data-en="⚡ Real-time Speed">⚡ 實時爬行速度</span>
-                        <span id="speed-status-badge" style="color:var(--game-green);" data-zh="安全" data-en="Safe">安全</span>
-                    </div>
-                    <div class="metric-val" style="color:var(--game-blue);">
-                        <span id="traffic-speed-val">0.0</span><span style="font-size:14px; font-weight:normal; color:var(--text-sub);"> cm/s</span>
-                    </div>
-                </div>
-
-                <!-- 手動緊急駕駛面板 -->
-                <div style="background:#f8fafc; border:1px solid var(--border-ui); border-radius:12px; padding:10px; display:flex; flex-direction:column; gap:6px;">
-                    <div style="font-size:11px; font-weight:bold; color:var(--text-sub);" data-zh="🕹️ 駕駛控制 (或按鍵盤 ↑ / ↓ / 空白鍵)：" data-en="🕹️ Controls (Or use ↑ / ↓ / Space):">🕹️ 駕駛控制 (或按鍵盤 ↑ / ↓ / 空白鍵)：</div>
-                    <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:6px;">
-                        <button class="step-btn" style="background:#1e293b; padding:8px 2px;" onclick="sendRobotCommand('1')" data-zh="▲ 衝刺" data-en="▲ Forward">▲ 衝刺</button>
-                        <button class="step-btn" style="background:#dc2626; padding:8px 2px;" onclick="sendRobotCommand('0')" data-zh="⏹ 煞停" data-en="⏹ Freeze">⏹ 煞停</button>
-                        <button class="step-btn" style="background:#475569; padding:8px 2px;" onclick="sendRobotCommand('2')" data-zh="▼ 倒退" data-en="▼ Back">▼ 倒退</button>
-                    </div>
-                </div>
+            <div class="tower-card">
+                <div style="font-size: 26px;">🏆</div>
+                <div style="font-size: 10px; color: var(--text-sub); font-weight: bold;">FINISH</div>
+                <div class="rope-shaft"><div class="robot-indicator" id="robot-indicator-mode3">🤖</div></div>
+                <div style="font-size: 10px; color: var(--text-sub); font-weight: bold;">START</div>
+                <div style="font-size: 20px;">🚩</div>
             </div>
         </div>
     </div>
@@ -885,8 +870,8 @@
             </div>
             <div class="chip-group" id="chat-first-chips">
                 <span class="quick-chip" onclick="handleChipClick('手勢成日認錯，受背景干擾')">手勢成日認錯</span>
+                <span class="quick-chip" onclick="handleChipClick('紅燈嗰陣成日剎唔切車')">紅燈剎唔切車</span>
                 <span class="quick-chip" onclick="handleChipClick('機械人爬唔起，繩索太滑')">繩索太滑</span>
-                <span class="quick-chip" onclick="handleChipClick('micro:bit 訊號有時收唔到')">無線訊號受阻</span>
                 <span class="quick-chip" onclick="handleChipClick('好順利，冇遇到大困難！')">好順利冇問題！</span>
             </div>
         </div>
@@ -899,10 +884,9 @@
 
 <script>
     // =========================================================================
-    // 1. 全域配置與 Google Apps Script 靜默自動導出
+    // 1. 全域配置與 Google Sheet 靜默自動導出
     // =========================================================================
-    // 請將你部署好的 Google Apps Script 網頁應用程式 URL 貼喺呢度：
-    const GAS_ENDPOINT = "https://script.google.com/macros/s/AKfycbwFgIqCUUYGPdnF0I13ayD35w4CQe2tDA2dRvzvFJGHtpUlbEtmTyLswjMCtBg72sV0DA/exec"; 
+    const GAS_ENDPOINT = "https://script.google.com/macros/s/AKfycbxYOUR_ACTUAL_DEPLOYED_URL_HERE/exec"; 
     const SPREADSHEET_ID = "1HBh4g4FIGXVHxKcbtgfJPsvpK-YG5P1xs9p_-j_EBcY";
 
     let sharedMicrobitId = "";
@@ -910,7 +894,6 @@
     let chatReflectionData = { difficulty: "", favorite: "", comments: "" };
     let chatStep = 0;
 
-    // 背景靜默自動導出資料（無按鈕干擾）
     async function autoExportToGoogleSheet(modeName, finalScore) {
         if (!sharedMicrobitId || !GAS_ENDPOINT || GAS_ENDPOINT.includes("YOUR_ACTUAL_DEPLOYED_URL")) return;
         const payload = {
@@ -964,6 +947,7 @@
         document.getElementById("shared-mb-id-display").innerText = sharedMicrobitId ? ("No. " + sharedMicrobitId) : (currentLang === 'zh' ? "未填寫" : "Unset");
         checkCanUnlockStep3();
         checkCanUnlockMPStep3();
+        checkCanUnlockMode3Step3();
     }
 
     // =========================================================================
@@ -987,8 +971,8 @@
         document.getElementById("section-mode-2").classList.toggle("active-mode", modeNum === 2);
         document.getElementById("section-mode-3").classList.toggle("active-mode", modeNum === 3);
 
-        if (modeNum === 2 && !cameraMP) initMediaPipe();
-        else if (modeNum === 3 && !telemetryVideo) initTelemetryCamera();
+        if (modeNum === 2 && !cameraMP) initMediaPipe(2);
+        else if (modeNum === 3 && !cameraMP) initMediaPipe(3);
     }
 
     // XAI 密碼驗證
@@ -1013,7 +997,7 @@
     }
 
     // =========================================================================
-    // 5. WebSerial 通訊控制
+    // 5. WebSerial 通訊控制 (完全無需更動 Rx，只送 1\n)
     // =========================================================================
     let serialPort, serialWriter;
     let step1Ready = false;
@@ -1035,6 +1019,7 @@
             });
             checkCanUnlockStep3();
             checkCanUnlockMPStep3();
+            checkCanUnlockMode3Step3();
         } catch (e) {
             alert("Serial Connection Error: " + e.message);
         }
@@ -1046,23 +1031,15 @@
         }
     }
 
-    window.addEventListener("keydown", (e) => {
-        if (currentSystemMode === 3) {
-            if (e.key === "ArrowUp") sendRobotCommand("1");
-            else if (e.key === "ArrowDown") sendRobotCommand("2");
-            else if (e.key === " " || e.key === "Escape") sendRobotCommand("0");
-        }
-    });
-
     // =========================================================================
     // 6. 模式一：Teachable Machine + Grad-CAM
     // =========================================================================
     const GESTURES = {
-        "Class 1": { name: "石頭", symbol: "✊", num: "No. 1" },
-        "Class 2": { name: "剪刀", symbol: "✌️", num: "No. 2" },
-        "Class 3": { name: "布",   symbol: "🖐️", num: "No. 3" },
-        "Class 4": { name: "讚好", symbol: "👍", num: "No. 4" },
-        "Class 5": { name: "待機", symbol: "🫱", num: "No. 5" }
+        "Class 1": { name: "石頭", symbol: "✊" },
+        "Class 2": { name: "剪刀", symbol: "✌️" },
+        "Class 3": { name: "布",   symbol: "🖐️" },
+        "Class 4": { name: "讚好", symbol: "👍" },
+        "Class 5": { name: "待機", symbol: "🫱" }
     };
     const ACTIVE_TARGETS = ["Class 1", "Class 2", "Class 3", "Class 4"];
     let step2Ready = false, model, webcam, maxPredictions;
@@ -1343,76 +1320,94 @@
     }
 
     // =========================================================================
-    // 7. 模式二：MediaPipe 訓練艙
+    // 7. 模式二與模式三共用 MediaPipe Hands 引擎
     // =========================================================================
-    let handsMP = null, cameraMP = null, videoElementMP, canvasElementMP, canvasCtxMP;
+    let handsMP = null, cameraMP = null, videoElementMP;
     let currentLandmarks = null, dataset = [], isSampling = false, samplingTarget = null, sampleInterval = null;
     let step2MPReady = false, isMPRunning = false, isMPLocked = false, mpScore = 0, mpActionQueue = [], mpTimerLoop = null;
 
-    async function initMediaPipe() {
-        const btn = document.getElementById("btn-mp-start");
-        btn.innerText = currentLang === 'zh' ? "載入 MediaPipe 引擎中..." : "Loading MediaPipe...";
-        btn.disabled = true;
+    async function initMediaPipe(targetMode) {
+        if (!videoElementMP) {
+            videoElementMP = document.getElementById("webcam-video-mp");
+        }
+        if (!handsMP) {
+            handsMP = new Hands({ locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/hands/${file}` });
+            handsMP.setOptions({ maxNumHands: 1, modelComplexity: 1, minDetectionConfidence: 0.6, minTrackingConfidence: 0.6 });
+            handsMP.onResults(onHandResults);
+        }
+        if (!cameraMP) {
+            cameraMP = new Camera(videoElementMP, {
+                onFrame: async () => { 
+                    if (currentSystemMode === 2 || currentSystemMode === 3) {
+                        await handsMP.send({ image: videoElementMP }); 
+                    }
+                },
+                width: 320, height: 240
+            });
+            await cameraMP.start();
+        }
 
-        videoElementMP = document.getElementById("webcam-video-mp");
-        canvasElementMP = document.getElementById("output-canvas-mp");
-        canvasCtxMP = canvasElementMP.getContext("2d");
+        if (targetMode === 2) {
+            const btn = document.getElementById("btn-mp-start");
+            document.getElementById("tag-mp-engine").innerText = currentLang === 'zh' ? "21點鏡頭就緒 🟡" : "21-pt Ready 🟡";
+            btn.innerText = currentLang === 'zh' ? "按住上方按鈕錄製手勢" : "Hold buttons above to sample";
+            btn.classList.add("ready-btn");
+            btn.disabled = false;
+        } else if (targetMode === 3) {
+            document.getElementById("tag-mode3-cam").innerText = currentLang === 'zh' ? "就緒 🟢" : "Ready 🟢";
+            document.getElementById("card-mode3-step2").classList.add("done");
+            document.getElementById("btn-mode3-cam").innerText = currentLang === 'zh' ? "✔ 手勢鏡頭已啟動" : "✔ Cam Started";
+            document.getElementById("btn-mode3-cam").classList.add("ready-btn");
+            checkCanUnlockMode3Step3();
+        }
 
-        handsMP = new Hands({ locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/hands/${file}` });
-        handsMP.setOptions({ maxNumHands: 1, modelComplexity: 1, minDetectionConfidence: 0.6, minTrackingConfidence: 0.6 });
-        handsMP.onResults(onHandResults);
-
-        cameraMP = new Camera(videoElementMP, {
-            onFrame: async () => { if (currentSystemMode === 2) await handsMP.send({ image: videoElementMP }); },
-            width: 320, height: 240
+        // 初始化指示器
+        ["meters-container-mp", "meters-container-mode3"].forEach(cid => {
+            const mBox = document.getElementById(cid);
+            mBox.innerHTML = "";
+            Object.keys(GESTURES).forEach((key) => {
+                const row = document.createElement("div");
+                row.className = "meter-row";
+                row.id = cid + "-row-" + key.replace(" ", "-");
+                const g = GESTURES[key];
+                row.innerHTML = `<span>${g.symbol} ${g.name}</span><span>0%</span>`;
+                mBox.appendChild(row);
+            });
         });
-        await cameraMP.start();
-
-        const mBox = document.getElementById("meters-container-mp");
-        mBox.innerHTML = "";
-        Object.keys(GESTURES).forEach((key) => {
-            const row = document.createElement("div");
-            row.className = "meter-row";
-            row.id = "meter-row-mp-" + key.replace(" ", "-");
-            const g = GESTURES[key];
-            row.innerHTML = `<span>${g.symbol} ${g.name}</span><span>0%</span>`;
-            mBox.appendChild(row);
-        });
-
-        document.getElementById("tag-mp-engine").innerText = currentLang === 'zh' ? "21點鏡頭就緒 🟡" : "21-pt Ready 🟡";
-        btn.innerText = currentLang === 'zh' ? "按住上方按鈕錄製手勢" : "Hold buttons above to sample";
-        btn.classList.add("ready-btn");
-        btn.disabled = false;
     }
 
     function onHandResults(results) {
-        canvasElementMP.width = videoElementMP.videoWidth || 320;
-        canvasElementMP.height = videoElementMP.videoHeight || 240;
-        canvasCtxMP.save();
-        canvasCtxMP.clearRect(0, 0, canvasElementMP.width, canvasElementMP.height);
-        canvasCtxMP.drawImage(results.image, 0, 0, canvasElementMP.width, canvasElementMP.height);
+        let activeCanvas = null;
+        if (currentSystemMode === 2) activeCanvas = document.getElementById("output-canvas-mp");
+        else if (currentSystemMode === 3) activeCanvas = document.getElementById("output-canvas-mode3");
+        if (!activeCanvas) return;
+
+        const ctx = activeCanvas.getContext("2d");
+        ctx.save();
+        ctx.clearRect(0, 0, activeCanvas.width, activeCanvas.height);
+        ctx.drawImage(results.image, 0, 0, activeCanvas.width, activeCanvas.height);
 
         if (results.multiHandLandmarks && results.multiHandLandmarks.length > 0) {
             currentLandmarks = results.multiHandLandmarks[0];
-            drawSkeletonMP(currentLandmarks);
-            if (dataset.length > 0) classifyCurrentPose();
+            drawSkeleton(ctx, currentLandmarks, activeCanvas.width, activeCanvas.height);
+            classifyCurrentPose();
         } else {
             currentLandmarks = null;
         }
-        canvasCtxMP.restore();
+        ctx.restore();
     }
 
-    function drawSkeletonMP(landmarks) {
+    function drawSkeleton(ctx, landmarks, w, h) {
         const CONNECTIONS = [
             [0,1],[1,2],[2,3],[3,4],[0,5],[5,6],[6,7],[7,8],[5,9],[9,10],[10,11],[11,12],
             [9,13],[13,14],[14,15],[15,16],[13,17],[17,18],[18,19],[19,20],[0,17]
         ];
-        canvasCtxMP.strokeStyle = "#0284c7"; canvasCtxMP.lineWidth = 3;
+        ctx.strokeStyle = "#0284c7"; ctx.lineWidth = 3;
         CONNECTIONS.forEach(([i, j]) => {
-            canvasCtxMP.beginPath();
-            canvasCtxMP.moveTo(landmarks[i].x * canvasElementMP.width, landmarks[i].y * canvasElementMP.height);
-            canvasCtxMP.lineTo(landmarks[j].x * canvasElementMP.width, landmarks[j].y * canvasElementMP.height);
-            canvasCtxMP.stroke();
+            ctx.beginPath();
+            ctx.moveTo(landmarks[i].x * w, landmarks[i].y * h);
+            ctx.lineTo(landmarks[j].x * w, landmarks[j].y * h);
+            ctx.stroke();
         });
     }
 
@@ -1463,39 +1458,69 @@
         }
     }
 
+    // 智能手勢分類（KNN 匹配 + 內置特徵備援）
     function classifyCurrentPose() {
-        const currentVec = extractNormalizedFeatures(currentLandmarks);
-        const distances = dataset.map(sample => {
-            let distSq = 0;
-            for (let i = 0; i < currentVec.length; i++) {
-                const diff = currentVec[i] - sample.vector[i];
-                distSq += diff * diff;
-            }
-            return { label: sample.label, dist: Math.sqrt(distSq) };
-        });
-        distances.sort((a, b) => a.dist - b.dist);
-        const k = Math.min(5, distances.length);
-        const topK = distances.slice(0, k);
+        if (!currentLandmarks) return;
+        let topCls = "Class 5", maxProb = 0.5;
 
-        const scores = {};
-        Object.keys(GESTURES).forEach(k => scores[k] = 0);
-        topK.forEach(item => scores[item.label]++);
+        if (dataset.length >= 20) {
+            const currentVec = extractNormalizedFeatures(currentLandmarks);
+            const distances = dataset.map(sample => {
+                let distSq = 0;
+                for (let i = 0; i < currentVec.length; i++) {
+                    const diff = currentVec[i] - sample.vector[i];
+                    distSq += diff * diff;
+                }
+                return { label: sample.label, dist: Math.sqrt(distSq) };
+            });
+            distances.sort((a, b) => a.dist - b.dist);
+            const k = Math.min(5, distances.length);
+            const topK = distances.slice(0, k);
 
-        let topCls = "Class 5", maxVotes = 0;
-        Object.keys(scores).forEach(cls => {
-            const prob = scores[cls] / k;
-            const row = document.getElementById("meter-row-mp-" + cls.replace(" ", "-"));
-            const g = GESTURES[cls];
+            const scores = {};
+            Object.keys(GESTURES).forEach(k => scores[k] = 0);
+            topK.forEach(item => scores[item.label]++);
+            Object.keys(scores).forEach(cls => {
+                const prob = scores[cls] / k;
+                if (scores[cls] > maxProb * k) { maxProb = prob; topCls = cls; }
+            });
+        } else {
+            // 備援幾何啟發式辨識（即使未訓練亦能即時玩！）
+            const isExtended = (tipIdx, pipIdx) => currentLandmarks[tipIdx].y < currentLandmarks[pipIdx].y;
+            const indexUp = isExtended(8, 6);
+            const middleUp = isExtended(12, 10);
+            const ringUp = isExtended(16, 14);
+            const pinkyUp = isExtended(20, 18);
+            const thumbUp = currentLandmarks[4].y < currentLandmarks[3].y;
+
+            if (!indexUp && !middleUp && !ringUp && !pinkyUp) { topCls = "Class 1"; maxProb = 0.85; } // 石頭
+            else if (indexUp && middleUp && !ringUp && !pinkyUp) { topCls = "Class 2"; maxProb = 0.85; } // 剪刀
+            else if (indexUp && middleUp && ringUp && pinkyUp) { topCls = "Class 3"; maxProb = 0.85; } // 布
+            else if (thumbUp && !indexUp && !middleUp && !ringUp && !pinkyUp) { topCls = "Class 4"; maxProb = 0.85; } // 讚好
+            else { topCls = "Class 5"; maxProb = 0.7; }
+        }
+
+        // 更新當前模式儀表板
+        const prefix = currentSystemMode === 2 ? "meters-container-mp-row-" : "meters-container-mode3-row-";
+        Object.keys(GESTURES).forEach(cls => {
+            const row = document.getElementById(prefix + cls.replace(" ", "-"));
             if (row) {
+                const prob = cls === topCls ? maxProb : (1 - maxProb) / 4;
+                const g = GESTURES[cls];
                 row.innerHTML = `<span>${g.symbol} ${g.name}</span><span>${(prob * 100).toFixed(0)}%</span>`;
-                if (prob > 0.6) row.classList.add("matched");
+                if (cls === topCls && prob >= 0.6) row.classList.add("matched");
                 else row.classList.remove("matched");
             }
-            if (scores[cls] > maxVotes) { maxVotes = scores[cls]; topCls = cls; }
         });
 
-        if (isMPRunning && !isMPLocked && mpActionQueue.length > 0) {
-            if (topCls === mpActionQueue[0] && (maxVotes / k) >= 0.6) handleMPSuccess();
+        // 觸發模式二邏輯
+        if (currentSystemMode === 2 && isMPRunning && !isMPLocked && mpActionQueue.length > 0) {
+            if (topCls === mpActionQueue[0] && maxProb >= 0.6) handleMPSuccess();
+        }
+
+        // 觸發模式三紅綠燈邏輯
+        if (currentSystemMode === 3 && isMode3Running && !isMode3Locked && mode3ActionQueue.length > 0) {
+            handleTrafficLightAction(topCls, maxProb);
         }
     }
 
@@ -1572,177 +1597,169 @@
     }
 
     // =========================================================================
-    // 8. 模式三：昂坪 360 一二三紅綠燈視覺裁判賽
+    // 8. 模式三：昂坪 360 紅綠燈 AI 執法賽 (5 秒罰凍結 + 零 Rx 負擔)
     // =========================================================================
-    let telemetryVideo = null, telemetryCanvas = document.getElementById("telemetry-canvas");
-    let telemetryCtx = telemetryCanvas.getContext("2d"), isTelemetryRunning = false;
-    let isDrawingBox = false, dragStartX = 0, dragStartY = 0, dragCurrX = 0, dragCurrY = 0;
-    let roiTemplate = null, targetBox = null, prevPosition = null;
-    let currentSpeed = 0.0, trafficState = "GREEN", trafficGameRunning = false, trafficTimer = null;
+    let isMode3Running = false, isMode3Locked = false, mode3Score = 0;
+    let mode3ActionQueue = [], mode3TimerLoop = null, trafficCycleTimer = null;
+    let trafficLightColor = "GREEN"; // "GREEN" or "RED"
+    let freezeTimer = null, freezeRemaining = 5;
 
-    async function initTelemetryCamera() {
-        try {
-            if (!telemetryVideo) {
-                telemetryVideo = document.createElement("video");
-                telemetryVideo.autoplay = true; telemetryVideo.playsInline = true;
+    function checkCanUnlockMode3Step3() {
+        if (step1Ready && sharedMicrobitId && cameraMP) {
+            document.getElementById("card-mode3-step3").classList.add("done");
+            document.getElementById("tag-mode3-game").innerText = currentLang === 'zh' ? "準備就緒 ✨" : "Ready ✨";
+            const launchBtn = document.getElementById("btn-launch-mode3");
+            launchBtn.disabled = false;
+            launchBtn.innerText = currentLang === 'zh' ? "🚦 開始紅綠燈競技！" : "🚦 Start Traffic Race!";
+            launchBtn.classList.add("unlocked");
+        }
+    }
+
+    function startTrafficGameMode3() {
+        isMode3Running = true; isMode3Locked = false; mode3Score = 0;
+        document.getElementById("score-counter-mode3").innerText = mode3Score;
+        const launchBtn = document.getElementById("btn-launch-mode3");
+        launchBtn.innerText = currentLang === 'zh' ? "🚦 紅綠燈競技中..." : "🚦 Game Active...";
+        launchBtn.disabled = true;
+
+        mode3ActionQueue = [];
+        for (let i = 0; i < 5; i++) mode3ActionQueue.push(ACTIVE_TARGETS[Math.floor(Math.random() * ACTIVE_TARGETS.length)]);
+        renderMode3Queue();
+        startMode3Timer();
+        runTrafficLightLoop();
+    }
+
+    function renderMode3Queue() {
+        const ribbon = document.getElementById("queue-ribbon-mode3");
+        ribbon.innerHTML = "";
+        mode3ActionQueue.forEach((clsKey, index) => {
+            const g = GESTURES[clsKey];
+            const card = document.createElement("div");
+            card.className = "action-card " + (index === 0 ? "active-target" : "upcoming");
+            card.innerHTML = `<div class="symbol">${g.symbol}</div><div class="c-name">${g.name}</div>`;
+            ribbon.appendChild(card);
+        });
+    }
+
+    function startMode3Timer() {
+        clearInterval(mode3TimerLoop);
+        const start = performance.now();
+        const bar = document.getElementById("timer-bar-mode3");
+        mode3TimerLoop = setInterval(() => {
+            if (isMode3Locked) return;
+            const elapsed = performance.now() - start;
+            const remaining = Math.max(0, TIME_LIMIT_MS - elapsed);
+            bar.style.width = (remaining / TIME_LIMIT_MS) * 100 + "%";
+            if (remaining <= 0) {
+                clearInterval(mode3TimerLoop);
+                mode3ActionQueue.shift();
+                mode3ActionQueue.push(ACTIVE_TARGETS[Math.floor(Math.random() * ACTIVE_TARGETS.length)]);
+                renderMode3Queue();
+                if (isMode3Running) startMode3Timer();
             }
-            const stream = await navigator.mediaDevices.getUserMedia({ video: { width: 640, height: 480 } });
-            telemetryVideo.srcObject = stream;
-            await new Promise(res => telemetryVideo.onloadedmetadata = res);
-            isTelemetryRunning = true;
-            document.getElementById("track-status-tag").innerText = currentLang === 'zh' ? "HC010 就緒 🟢" : "HC010 Ready 🟢";
-            document.getElementById("tag-mode3-cam").innerText = currentLang === 'zh' ? "就緒 🟢" : "Ready 🟢";
-            document.getElementById("card-mode3-step2").classList.add("done");
-            requestAnimationFrame(telemetryProcessLoop);
-        } catch(e) { alert("Camera Error: " + e.message); }
+        }, 30);
     }
 
-    function toggleTelemetryCamera() {
-        if (isTelemetryRunning) {
-            if (telemetryVideo && telemetryVideo.srcObject) {
-                telemetryVideo.srcObject.getTracks().forEach(t => t.stop());
-                telemetryVideo = null;
-            }
-            isTelemetryRunning = false;
-        } else {
-            initTelemetryCamera();
-        }
+    // 紅綠燈狀態機循環
+    function runTrafficLightLoop() {
+        if (!isMode3Running) return;
+        // 隨機綠燈 3.5 至 5.5 秒
+        trafficLightColor = "GREEN";
+        document.getElementById("m3-bulb-red").classList.remove("active");
+        document.getElementById("m3-bulb-green").classList.add("active");
+        document.getElementById("m3-traffic-status-text").innerText = currentLang === 'zh' ? "🟢 綠燈：出招前進！" : "🟢 GREEN: MATCH GESTURE!";
+        document.getElementById("m3-traffic-status-text").style.color = "#10b981";
+
+        const greenMs = Math.random() * 2000 + 3500;
+        trafficCycleTimer = setTimeout(() => {
+            if (!isMode3Running) return;
+            // 轉為紅燈 2.5 至 4 秒
+            trafficLightColor = "RED";
+            document.getElementById("m3-bulb-green").classList.remove("active");
+            document.getElementById("m3-bulb-red").classList.add("active");
+            document.getElementById("m3-traffic-status-text").innerText = currentLang === 'zh' ? "🛑 紅燈：收手定身！" : "🛑 RED: FREEZE HANDS!";
+            document.getElementById("m3-traffic-status-text").style.color = "#ef4444";
+
+            const redMs = Math.random() * 1500 + 2500;
+            trafficCycleTimer = setTimeout(() => {
+                if (isMode3Running) runTrafficLightLoop();
+            }, redMs);
+        }, greenMs);
     }
 
-    function getCanvasCoords(e) {
-        const rect = telemetryCanvas.getBoundingClientRect();
-        return {
-            x: Math.max(0, Math.min(telemetryCanvas.width, Math.floor((e.clientX - rect.left) * (telemetryCanvas.width / rect.width)))),
-            y: Math.max(0, Math.min(telemetryCanvas.height, Math.floor((e.clientY - rect.top) * (telemetryCanvas.height / rect.height))))
-        };
-    }
+    // 核心執法與 5 秒懲罰邏輯
+    function handleTrafficLightAction(detectedCls, prob) {
+        const targetCls = mode3ActionQueue[0];
 
-    telemetryCanvas.addEventListener("mousedown", (e) => {
-        if (!telemetryVideo) return;
-        const p = getCanvasCoords(e);
-        isDrawingBox = true; dragStartX = p.x; dragStartY = p.y; dragCurrX = p.x; dragCurrY = p.y;
-    });
-    telemetryCanvas.addEventListener("mousemove", (e) => {
-        if (!isDrawingBox) return;
-        const p = getCanvasCoords(e); dragCurrX = p.x; dragCurrY = p.y;
-    });
-    window.addEventListener("mouseup", () => {
-        if (!isDrawingBox) return;
-        isDrawingBox = false; finalizeROISelection();
-    });
+        // 情況 A：綠燈且命中目標手勢 -> 正常得分推進！
+        if (trafficLightColor === "GREEN") {
+            if (detectedCls === targetCls && prob >= 0.65) {
+                isMode3Locked = true; clearInterval(mode3TimerLoop);
+                mode3Score++;
+                document.getElementById("score-counter-mode3").innerText = mode3Score;
+                document.getElementById("robot-indicator-mode3").style.bottom = Math.min(92, (mode3Score / 15) * 92) + "%";
+                sendRobotCommand("1"); // 綠燈才發送信號推進
+                popMode3Splash("PERFECT! ⚡", "var(--game-green)");
 
-    function finalizeROISelection() {
-        const x1 = Math.min(dragStartX, dragCurrX), y1 = Math.min(dragStartY, dragCurrY);
-        const bw = Math.abs(dragCurrX - dragStartX), bh = Math.abs(dragCurrY - dragStartY);
-        if (bw < 18 || bh < 18) return;
+                mode3ActionQueue.shift();
+                mode3ActionQueue.push(ACTIVE_TARGETS[Math.floor(Math.random() * ACTIVE_TARGETS.length)]);
+                renderMode3Queue();
 
-        const tempCanvas = document.createElement("canvas");
-        tempCanvas.width = 36; tempCanvas.height = 36;
-        const tCtx = tempCanvas.getContext("2d");
-        tCtx.drawImage(telemetryVideo, x1, y1, bw, bh, 0, 0, 36, 36);
-
-        const imgData = tCtx.getImageData(0, 0, 36, 36).data;
-        const gray = new Float32Array(36 * 36);
-        let sum = 0;
-        for (let i = 0; i < gray.length; i++) {
-            gray[i] = 0.299 * imgData[i*4] + 0.587 * imgData[i*4+1] + 0.114 * imgData[i*4+2];
-            sum += gray[i];
-        }
-        const mean = sum / gray.length;
-        let varSum = 0;
-        for (let i = 0; i < gray.length; i++) {
-            gray[i] -= mean; varSum += gray[i] * gray[i];
-        }
-        const std = Math.sqrt(varSum) + 1e-5;
-        for (let i = 0; i < gray.length; i++) gray[i] /= std;
-
-        roiTemplate = { gray: gray, aspectRatio: bh / bw };
-        targetBox = { x: x1 + bw/2, y: y1 + bh/2, w: bw, h: bh };
-        prevPosition = null;
-    }
-
-    function resetROISelection() { roiTemplate = null; targetBox = null; }
-
-    function telemetryProcessLoop() {
-        if (!isTelemetryRunning || !telemetryVideo) return;
-        telemetryCtx.drawImage(telemetryVideo, 0, 0, telemetryCanvas.width, telemetryCanvas.height);
-
-        if (isDrawingBox) {
-            telemetryCtx.strokeStyle = "var(--game-amber)";
-            telemetryCtx.lineWidth = 2;
-            telemetryCtx.strokeRect(Math.min(dragStartX, dragCurrX), Math.min(dragStartY, dragCurrY), Math.abs(dragCurrX - dragStartX), Math.abs(dragCurrY - dragStartY));
-        } else if (roiTemplate && targetBox) {
-            const curW = targetBox.w, curH = targetBox.h;
-            telemetryCtx.strokeStyle = trafficState === "RED" ? "#ef4444" : "#10b981";
-            telemetryCtx.lineWidth = 3;
-            telemetryCtx.strokeRect(targetBox.x - curW/2, targetBox.y - curH/2, curW, curH);
-
-            // 模擬光流測速
-            const now = performance.now();
-            if (prevPosition) {
-                const dt = (now - prevPosition.timestamp) / 1000.0;
-                if (dt > 0.05) {
-                    const deltaPx = Math.hypot(targetBox.x - prevPosition.x, targetBox.y - prevPosition.y);
-                    const rawSpeed = (deltaPx * (7.0 / curW)) / dt;
-                    currentSpeed = currentSpeed * 0.7 + rawSpeed * 0.3;
-                    document.getElementById("traffic-speed-val").innerText = currentSpeed.toFixed(1);
-
-                    // 紅燈執法邏輯
-                    if (trafficGameRunning && trafficState === "RED" && currentSpeed > 0.8) {
-                        document.getElementById("speed-status-badge").innerText = currentLang === 'zh' ? "🚨 違規超速！" : "🚨 VIOLATION!";
-                        document.getElementById("speed-status-badge").style.color = "var(--game-red)";
-                        sendRobotCommand("2"); // 懲罰倒退
-                    } else {
-                        document.getElementById("speed-status-badge").innerText = currentLang === 'zh' ? "安全" : "Safe";
-                        document.getElementById("speed-status-badge").style.color = "var(--game-green)";
-                    }
-                    prevPosition = { x: targetBox.x, y: targetBox.y, timestamp: now };
+                if (mode3Score >= 15) {
+                    isMode3Running = false;
+                    clearTimeout(trafficCycleTimer);
+                    autoExportToGoogleSheet("Mode 3 (Traffic Race)", mode3Score);
+                    alert(currentLang === 'zh' ? "🎉 太厲害了！紅綠燈挑戰成功通關！" : "🎉 Victory! Traffic Arena Completed!");
+                } else {
+                    setTimeout(() => { isMode3Locked = false; if (isMode3Running) startMode3Timer(); }, 700);
                 }
-            } else {
-                prevPosition = { x: targetBox.x, y: targetBox.y, timestamp: now };
+            }
+        } 
+        // 情況 B：紅燈時手痕出咗目標手勢 -> 🚨 違規抓拍！全螢幕結冰罰凍結 5 秒！
+        else if (trafficLightColor === "RED") {
+            if (detectedCls === targetCls && prob >= 0.65) {
+                trigger5SecondFreezePenalty();
             }
         }
-        requestAnimationFrame(telemetryProcessLoop);
     }
 
-    function toggleTrafficGame() {
-        if (trafficGameRunning) {
-            trafficGameRunning = false;
-            clearTimeout(trafficTimer);
-            document.getElementById("btn-start-traffic").innerText = currentLang === 'zh' ? "▶ 開始紅綠燈競技！" : "▶ Start Race!";
-            document.getElementById("btn-start-traffic").style.background = "#059669";
-        } else {
-            trafficGameRunning = true;
-            document.getElementById("btn-start-traffic").innerText = currentLang === 'zh' ? "⏹ 結束競技" : "⏹ Stop Race";
-            document.getElementById("btn-start-traffic").style.background = "#dc2626";
-            runTrafficCycle();
-        }
+    // 觸發 5 秒懲罰凍結遮罩
+    function trigger5SecondFreezePenalty() {
+        isMode3Locked = true;
+        clearInterval(mode3TimerLoop);
+        clearTimeout(trafficCycleTimer);
+
+        // 懲罰扣 2 分
+        mode3Score = Math.max(0, mode3Score - 2);
+        document.getElementById("score-counter-mode3").innerText = mode3Score;
+        document.getElementById("robot-indicator-mode3").style.bottom = Math.min(92, (mode3Score / 15) * 92) + "%";
+
+        // 顯示結冰紅色遮罩
+        freezeRemaining = 5;
+        const overlay = document.getElementById("freeze-penalty-overlay");
+        const countEl = document.getElementById("freeze-seconds-left");
+        countEl.innerText = freezeRemaining;
+        overlay.style.display = "flex";
+
+        freezeTimer = setInterval(() => {
+            freezeRemaining--;
+            countEl.innerText = freezeRemaining;
+            if (freezeRemaining <= 0) {
+                clearInterval(freezeTimer);
+                overlay.style.display = "none";
+                isMode3Locked = false;
+                if (isMode3Running) {
+                    startMode3Timer();
+                    runTrafficLightLoop(); // 重啟紅綠燈放行
+                }
+            }
+        }, 1000);
     }
 
-    function runTrafficCycle() {
-        if (!trafficGameRunning) return;
-        // 隨機綠燈 3-6 秒
-        trafficState = "GREEN";
-        document.getElementById("bulb-red").classList.remove("active");
-        document.getElementById("bulb-green").classList.add("active");
-        document.getElementById("traffic-command-label").innerText = currentLang === 'zh' ? "🟢 綠燈：前進！" : "🟢 GREEN: GO!";
-        document.getElementById("traffic-command-label").style.color = "#10b981";
-
-        const greenDuration = (Math.random() * 3000 + 3000);
-        trafficTimer = setTimeout(() => {
-            if (!trafficGameRunning) return;
-            // 切換為紅燈 2-4 秒
-            trafficState = "RED";
-            document.getElementById("bulb-green").classList.remove("active");
-            document.getElementById("bulb-red").classList.add("active");
-            document.getElementById("traffic-command-label").innerText = currentLang === 'zh' ? "🛑 紅燈：煞停！" : "🛑 RED: FREEZE!";
-            document.getElementById("traffic-command-label").style.color = "#ef4444";
-
-            const redDuration = (Math.random() * 2000 + 2000);
-            trafficTimer = setTimeout(() => {
-                if (trafficGameRunning) runTrafficCycle();
-            }, redDuration);
-        }, greenDuration);
+    function popMode3Splash(text, color) {
+        const el = document.getElementById("splash-text-mode3");
+        el.innerText = text; el.style.color = color; el.classList.add("show");
+        setTimeout(() => el.classList.remove("show"), 450);
     }
 
     // =========================================================================
@@ -1775,7 +1792,7 @@
                     ? "收到！懂得除錯正是工程師思維 💡！<br><br><b>喺成個活動入面，你最鍾意或覺得最神奇、最想同同學分享嘅係邊部分？</b>" 
                     : "Noted! Troubleshooting is the core of engineering! 💡<br><br><b>What was your favorite moment or discovery today that you'd love to share?</b>",
                     "bot",
-                    currentLang === 'zh' ? ["看見 Grad-CAM 熱力圖", "用手勢隔空控制爬繩", "同拍檔一齊除錯成功", "搶包山紅綠燈極速煞停"] : ["Seeing Grad-CAM Heatmap", "Gesture Remote Control", "Fixing bugs with partner", "Red light emergency freeze"]
+                    currentLang === 'zh' ? ["看見 Grad-CAM 熱力圖", "用手勢隔空控制爬繩", "同拍檔一齊除錯成功", "紅綠燈極速剎手定身"] : ["Seeing Grad-CAM Heatmap", "Gesture Remote Control", "Fixing bugs with partner", "Red light instant freeze"]
                 );
             } else if (chatStep === 1) {
                 chatReflectionData.favorite = msg;
