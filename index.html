@@ -4,18 +4,18 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>AI Robot Gesture Arena & Telemetry Hub</title>
-    <!-- 模式一與模式二依賴：TensorFlow.js & Teachable Machine -->
+    <!-- 模式一與模式二：TensorFlow.js & Teachable Machine -->
     <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@latest/dist/tf.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@teachablemachine/image@latest/dist/teachablemachine-image.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
-    <!-- 模式三依賴：MediaPipe Hands -->
+    <!-- 模式三：MediaPipe Hands -->
     <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js" crossorigin="anonymous"></script>
     <script src="https://cdn.jsdelivr.net/npm/@mediapipe/hands/hands.js" crossorigin="anonymous"></script>
     <style>
         :root {
-            --bg-base: #f1f5f9;
+            --bg-base: #0f172a;
             --bg-card: #ffffff;
-            --border-ui: #cbd5e1;
+            --border-ui: #e2e8f0;
             --text-main: #0f172a;
             --text-sub: #475569;
             --game-blue: #0284c7;
@@ -31,14 +31,19 @@
             margin: 0;
             padding: 16px;
             padding-bottom: 90px;
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "PingFang HK", sans-serif;
-            background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "PingFang HK", "Microsoft JhengHei", sans-serif;
+            /* 專業科技感幾何點陣背景 */
+            background-color: #f8fafc;
+            background-image: 
+                radial-gradient(#cbd5e1 1.2px, transparent 1.2px),
+                linear-gradient(135deg, #f1f5f9 0%, #e2e8f0 100%);
+            background-size: 24px 24px, 100% 100%;
             color: var(--text-main);
             min-height: 100vh;
         }
 
         .arena-container {
-            max-width: 1100px;
+            max-width: 1120px;
             margin: 0 auto;
             display: flex;
             flex-direction: column;
@@ -49,19 +54,20 @@
         .mode-nav-bar {
             display: grid;
             grid-template-columns: 1fr 1fr 1fr;
-            gap: 10px;
-            background: #ffffff;
+            gap: 12px;
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
             padding: 8px;
-            border-radius: 14px;
-            border: 1px solid var(--border-ui);
-            box-shadow: 0 4px 12px rgba(15, 23, 42, 0.05);
+            border-radius: 16px;
+            border: 1.5px solid var(--border-ui);
+            box-shadow: 0 4px 20px rgba(15, 23, 42, 0.06);
         }
         .mode-tab-btn {
             background: #f8fafc;
             border: 2px solid var(--border-ui);
             color: var(--text-sub);
             padding: 12px 10px;
-            border-radius: 10px;
+            border-radius: 12px;
             font-size: 13px;
             font-weight: 800;
             cursor: pointer;
@@ -77,34 +83,35 @@
             background: linear-gradient(135deg, #e0f2fe, #fce7f3);
             border-color: var(--game-blue);
             color: #0369a1;
-            box-shadow: 0 2px 8px rgba(2, 132, 199, 0.2);
+            box-shadow: 0 3px 12px rgba(2, 132, 199, 0.2);
         }
 
-        /* 頂部全域資訊與語系切換條 */
+        /* 頂部資訊與語系條 */
         .meta-strip {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            background: var(--bg-card);
-            padding: 10px 16px;
-            border-radius: 12px;
-            border: 1px solid var(--border-ui);
-            box-shadow: 0 2px 6px rgba(15, 23, 42, 0.04);
+            background: #ffffff;
+            padding: 12px 20px;
+            border-radius: 14px;
+            border: 1.5px solid var(--border-ui);
+            box-shadow: 0 2px 8px rgba(15, 23, 42, 0.04);
         }
         .meta-strip select {
             background: #f8fafc;
-            border: 1px solid var(--border-ui);
+            border: 1.5px solid var(--border-ui);
             color: var(--text-main);
             padding: 8px 12px;
             border-radius: 8px;
             font-size: 13px;
-            font-weight: 600;
+            font-weight: 700;
+            outline: none;
         }
         .lang-btn {
             background: #ffffff;
-            border: 1.5px solid var(--game-blue);
+            border: 2px solid var(--game-blue);
             color: var(--game-blue);
-            padding: 7px 14px;
+            padding: 6px 14px;
             border-radius: 20px;
             font-weight: 800;
             font-size: 12px;
@@ -119,30 +126,30 @@
         /* 步驟看板 */
         .stepper-board {
             display: grid;
-            grid-template-columns: 1.2fr 1.3fr 1fr;
+            grid-template-columns: 1.1fr 1.3fr 1.2fr;
             gap: 14px;
         }
         .step-card {
             background: var(--bg-card);
             border: 2px solid var(--border-ui);
-            border-radius: 14px;
-            padding: 14px 16px;
+            border-radius: 16px;
+            padding: 16px;
             display: flex;
             flex-direction: column;
             justify-content: space-between;
-            box-shadow: 0 4px 10px rgba(15, 23, 42, 0.03);
+            box-shadow: 0 4px 12px rgba(15, 23, 42, 0.03);
             transition: all 0.25s ease;
         }
         .step-card.done {
             border-color: var(--game-green);
             background: #f0fdf4;
-            box-shadow: 0 4px 14px rgba(16, 185, 129, 0.15);
+            box-shadow: 0 4px 16px rgba(16, 185, 129, 0.15);
         }
         .step-header {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin-bottom: 8px;
+            margin-bottom: 10px;
         }
         .step-title {
             font-weight: 800;
@@ -171,7 +178,7 @@
             color: #ffffff;
             border: none;
             padding: 10px 14px;
-            border-radius: 8px;
+            border-radius: 10px;
             font-weight: bold;
             font-size: 13px;
             cursor: pointer;
@@ -183,17 +190,67 @@
 
         .id-input-field {
             background: #ffffff;
-            border: 1.5px solid var(--border-ui);
+            border: 2px solid var(--border-ui);
             color: var(--text-main);
-            padding: 8px 10px;
+            padding: 8px 12px;
             border-radius: 8px;
-            font-size: 13px;
+            font-size: 14px;
             font-weight: bold;
             width: 100%;
             margin-bottom: 8px;
+            outline: none;
         }
 
-        /* 骨骼採樣網格 */
+        /* 雙按鍵：開始與停止 */
+        .btn-ctrl-group {
+            display: grid;
+            grid-template-columns: 1.4fr 1fr;
+            gap: 8px;
+            width: 100%;
+        }
+        .btn-launch {
+            background: #e2e8f0;
+            color: #94a3b8;
+            border: 2px dashed #cbd5e1;
+            padding: 10px;
+            border-radius: 10px;
+            font-size: 14px;
+            font-weight: 900;
+            cursor: not-allowed;
+            transition: all 0.2s;
+        }
+        .btn-launch.unlocked {
+            background: linear-gradient(135deg, var(--game-blue), var(--game-green));
+            color: #ffffff;
+            border: none;
+            cursor: pointer;
+            box-shadow: 0 4px 14px rgba(2, 132, 199, 0.4);
+        }
+        .btn-stop {
+            background: #fee2e2;
+            border: 2px solid #fca5a5;
+            color: #991b1b;
+            padding: 10px;
+            border-radius: 10px;
+            font-size: 14px;
+            font-weight: 800;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .btn-stop:hover:not(:disabled) {
+            background: #ef4444;
+            color: #ffffff;
+            border-color: #dc2626;
+        }
+        .btn-stop:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            background: #f1f5f9;
+            color: #94a3b8;
+            border-color: #cbd5e1;
+        }
+
+        /* 模式三採樣按鈕 */
         .sample-grid {
             display: grid;
             grid-template-columns: repeat(3, 1fr);
@@ -224,32 +281,6 @@
         }
         .sample-count { font-size: 10px; color: var(--game-blue); }
 
-        /* 啟動按鈕 */
-        .btn-launch {
-            background: #e2e8f0;
-            color: #94a3b8;
-            border: 2px dashed #cbd5e1;
-            padding: 12px;
-            border-radius: 8px;
-            font-size: 15px;
-            font-weight: 900;
-            cursor: not-allowed;
-            width: 100%;
-            min-height: 46px;
-        }
-        .btn-launch.unlocked {
-            background: linear-gradient(135deg, var(--game-blue), var(--game-green));
-            color: #ffffff;
-            border: none;
-            cursor: pointer;
-            box-shadow: 0 4px 14px rgba(2, 132, 199, 0.4);
-            animation: pulse-launch 1.4s infinite alternate;
-        }
-        @keyframes pulse-launch {
-            0% { transform: scale(1); }
-            100% { transform: scale(1.02); }
-        }
-
         /* 競技舞台佈局 */
         .stage-layout {
             display: grid;
@@ -259,12 +290,12 @@
         .arena-box {
             background: var(--bg-card);
             border: 2px solid var(--border-ui);
-            border-radius: 16px;
-            padding: 16px 20px;
+            border-radius: 18px;
+            padding: 18px 22px;
             display: flex;
             flex-direction: column;
             gap: 14px;
-            box-shadow: 0 4px 14px rgba(15, 23, 42, 0.04);
+            box-shadow: 0 4px 16px rgba(15, 23, 42, 0.04);
             position: relative;
         }
         .hud-bar {
@@ -342,7 +373,7 @@
         .arena-footer {
             display: grid;
             grid-template-columns: 220px 1fr;
-            gap: 14px;
+            gap: 16px;
             align-items: center;
         }
         .meters-grid {
@@ -371,11 +402,12 @@
         .tower-card {
             background: var(--bg-card);
             border: 2px solid var(--border-ui);
-            border-radius: 16px;
+            border-radius: 18px;
             padding: 14px 10px;
             display: flex;
             flex-direction: column;
             align-items: center;
+            box-shadow: 0 4px 16px rgba(15, 23, 42, 0.04);
         }
         .rope-shaft {
             flex-grow: 1;
@@ -409,9 +441,7 @@
         }
         #splash-text.show, #splash-text-mode2.show, #splash-text-mp.show { transform: translate(-50%, -50%) scale(1.15); }
 
-        /* =========================================================================
-           模式二：昂坪紅綠燈 AI 執法機 + 3 秒定身遮罩
-           ========================================================================= */
+        /* 模式二：昂坪紅綠燈 AI 執法機 + 3 秒定身遮罩 */
         .traffic-hud-bar {
             display: flex;
             justify-content: space-between;
@@ -441,7 +471,6 @@
         .bulb-circle.active.red { opacity: 1; box-shadow: 0 0 18px #ef4444; }
         .bulb-circle.active.green { opacity: 1; box-shadow: 0 0 18px #10b981; }
 
-        /* 3 秒定身懲罰全域遮罩 */
         .freeze-overlay {
             position: absolute;
             top: 0; left: 0; width: 100%; height: 100%;
@@ -453,17 +482,11 @@
             justify-content: center;
             color: #ffffff;
             z-index: 100;
-            border-radius: 16px;
-            animation: pulse-freeze 0.5s infinite alternate;
-        }
-        @keyframes pulse-freeze {
-            0% { background: rgba(220, 38, 38, 0.90); }
-            100% { background: rgba(185, 28, 28, 0.96); }
+            border-radius: 18px;
         }
         .freeze-title {
-            font-size: 28px;
+            font-size: 26px;
             font-weight: 900;
-            letter-spacing: 2px;
             margin-bottom: 6px;
         }
         .freeze-timer-count {
@@ -471,7 +494,6 @@
             font-weight: 900;
             line-height: 1;
             color: #fef08a;
-            text-shadow: 0 4px 14px rgba(0,0,0,0.4);
         }
 
         /* 互動式引導 Chatbot */
@@ -497,13 +519,13 @@
             position: fixed;
             bottom: 75px;
             right: 20px;
-            width: 360px;
+            width: 380px;
             max-width: calc(100vw - 40px);
-            height: 500px;
+            height: 520px;
             background: #ffffff;
             border: 2px solid var(--border-ui);
-            border-radius: 18px;
-            box-shadow: 0 10px 30px rgba(15, 23, 42, 0.18);
+            border-radius: 20px;
+            box-shadow: 0 12px 36px rgba(15, 23, 42, 0.2);
             display: none;
             flex-direction: column;
             overflow: hidden;
@@ -512,7 +534,7 @@
         .chat-header {
             background: linear-gradient(135deg, var(--game-blue), var(--game-purple));
             color: #ffffff;
-            padding: 12px 16px;
+            padding: 14px 18px;
             display: flex;
             justify-content: space-between;
             align-items: center;
@@ -531,33 +553,37 @@
         .chat-msg.bot .bubble {
             background: #ffffff;
             border: 1px solid var(--border-ui);
-            padding: 10px 12px;
-            border-radius: 12px 12px 12px 2px;
-            line-height: 1.45;
+            padding: 10px 14px;
+            border-radius: 14px 14px 14px 2px;
+            line-height: 1.5;
+            box-shadow: 0 2px 4px rgba(15, 23, 42, 0.03);
         }
         .chat-msg.user { align-self: flex-end; }
         .chat-msg.user .bubble {
             background: var(--game-blue);
             color: #ffffff;
-            padding: 10px 12px;
-            border-radius: 12px 12px 2px 12px;
+            padding: 10px 14px;
+            border-radius: 14px 14px 2px 14px;
+            box-shadow: 0 2px 6px rgba(2, 132, 199, 0.3);
         }
         .chip-group {
             display: flex;
             flex-wrap: wrap;
             gap: 6px;
-            margin-top: 6px;
+            margin-top: 8px;
         }
         .quick-chip {
             background: #e0f2fe;
             border: 1px solid #7dd3fc;
             color: #0369a1;
-            padding: 4px 8px;
-            border-radius: 12px;
+            padding: 5px 10px;
+            border-radius: 14px;
             font-size: 11px;
             cursor: pointer;
-            font-weight: 600;
+            font-weight: 700;
+            transition: all 0.15s;
         }
+        .quick-chip:hover { background: #bae6fd; }
         .chat-footer {
             padding: 10px;
             background: #ffffff;
@@ -567,10 +593,10 @@
         }
         .chat-input {
             flex-grow: 1;
-            border: 1px solid var(--border-ui);
+            border: 1.5px solid var(--border-ui);
             border-radius: 8px;
-            padding: 8px 10px;
-            font-size: 12px;
+            padding: 8px 12px;
+            font-size: 13px;
             outline: none;
         }
     </style>
@@ -640,12 +666,15 @@
             <div class="step-card" id="card-step3">
                 <div>
                     <div class="step-header">
-                        <span class="step-title" data-zh="🚀 步驟 3：開始競技" data-en="🚀 Step 3: Launch Arena">🚀 步驟 3：開始競技</span>
+                        <span class="step-title" data-zh="🚀 步驟 3：開始 / 停止" data-en="🚀 Step 3: Start / Stop">🚀 步驟 3：開始 / 停止</span>
                         <span class="step-tag" id="tag-step3" data-zh="待解鎖 🔒" data-en="Locked 🔒">待解鎖 🔒</span>
                     </div>
-                    <div style="font-size: 11px; color: var(--text-sub); margin-bottom: 10px;" id="desc-step3" data-zh="需填寫編號、連線及載入模型" data-en="Requires ID, Serial, and Model">需填寫編號、連線及載入模型</div>
+                    <div style="font-size: 11px; color: var(--text-sub); margin-bottom: 8px;" id="desc-step3" data-zh="需填寫編號、連線及載入模型" data-en="Requires ID, Serial, and Model">需填寫編號、連線及載入模型</div>
                 </div>
-                <button class="btn-launch" id="btn-launch" onclick="startGame(1)" disabled data-zh="等待準備..." data-en="Waiting...">等待準備...</button>
+                <div class="btn-ctrl-group">
+                    <button class="btn-launch" id="btn-launch" onclick="startGame(1)" disabled data-zh="開始競技 🚀" data-en="Start 🚀">開始競技 🚀</button>
+                    <button class="btn-stop" id="btn-stop" onclick="stopGame(1)" disabled data-zh="停止 🛑" data-en="Stop 🛑">停止 🛑</button>
+                </div>
             </div>
         </div>
 
@@ -683,7 +712,7 @@
     </div>
 
     <!-- =========================================================================
-         【模式二：昂坪 360 紅綠燈 AI 執法賽 (GTM 圖像模型 + 罰凍結 3 秒)】
+         【模式二：昂坪 360 紅綠燈 AI 執法賽】
          ========================================================================= -->
     <div class="mode-section" id="section-mode-2">
         <div class="stepper-board">
@@ -710,25 +739,26 @@
             <div class="step-card" id="card-mode2-step3">
                 <div>
                     <div class="step-header">
-                        <span class="step-title" data-zh="🚦 步驟 3：開始紅綠燈賽" data-en="🚦 Step 3: Start Traffic Race">🚦 步驟 3：開始紅綠燈賽</span>
+                        <span class="step-title" data-zh="🚦 步驟 3：開始 / 停止" data-en="🚦 Step 3: Start / Stop">🚦 步驟 3：開始 / 停止</span>
                         <span class="step-tag" id="tag-mode2-game" data-zh="待解鎖 🔒" data-en="Locked 🔒">待解鎖 🔒</span>
                     </div>
-                    <div style="font-size: 11px; color: var(--text-sub); margin-bottom: 10px;" id="desc-mode2-step3" data-zh="綠燈出目標手勢，紅燈違者罰凍結 3 秒！" data-en="Match on Green! Freeze on Red (3s penalty)!">綠燈出目標手勢，紅燈違者罰凍結 3 秒！</div>
+                    <div style="font-size: 11px; color: var(--text-sub); margin-bottom: 8px;" id="desc-mode2-step3" data-zh="綠燈出招前進，紅燈違者罰定身 3 秒！" data-en="Match on Green! Freeze on Red (3s penalty)!">綠燈出招前進，紅燈違者罰定身 3 秒！</div>
                 </div>
-                <button class="btn-launch" id="btn-launch-mode2" onclick="startTrafficGameMode2()" disabled data-zh="等待準備..." data-en="Waiting...">等待準備...</button>
+                <div class="btn-ctrl-group">
+                    <button class="btn-launch" id="btn-launch-mode2" onclick="startTrafficGameMode2()" disabled data-zh="開始競賽 🚦" data-en="Start 🚦">開始競賽 🚦</button>
+                    <button class="btn-stop" id="btn-stop-mode2" onclick="stopTrafficGameMode2()" disabled data-zh="停止 🛑" data-en="Stop 🛑">停止 🛑</button>
+                </div>
             </div>
         </div>
 
         <div class="stage-layout">
             <div class="arena-box" id="arena-box-mode2">
-                <!-- 3 秒定身懲罰全域遮罩 -->
                 <div class="freeze-overlay" id="freeze-penalty-overlay-m2">
                     <div class="freeze-title" data-zh="🚨 違規！急煞失敗罰凍結" data-en="🚨 VIOLATION! FREEZE PENALTY">🚨 違規！急煞失敗罰凍結</div>
                     <div class="freeze-timer-count" id="freeze-seconds-left-m2">3</div>
                     <div style="font-size:14px; font-weight:bold; margin-top:8px;" data-zh="🚫 扣除 2 分，全畫面鎖定中..." data-en="🚫 -2 Points, Screen Locked...">🚫 扣除 2 分，全畫面鎖定中...</div>
                 </div>
 
-                <!-- 頂部信號燈 HUD -->
                 <div class="traffic-hud-bar">
                     <div class="traffic-lights-box">
                         <div class="bulb-circle red" id="m2-bulb-red"></div>
@@ -738,7 +768,6 @@
                     <div class="score-pill"><span data-zh="攀爬得分：" data-en="Score: ">攀爬得分：</span><span id="score-counter-mode2">0</span></div>
                 </div>
 
-                <!-- 目標手勢流動軌道 -->
                 <div class="ribbon-track-wrapper">
                     <div class="ribbon-track" id="queue-ribbon-mode2"></div>
                     <div class="timer-bg"><div class="timer-fill" id="timer-bar-mode2"></div></div>
@@ -764,7 +793,7 @@
     </div>
 
     <!-- =========================================================================
-         【模式三：MediaPipe 訓練艙 (原創模式二：21 點骨骼採樣 + KNN，無紅綠燈)】
+         【模式三：MediaPipe 訓練艙】
          ========================================================================= -->
     <div class="mode-section" id="section-mode-3">
         <div class="stepper-board">
@@ -802,7 +831,7 @@
                             <span data-zh="🫱 待機" data-en="🫱 Idle">🫱 待機</span><span class="sample-count" id="cnt-Class 5">0 幀</span>
                         </button>
                         <button class="sample-btn" style="background:#fee2e2; border-color:#fca5a5; color:#991b1b;" onclick="clearDataset()">
-                            <span data-zh="🗑️ 重置" data-en="🗑️ Reset">🗑️ 重置</span><span style="font-size:9px; color:#b91c1c;" data-zh="清空" data-en="Clear">清空</span>
+                            <span data-zh="🗑️ 重置" data-en="🗑️️ Reset">🗑️ 重置</span><span style="font-size:9px; color:#b91c1c;" data-zh="清空" data-en="Clear">清空</span>
                         </button>
                     </div>
                 </div>
@@ -812,12 +841,15 @@
             <div class="step-card" id="card-mp-step3">
                 <div>
                     <div class="step-header">
-                        <span class="step-title" data-zh="🚀 步驟 3：開始競技" data-en="🚀 Step 3: Launch Arena">🚀 步驟 3：開始競技</span>
+                        <span class="step-title" data-zh="🚀 步驟 3：開始 / 停止" data-en="🚀 Step 3: Start / Stop">🚀 步驟 3：開始 / 停止</span>
                         <span class="step-tag" id="tag-mp-launch" data-zh="待解鎖 🔒" data-en="Locked 🔒">待解鎖 🔒</span>
                     </div>
-                    <div style="font-size: 11px; color: var(--text-sub); margin-bottom: 10px;" id="desc-mp-step3" data-zh="需填寫編號、連線並每款錄製 ≥8 幀" data-en="Requires ID, Serial, and ≥8 frames/class">需填寫編號、連線並每款錄製 ≥8 幀</div>
+                    <div style="font-size: 11px; color: var(--text-sub); margin-bottom: 8px;" id="desc-mp-step3" data-zh="需填寫編號、連線並每款錄製 ≥8 幀" data-en="Requires ID, Serial, and ≥8 frames/class">需填寫編號、連線並每款錄製 ≥8 幀</div>
                 </div>
-                <button class="btn-launch" id="btn-launch-mp" onclick="startMPGame()" disabled data-zh="等待準備..." data-en="Waiting...">等待準備...</button>
+                <div class="btn-ctrl-group">
+                    <button class="btn-launch" id="btn-launch-mp" onclick="startMPGame()" disabled data-zh="開始競技 ✋" data-en="Start ✋">開始競技 ✋</button>
+                    <button class="btn-stop" id="btn-stop-mp" onclick="stopMPGame()" disabled data-zh="停止 🛑" data-en="Stop 🛑">停止 🛑</button>
+                </div>
             </div>
         </div>
 
@@ -878,46 +910,68 @@
     </div>
     <div class="chat-footer">
         <input type="text" class="chat-input" id="chat-input" placeholder="輸入你想講嘅嘢..." data-ph-zh="輸入你想講嘅嘢..." data-ph-en="Type your response..." onkeydown="if(event.key==='Enter') sendChatMessage()">
-        <button class="step-btn" style="width:auto; padding:6px 12px; background:var(--game-blue);" onclick="sendChatMessage()" data-zh="送出" data-en="Send">送出</button>
+        <button class="step-btn" style="width:auto; padding:6px 14px; background:var(--game-blue);" onclick="sendChatMessage()" data-zh="送出" data-en="Send">送出</button>
     </div>
 </div>
 
 <script>
     // =========================================================================
-    // 1. 全域配置與 Google Sheet 靜默自動導出
+    // 1. 全域配置與 Google Sheet 穩定傳輸通道 (微調避免 CORS OPTIONS 攔截)
     // =========================================================================
-    const GAS_ENDPOINT = "https://script.google.com/macros/s/AKfycbxYOUR_ACTUAL_DEPLOYED_URL_HERE/exec"; 
+    // 請將下方的 GAS_ENDPOINT 換成你在 Google Apps Script 部署後的 Web App URL
+    const GAS_ENDPOINT = "https://script.google.com/macros/s/AKfycbwYOUR_ACTUAL_DEPLOYED_URL_HERE/exec"; 
     const SPREADSHEET_ID = "1HBh4g4FIGXVHxKcbtgfJPsvpK-YG5P1xs9p_-j_EBcY";
 
     let sharedMicrobitId = "";
     let eventLogs = [];
-    let chatReflectionData = { difficulty: "", favorite: "", comments: "" };
+    let chatReflectionData = { 
+        difficulty: "", 
+        favorite: "", 
+        upgrade: "", 
+        chatLog: [] 
+    };
     let chatStep = 0;
 
-    async function autoExportToGoogleSheet(modeName, finalScore) {
-        if (!sharedMicrobitId || !GAS_ENDPOINT || GAS_ENDPOINT.includes("YOUR_ACTUAL_DEPLOYED_URL")) return;
+    // 遊玩秒數計時器變量
+    let modeStartTime = 0;
+
+    async function autoExportToGoogleSheet(modeName, finalScore, durationSeconds) {
+        if (!sharedMicrobitId) {
+            console.warn("⚠️ 未設定 micro:bit 編號，取消上傳。");
+            return;
+        }
+        if (!GAS_ENDPOINT || GAS_ENDPOINT.includes("YOUR_ACTUAL_DEPLOYED_URL")) {
+            console.log("ℹ️ 提示：目前為本機測試模式（尚未設定實際 GAS_ENDPOINT）。");
+            return;
+        }
+
         const payload = {
             sheetId: SPREADSHEET_ID,
             microbitId: sharedMicrobitId,
             condition: document.getElementById("conditionType").value,
             mode: modeName,
             score: finalScore,
+            durationSeconds: durationSeconds || 0,
             reflections: chatReflectionData,
-            logs: eventLogs
+            timestamp: new Date().toLocaleString("zh-HK", { timeZone: "Asia/Hong_Kong" })
         };
+
         try {
+            // 使用 text/plain 避免觸發預檢 OPTIONS CORS 錯誤
             await fetch(GAS_ENDPOINT, {
                 method: "POST",
                 mode: "no-cors",
-                headers: { "Content-Type": "application/json" },
+                headers: { "Content-Type": "text/plain;charset=utf-8" },
                 body: JSON.stringify(payload)
             });
-            console.log("✔ Auto-synced to Google Sheet quietly.");
-        } catch(e) {}
+            console.log("✔ 已靜默傳送至 Google Sheet");
+        } catch(e) {
+            console.error("上傳失敗:", e);
+        }
     }
 
     // =========================================================================
-    // 2. 繁英即時切換邏輯 (少於 25 行代碼)
+    // 2. 繁英即時切換邏輯
     // =========================================================================
     let currentLang = 'zh';
     function toggleLanguage() {
@@ -930,7 +984,7 @@
             el.placeholder = el.getAttribute(`data-ph-${currentLang}`);
         });
         if (currentLang === 'en') {
-            document.getElementById('chat-first-bubble').innerHTML = "Hello! I am your AI Learning Tutor 🤖. Great job on the rope-climbing robot today!<br><br><b>What was the biggest technical challenge or error you encountered?</b>";
+            document.getElementById('chat-first-bubble').innerHTML = "Hello! I am your AI Learning Tutor 🤖. Great job testing your rope-climbing robot today!<br><br><b>What was the biggest technical challenge or error you encountered?</b>";
         } else {
             document.getElementById('chat-first-bubble').innerHTML = "哈囉！我係你嘅學習小導師 🤖。辛苦晒你組裝同測試爬繩機械人！<br><br><b>請問你頭先喺操作或除錯嗰陣，有冇遇到咩特別嘅困難？</b>";
         }
@@ -951,19 +1005,19 @@
     }
 
     // =========================================================================
-    // 4. 模式切換 (模式二與模式三密碼驗證：支援 game 與 mediapipe)
+    // 4. 模式切換與密碼驗證 (Mode 2: game | Mode 3: mediapipe | XAI: xai)
     // =========================================================================
     let currentSystemMode = 1;
     function switchSystemMode(modeNum) {
         if (modeNum === 2) {
             const pwd = prompt(currentLang === 'zh' ? "請輸入模式二權限密碼：" : "Enter Mode 2 Password:");
-            if (pwd !== "game" && pwd !== "mediapipe") {
+            if (pwd !== "game") {
                 alert(currentLang === 'zh' ? "❌ 密碼錯誤！(提示: game)" : "❌ Incorrect Password! (Hint: game)");
                 return;
             }
         } else if (modeNum === 3) {
             const pwd = prompt(currentLang === 'zh' ? "請輸入模式三權限密碼：" : "Enter Mode 3 Password:");
-            if (pwd !== "game" && pwd !== "mediapipe") {
+            if (pwd !== "mediapipe") {
                 alert(currentLang === 'zh' ? "❌ 密碼錯誤！(提示: mediapipe)" : "❌ Incorrect Password! (Hint: mediapipe)");
                 return;
             }
@@ -992,7 +1046,7 @@
                 prevConditionVal = "XAI_GradCAM";
                 document.getElementById("gradcam-legend-ui").style.display = "flex";
             } else {
-                alert(currentLang === 'zh' ? "❌ 密碼錯誤，已鎖定於【對照組】" : "❌ Access Denied!");
+                alert(currentLang === 'zh' ? "❌ 密碼錯誤！(提示: xai)" : "❌ Access Denied! (Hint: xai)");
                 selectEl.value = prevConditionVal;
                 document.getElementById("gradcam-legend-ui").style.display = "none";
             }
@@ -1003,7 +1057,7 @@
     }
 
     // =========================================================================
-    // 5. WebSerial 通訊控制 (完全無需更動 Rx，只送 1\n)
+    // 5. WebSerial 通訊控制
     // =========================================================================
     let serialPort, serialWriter;
     let step1Ready = false;
@@ -1057,12 +1111,12 @@
     let actionQueue1 = [], isRunning1 = false, isLocked1 = false, score1 = 0, combo1 = 0, roundStart1 = 0;
     let timerLoop1 = null;
 
-    // 模式二變數 (GTM 紅綠燈)
+    // 模式二變數
     let step2ReadyM2 = false, model2 = null, webcam2 = null, maxPredictions2 = 0;
     let displayCanvas2, displayCtx2;
     let isMode2Running = false, isMode2Locked = false, mode2Score = 0;
     let mode2ActionQueue = [], mode2TimerLoop = null, trafficCycleTimerM2 = null;
-    let trafficLightColorM2 = "GREEN"; // "GREEN" or "RED"
+    let trafficLightColorM2 = "GREEN";
     let freezeTimerM2 = null, freezeRemainingM2 = 3;
 
     async function initAI(modeNum) {
@@ -1070,7 +1124,6 @@
         const btnId = modeNum === 1 ? "btn-step2" : "btn-mode2-model";
         let url = document.getElementById(inputId).value.trim();
 
-        // 若模式二為空但模式一已填，自動借用模式一的 URL
         if (modeNum === 2 && !url) {
             url = document.getElementById("modelUrl").value.trim();
             if (url) document.getElementById("modelUrl-mode2").value = url;
@@ -1162,7 +1215,7 @@
     }
 
     // =========================================================================
-    // 7. 模式一：GTM 駕駛艙專屬邏輯 (Grad-CAM XAI)
+    // 7. 模式一：開始、停止與競技主循環
     // =========================================================================
     function setupGradCAMComponents(tmLayersModel) {
         if (!tmLayersModel) return;
@@ -1223,7 +1276,6 @@
             document.getElementById("tag-step3").innerText = currentLang === 'zh' ? "準備就緒 ✨" : "Ready ✨";
             const launchBtn = document.getElementById("btn-launch");
             launchBtn.disabled = false;
-            launchBtn.innerText = currentLang === 'zh' ? "🚀 開始攀爬競技！" : "🚀 Start Arena!";
             launchBtn.classList.add("unlocked");
         }
     }
@@ -1307,14 +1359,28 @@
     function startGame(modeNum) {
         if (modeNum === 1) {
             isRunning1 = true; isLocked1 = false; score1 = 0; combo1 = 0; eventLogs = [];
+            modeStartTime = performance.now();
             updateHUD1();
-            const launchBtn = document.getElementById("btn-launch");
-            launchBtn.innerText = currentLang === 'zh' ? "🎮 競技進行中..." : "🎮 Competing...";
-            launchBtn.disabled = true;
+            
+            document.getElementById("btn-launch").disabled = true;
+            document.getElementById("btn-stop").disabled = false;
+
             actionQueue1 = [];
             for (let i = 0; i < 5; i++) actionQueue1.push(ACTIVE_TARGETS[Math.floor(Math.random() * ACTIVE_TARGETS.length)]);
             renderQueue1();
             startTimer1();
+        }
+    }
+
+    function stopGame(modeNum) {
+        if (modeNum === 1 && isRunning1) {
+            isRunning1 = false;
+            clearInterval(timerLoop1);
+            const duration = Math.round((performance.now() - modeStartTime) / 1000);
+            document.getElementById("btn-launch").disabled = false;
+            document.getElementById("btn-stop").disabled = true;
+            autoExportToGoogleSheet("Mode 1 (GTM)", score1, duration);
+            alert((currentLang === 'zh' ? `🛑 競技已停止！遊玩時長: ${duration}秒，得分: ${score1}` : `🛑 Arena Stopped! Time: ${duration}s, Score: ${score1}`));
         }
     }
 
@@ -1360,8 +1426,11 @@
 
         if (score1 >= 15) {
             isRunning1 = false;
-            autoExportToGoogleSheet("Mode 1 (GTM)", score1);
-            alert(currentLang === 'zh' ? "🎉 恭喜完成！成績已自動儲存至 Google Sheet！" : "🎉 Congratulations! Scores auto-saved to Google Sheet!");
+            const duration = Math.round((performance.now() - modeStartTime) / 1000);
+            document.getElementById("btn-launch").disabled = false;
+            document.getElementById("btn-stop").disabled = true;
+            autoExportToGoogleSheet("Mode 1 (GTM)", score1, duration);
+            alert(currentLang === 'zh' ? `🎉 恭喜完成！總耗時: ${duration}秒，成績已同步 Google Sheet！` : `🎉 Congratulations! Finished in ${duration}s! Data saved.`);
         } else {
             setTimeout(() => { isLocked1 = false; if (isRunning1) startTimer1(); }, 800);
         }
@@ -1389,7 +1458,7 @@
     }
 
     // =========================================================================
-    // 8. 模式二：昂坪 360 紅綠燈 AI 執法賽 (GTM 模型 + 罰凍結 3 秒)
+    // 8. 模式二：昂坪 360 紅綠燈 AI 執法賽 (開始與停止控制)
     // =========================================================================
     function checkCanUnlockMode2Step3() {
         if (step1Ready && step2ReadyM2 && sharedMicrobitId) {
@@ -1397,23 +1466,39 @@
             document.getElementById("tag-mode2-game").innerText = currentLang === 'zh' ? "準備就緒 ✨" : "Ready ✨";
             const launchBtn = document.getElementById("btn-launch-mode2");
             launchBtn.disabled = false;
-            launchBtn.innerText = currentLang === 'zh' ? "🚦 開始紅綠燈競技！" : "🚦 Start Traffic Race!";
             launchBtn.classList.add("unlocked");
         }
     }
 
     function startTrafficGameMode2() {
         isMode2Running = true; isMode2Locked = false; mode2Score = 0;
+        modeStartTime = performance.now();
         document.getElementById("score-counter-mode2").innerText = mode2Score;
-        const launchBtn = document.getElementById("btn-launch-mode2");
-        launchBtn.innerText = currentLang === 'zh' ? "🚦 紅綠燈競技中..." : "🚦 Game Active...";
-        launchBtn.disabled = true;
+        
+        document.getElementById("btn-launch-mode2").disabled = true;
+        document.getElementById("btn-stop-mode2").disabled = false;
 
         mode2ActionQueue = [];
         for (let i = 0; i < 5; i++) mode2ActionQueue.push(ACTIVE_TARGETS[Math.floor(Math.random() * ACTIVE_TARGETS.length)]);
         renderMode2Queue();
         startMode2Timer();
         runTrafficLightLoopM2();
+    }
+
+    function stopTrafficGameMode2() {
+        if (isMode2Running) {
+            isMode2Running = false;
+            clearInterval(mode2TimerLoop);
+            clearTimeout(trafficCycleTimerM2);
+            clearInterval(freezeTimerM2);
+            document.getElementById("freeze-penalty-overlay-m2").style.display = "none";
+
+            const duration = Math.round((performance.now() - modeStartTime) / 1000);
+            document.getElementById("btn-launch-mode2").disabled = false;
+            document.getElementById("btn-stop-mode2").disabled = true;
+            autoExportToGoogleSheet("Mode 2 (Traffic Race)", mode2Score, duration);
+            alert((currentLang === 'zh' ? `🛑 紅綠燈賽已結束！遊玩時長: ${duration}秒，最終得分: ${mode2Score}` : `🛑 Arena Stopped! Time: ${duration}s, Score: ${mode2Score}`));
+        }
     }
 
     function renderMode2Queue() {
@@ -1449,7 +1534,6 @@
 
     function runTrafficLightLoopM2() {
         if (!isMode2Running) return;
-        // 隨機綠燈 3.5 至 5.5 秒
         trafficLightColorM2 = "GREEN";
         document.getElementById("m2-bulb-red").classList.remove("active");
         document.getElementById("m2-bulb-green").classList.add("active");
@@ -1459,7 +1543,6 @@
         const greenMs = Math.random() * 2000 + 3500;
         trafficCycleTimerM2 = setTimeout(() => {
             if (!isMode2Running) return;
-            // 轉為紅燈 2.5 至 4 秒
             trafficLightColorM2 = "RED";
             document.getElementById("m2-bulb-green").classList.remove("active");
             document.getElementById("m2-bulb-red").classList.add("active");
@@ -1510,15 +1593,13 @@
 
     function handleTrafficLightActionM2(detectedCls, prob) {
         const targetCls = mode2ActionQueue[0];
-
-        // 情況 A：綠燈且命中目標手勢 -> 正常推進！
         if (trafficLightColorM2 === "GREEN") {
             if (detectedCls === targetCls && prob >= 0.75) {
                 isMode2Locked = true; clearInterval(mode2TimerLoop);
                 mode2Score++;
                 document.getElementById("score-counter-mode2").innerText = mode2Score;
                 document.getElementById("robot-indicator-mode2").style.bottom = Math.min(92, (mode2Score / 15) * 92) + "%";
-                sendRobotCommand("1"); // 綠燈才發送信號推進
+                sendRobotCommand("1");
                 popSplash("PERFECT! ⚡", "var(--game-green)", "splash-text-mode2");
 
                 mode2ActionQueue.shift();
@@ -1528,15 +1609,16 @@
                 if (mode2Score >= 15) {
                     isMode2Running = false;
                     clearTimeout(trafficCycleTimerM2);
-                    autoExportToGoogleSheet("Mode 2 (Traffic Race)", mode2Score);
-                    alert(currentLang === 'zh' ? "🎉 太厲害了！紅綠燈挑戰成功通關！" : "🎉 Victory! Traffic Arena Completed!");
+                    const duration = Math.round((performance.now() - modeStartTime) / 1000);
+                    document.getElementById("btn-launch-mode2").disabled = false;
+                    document.getElementById("btn-stop-mode2").disabled = true;
+                    autoExportToGoogleSheet("Mode 2 (Traffic Race)", mode2Score, duration);
+                    alert(currentLang === 'zh' ? `🎉 太厲害了！耗時 ${duration}秒 成功通關！` : `🎉 Victory! Completed in ${duration}s!`);
                 } else {
                     setTimeout(() => { isMode2Locked = false; if (isMode2Running) startMode2Timer(); }, 700);
                 }
             }
-        } 
-        // 情況 B：紅燈時手痕出咗目標手勢 -> 🚨 違規抓拍！罰凍結 3 秒！
-        else if (trafficLightColorM2 === "RED") {
+        } else if (trafficLightColorM2 === "RED") {
             if (detectedCls === targetCls && prob >= 0.75) {
                 trigger3SecondFreezePenaltyM2();
             }
@@ -1548,12 +1630,10 @@
         clearInterval(mode2TimerLoop);
         clearTimeout(trafficCycleTimerM2);
 
-        // 懲罰扣 2 分
         mode2Score = Math.max(0, mode2Score - 2);
         document.getElementById("score-counter-mode2").innerText = mode2Score;
         document.getElementById("robot-indicator-mode2").style.bottom = Math.min(92, (mode2Score / 15) * 92) + "%";
 
-        // 顯示結冰紅色遮罩（3 秒）
         freezeRemainingM2 = 3;
         const overlay = document.getElementById("freeze-penalty-overlay-m2");
         const countEl = document.getElementById("freeze-seconds-left-m2");
@@ -1569,14 +1649,14 @@
                 isMode2Locked = false;
                 if (isMode2Running) {
                     startMode2Timer();
-                    runTrafficLightLoopM2(); // 解凍重啟紅綠燈循環
+                    runTrafficLightLoopM2();
                 }
             }
         }, 1000);
     }
 
     // =========================================================================
-    // 9. 模式三：MediaPipe 訓練艙 (原創模式二：21 點骨骼幾何採樣 + KNN)
+    // 9. 模式三：MediaPipe 訓練艙 (開始與停止控制)
     // =========================================================================
     let handsMP = null, cameraMP = null, videoElementMP, canvasElementMP, canvasCtxMP;
     let currentLandmarks = null, dataset = [], isSampling = false, samplingTarget = null, sampleInterval = null;
@@ -1739,21 +1819,34 @@
             document.getElementById("tag-mp-launch").innerText = currentLang === 'zh' ? "準備就緒 ✨" : "Ready ✨";
             const launchBtn = document.getElementById("btn-launch-mp");
             launchBtn.disabled = false;
-            launchBtn.innerText = currentLang === 'zh' ? "🚀 開始骨骼競技！" : "🚀 Start Skeleton Arena!";
             launchBtn.classList.add("unlocked");
         }
     }
 
     function startMPGame() {
         isMPRunning = true; isMPLocked = false; mpScore = 0;
+        modeStartTime = performance.now();
         document.getElementById("score-counter-mp").innerText = mpScore;
-        const launchBtn = document.getElementById("btn-launch-mp");
-        launchBtn.innerText = currentLang === 'zh' ? "🎮 骨骼競技進行中..." : "🎮 Playing...";
-        launchBtn.disabled = true;
+        
+        document.getElementById("btn-launch-mp").disabled = true;
+        document.getElementById("btn-stop-mp").disabled = false;
+
         mpActionQueue = [];
         for (let i = 0; i < 5; i++) mpActionQueue.push(ACTIVE_TARGETS[Math.floor(Math.random() * ACTIVE_TARGETS.length)]);
         renderMPQueue();
         startMPTimer();
+    }
+
+    function stopMPGame() {
+        if (isMPRunning) {
+            isMPRunning = false;
+            clearInterval(mpTimerLoop);
+            const duration = Math.round((performance.now() - modeStartTime) / 1000);
+            document.getElementById("btn-launch-mp").disabled = false;
+            document.getElementById("btn-stop-mp").disabled = true;
+            autoExportToGoogleSheet("Mode 3 (MediaPipe)", mpScore, duration);
+            alert((currentLang === 'zh' ? `🛑 骨骼競技已停止！遊玩時長: ${duration}秒，最終得分: ${mpScore}` : `🛑 Arena Stopped! Time: ${duration}s, Score: ${mpScore}`));
+        }
     }
 
     function renderMPQueue() {
@@ -1798,15 +1891,18 @@
 
         if (mpScore >= 15) {
             isMPRunning = false;
-            autoExportToGoogleSheet("Mode 3 (MediaPipe)", mpScore);
-            alert(currentLang === 'zh' ? "🎉 恭喜完成！成績已自動儲存至 Google Sheet！" : "🎉 Mode 3 Finished! Auto-saved to Sheet!");
+            const duration = Math.round((performance.now() - modeStartTime) / 1000);
+            document.getElementById("btn-launch-mp").disabled = false;
+            document.getElementById("btn-stop-mp").disabled = true;
+            autoExportToGoogleSheet("Mode 3 (MediaPipe)", mpScore, duration);
+            alert(currentLang === 'zh' ? `🎉 恭喜完成！總耗時: ${duration}秒，數據已自動儲存至 Google Sheet！` : `🎉 Mode 3 Finished! Time: ${duration}s.`);
         } else {
             setTimeout(() => { isMPLocked = false; if (isMPRunning) startMPTimer(); }, 800);
         }
     }
 
     // =========================================================================
-    // 10. 互動式反思 Chatbot
+    // 10. 互動式反思 Chatbot (完整儲存對答歷史並自動觸發雲端儲存)
     // =========================================================================
     function toggleChatWindow() {
         const win = document.getElementById("chat-window");
@@ -1824,38 +1920,35 @@
         if (!msg) return;
 
         appendChatMsg(msg, "user");
+        chatReflectionData.chatLog.push({ sender: "Student", text: msg, time: new Date().toLocaleTimeString() });
         inp.value = "";
 
         setTimeout(() => {
             if (chatStep === 0) {
                 chatReflectionData.difficulty = msg;
                 chatStep = 1;
-                appendChatMsg(
-                    currentLang === 'zh' 
+                const botReply = currentLang === 'zh' 
                     ? "收到！懂得除錯正是工程師思維 💡！<br><br><b>喺成個活動入面，你最鍾意或覺得最神奇、最想同同學分享嘅係邊部分？</b>" 
-                    : "Noted! Troubleshooting is the core of engineering! 💡<br><br><b>What was your favorite moment or discovery today that you'd love to share?</b>",
-                    "bot",
-                    currentLang === 'zh' ? ["看見 Grad-CAM 熱力圖", "用手勢隔空控制爬繩", "同拍檔一齊除錯成功", "紅綠燈極速剎手定身"] : ["Seeing Grad-CAM Heatmap", "Gesture Remote Control", "Fixing bugs with partner", "Red light instant freeze"]
-                );
+                    : "Noted! Troubleshooting is the core of engineering! 💡<br><br><b>What was your favorite moment or discovery today that you'd love to share?</b>";
+                appendChatMsg(botReply, "bot", currentLang === 'zh' ? ["看見 Grad-CAM 熱力圖", "用手勢隔空控制爬繩", "同拍檔一齊除錯成功", "紅綠燈極速剎手定身"] : ["Seeing Grad-CAM Heatmap", "Gesture Remote Control", "Fixing bugs with partner", "Red light instant freeze"]);
+                chatReflectionData.chatLog.push({ sender: "Tutor", text: botReply, time: new Date().toLocaleTimeString() });
             } else if (chatStep === 1) {
                 chatReflectionData.favorite = msg;
                 chatStep = 2;
-                appendChatMsg(
-                    currentLang === 'zh' 
+                const botReply = currentLang === 'zh' 
                     ? "太棒了！同儕協同往往能事半功倍 👏！<br><br><b>最後，如果可以幫呢部爬繩機械人再升級一項功能，你會想加咩？</b>" 
-                    : "Wonderful insight! Peer collaboration makes learning faster! 👏<br><br><b>Lastly, if you could add one new feature or upgrade to your robot, what would it be?</b>",
-                    "bot"
-                );
+                    : "Wonderful insight! Peer collaboration makes learning faster! 👏<br><br><b>Lastly, if you could add one new feature or upgrade to your robot, what would it be?</b>";
+                appendChatMsg(botReply, "bot");
+                chatReflectionData.chatLog.push({ sender: "Tutor", text: botReply, time: new Date().toLocaleTimeString() });
             } else if (chatStep === 2) {
-                chatReflectionData.comments = msg;
+                chatReflectionData.upgrade = msg;
                 chatStep = 3;
-                autoExportToGoogleSheet("Chatbot Reflections", 100);
-                appendChatMsg(
-                    currentLang === 'zh' 
+                autoExportToGoogleSheet("AI Tutor Reflections", 100, 0);
+                const botReply = currentLang === 'zh' 
                     ? "✨ 感謝你的精彩反思！你的學習心得已在背景自動儲存至 Google 雲端！隨時可以再次挑戰模式一或模式二哦 🚀" 
-                    : "✨ Thank you! All your reflections have been automatically saved to Google Sheet in the background! 🚀",
-                    "bot"
-                );
+                    : "✨ Thank you! All your reflections have been automatically saved to Google Sheet in the background! 🚀";
+                appendChatMsg(botReply, "bot");
+                chatReflectionData.chatLog.push({ sender: "Tutor", text: botReply, time: new Date().toLocaleTimeString() });
             } else {
                 appendChatMsg(currentLang === 'zh' ? "心得已妥善保存！盡情享受競技樂趣吧 🎮！" : "Reflections saved! Enjoy the challenge 🎮!", "bot");
             }
