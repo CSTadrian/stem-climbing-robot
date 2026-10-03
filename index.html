@@ -13,17 +13,19 @@
     <script src="https://cdn.jsdelivr.net/npm/@mediapipe/hands/hands.js" crossorigin="anonymous"></script>
     <style>
         :root {
-            --bg-base: #0f172a;
-            --bg-card: #ffffff;
-            --border-ui: #e2e8f0;
-            --text-main: #0f172a;
-            --text-sub: #475569;
-            --game-blue: #0284c7;
-            --game-pink: #ec4899;
-            --game-green: #10b981;
-            --game-amber: #f59e0b;
-            --game-purple: #8b5cf6;
-            --game-red: #ef4444;
+            --bg-base: #080c16;
+            --bg-panel: #0d1424;
+            --bg-card: #101a30;
+            --border-ui: #1c2842;
+            --border-glow: #00f0ff;
+            --accent-cyan: #00f0ff;
+            --accent-blue: #38bdf8;
+            --accent-pink: #ec4899;
+            --accent-yellow: #facc15;
+            --accent-green: #10b981;
+            --accent-red: #ef4444;
+            --text-main: #f8fafc;
+            --text-sub: #94a3b8;
         }
 
         * { box-sizing: border-box; }
@@ -32,11 +34,11 @@
             padding: 16px;
             padding-bottom: 90px;
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "PingFang HK", "Microsoft JhengHei", sans-serif;
-            background-color: #f8fafc;
+            background-color: var(--bg-base);
             background-image: 
-                radial-gradient(#cbd5e1 1.2px, transparent 1.2px),
-                linear-gradient(135deg, #f1f5f9 0%, #e2e8f0 100%);
-            background-size: 24px 24px, 100% 100%;
+                radial-gradient(rgba(30, 41, 59, 0.4) 1.5px, transparent 1.5px),
+                linear-gradient(180deg, #080c16 0%, #0d1424 100%);
+            background-size: 28px 28px, 100% 100%;
             color: var(--text-main);
             min-height: 100vh;
         }
@@ -49,24 +51,23 @@
             gap: 14px;
         }
 
-        /* 頂部三模式導航欄 */
+        /* 頂部三模式導航欄 (精準對標附圖暗黑微光風格) */
         .mode-nav-bar {
             display: grid;
             grid-template-columns: 1fr 1fr 1fr;
-            gap: 12px;
-            background: rgba(255, 255, 255, 0.95);
-            backdrop-filter: blur(10px);
+            gap: 10px;
+            background: var(--bg-panel);
             padding: 8px;
-            border-radius: 16px;
+            border-radius: 14px;
             border: 1.5px solid var(--border-ui);
-            box-shadow: 0 4px 20px rgba(15, 23, 42, 0.06);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
         }
         .mode-tab-btn {
-            background: #f8fafc;
-            border: 2px solid var(--border-ui);
+            background: #090e1c;
+            border: 1.5px solid var(--border-ui);
             color: var(--text-sub);
-            padding: 12px 10px;
-            border-radius: 12px;
+            padding: 10px 8px;
+            border-radius: 10px;
             font-size: 13px;
             font-weight: 800;
             cursor: pointer;
@@ -74,30 +75,53 @@
             flex-direction: column;
             align-items: center;
             justify-content: center;
-            gap: 4px;
-            transition: all 0.2s ease;
+            gap: 3px;
+            transition: all 0.25s ease;
         }
-        .mode-tab-btn:hover { border-color: var(--game-blue); color: var(--game-blue); }
+        .mode-tab-btn:hover {
+            border-color: var(--accent-cyan);
+            color: var(--accent-cyan);
+        }
         .mode-tab-btn.active {
-            background: linear-gradient(135deg, #e0f2fe, #fce7f3);
-            border-color: var(--game-blue);
-            color: #0369a1;
-            box-shadow: 0 3px 12px rgba(2, 132, 199, 0.2);
+            background: #0f1d38;
+            border-color: var(--accent-cyan);
+            color: #ffffff;
+            box-shadow: 0 0 16px rgba(0, 240, 255, 0.3), inset 0 0 10px rgba(0, 240, 255, 0.15);
         }
 
-        /* 頂部資訊與語系切換條 */
+        /* 頂部資訊條 (附圖風格：組別、學號/ID、模型組、提交Drive按鈕) */
         .meta-strip {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            background: #ffffff;
-            padding: 12px 20px;
-            border-radius: 14px;
+            background: var(--bg-panel);
+            padding: 10px 16px;
+            border-radius: 12px;
             border: 1.5px solid var(--border-ui);
-            box-shadow: 0 2px 8px rgba(15, 23, 42, 0.04);
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
+            gap: 10px;
+            flex-wrap: wrap;
         }
+        .meta-left {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            flex-grow: 1;
+        }
+        .meta-input {
+            background: #080d1a;
+            border: 1.5px solid var(--border-ui);
+            color: var(--text-main);
+            padding: 8px 12px;
+            border-radius: 8px;
+            font-size: 13px;
+            font-weight: bold;
+            outline: none;
+            transition: border 0.2s;
+        }
+        .meta-input:focus { border-color: var(--accent-cyan); }
         .meta-strip select {
-            background: #f8fafc;
+            background: #080d1a;
             border: 1.5px solid var(--border-ui);
             color: var(--text-main);
             padding: 8px 12px;
@@ -105,102 +129,128 @@
             font-size: 13px;
             font-weight: 700;
             outline: none;
+            cursor: pointer;
+        }
+        .btn-drive {
+            background: #0c1a2e;
+            border: 1.5px solid #0284c7;
+            color: #38bdf8;
+            padding: 8px 14px;
+            border-radius: 8px;
+            font-weight: 800;
+            font-size: 12px;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .btn-drive:hover {
+            background: #0369a1;
+            color: #ffffff;
+            box-shadow: 0 0 12px rgba(56, 189, 248, 0.4);
         }
         .lang-btn {
-            background: #ffffff;
-            border: 2px solid var(--game-blue);
-            color: var(--game-blue);
-            padding: 6px 14px;
+            background: transparent;
+            border: 1.5px solid var(--border-ui);
+            color: var(--text-sub);
+            padding: 6px 12px;
             border-radius: 20px;
             font-weight: 800;
             font-size: 12px;
             cursor: pointer;
             transition: all 0.2s;
         }
-        .lang-btn:hover { background: #e0f2fe; }
+        .lang-btn:hover { border-color: var(--accent-cyan); color: var(--accent-cyan); }
 
         .mode-section { display: none; flex-direction: column; gap: 14px; }
         .mode-section.active-mode { display: flex; }
 
-        /* 步驟看板 */
+        /* 步驟看板 (三欄式深色卡片) */
         .stepper-board {
             display: grid;
             grid-template-columns: 1fr 1.25fr 1.35fr;
             gap: 14px;
         }
         .step-card {
-            background: var(--bg-card);
-            border: 2px solid var(--border-ui);
-            border-radius: 16px;
-            padding: 16px;
+            background: var(--bg-panel);
+            border: 1.5px solid var(--border-ui);
+            border-radius: 14px;
+            padding: 14px;
             display: flex;
             flex-direction: column;
             justify-content: space-between;
-            box-shadow: 0 4px 12px rgba(15, 23, 42, 0.03);
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
             transition: all 0.25s ease;
         }
         .step-card.done {
-            border-color: var(--game-green);
-            background: #f0fdf4;
-            box-shadow: 0 4px 16px rgba(16, 185, 129, 0.15);
+            border-color: #059669;
+            background: #081a24;
+            box-shadow: 0 0 16px rgba(16, 185, 129, 0.15);
         }
         .step-header {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin-bottom: 10px;
+            margin-bottom: 8px;
         }
         .step-title {
             font-weight: 800;
-            font-size: 14px;
+            font-size: 13px;
             display: flex;
             align-items: center;
             gap: 6px;
             color: var(--text-main);
         }
         .step-tag {
-            font-size: 11px;
-            padding: 3px 8px;
-            border-radius: 12px;
-            background: #f1f5f9;
+            font-size: 10px;
+            padding: 2px 8px;
+            border-radius: 10px;
+            background: #080d1a;
             color: var(--text-sub);
             border: 1px solid var(--border-ui);
             font-weight: bold;
         }
         .step-card.done .step-tag {
-            background: #dcfce7;
-            color: #15803d;
-            border-color: #86efac;
+            background: #064e3b;
+            color: #34d399;
+            border-color: #059669;
         }
         .step-btn {
-            background: #334155;
-            color: #ffffff;
-            border: none;
-            padding: 10px 14px;
-            border-radius: 10px;
+            background: #142036;
+            color: #cbd5e1;
+            border: 1px solid var(--border-ui);
+            padding: 9px 12px;
+            border-radius: 8px;
             font-weight: bold;
-            font-size: 13px;
+            font-size: 12px;
             cursor: pointer;
             width: 100%;
             transition: all 0.2s;
         }
-        .step-btn:hover { background: #1e293b; }
-        .step-btn.ready-btn { background: var(--game-green); }
+        .step-btn:hover { background: #1e3052; color: #fff; }
+        .step-btn.ready-btn {
+            background: #059669;
+            color: #ffffff;
+            border-color: #10b981;
+            box-shadow: 0 0 10px rgba(16, 185, 129, 0.3);
+        }
 
         .id-input-field {
-            background: #ffffff;
-            border: 2px solid var(--border-ui);
+            background: #080d1a;
+            border: 1.5px solid var(--border-ui);
             color: var(--text-main);
-            padding: 8px 12px;
+            padding: 8px 10px;
             border-radius: 8px;
-            font-size: 14px;
+            font-size: 13px;
             font-weight: bold;
             width: 100%;
             margin-bottom: 8px;
             outline: none;
         }
+        .id-input-field:focus { border-color: var(--accent-cyan); }
 
-        /* 控制組：開始、停止、重開三按鈕並排 */
+        /* 控制組：開始/繼續、暫停、重開三按鈕並排 */
         .btn-ctrl-group {
             display: grid;
             grid-template-columns: 1.2fr 0.9fr 0.9fr;
@@ -208,65 +258,73 @@
             width: 100%;
         }
         .btn-launch {
-            background: #e2e8f0;
-            color: #94a3b8;
-            border: 2px dashed #cbd5e1;
-            padding: 10px 6px;
-            border-radius: 10px;
-            font-size: 13px;
+            background: #101726;
+            color: #64748b;
+            border: 1.5px dashed var(--border-ui);
+            padding: 9px 6px;
+            border-radius: 8px;
+            font-size: 12px;
             font-weight: 900;
             cursor: not-allowed;
             transition: all 0.2s;
         }
         .btn-launch.unlocked {
-            background: linear-gradient(135deg, var(--game-blue), var(--game-green));
+            background: linear-gradient(135deg, #0284c7, #059669);
             color: #ffffff;
             border: none;
             cursor: pointer;
-            box-shadow: 0 4px 14px rgba(2, 132, 199, 0.4);
+            box-shadow: 0 0 14px rgba(2, 132, 199, 0.4);
         }
+        .btn-launch.is-resume {
+            background: linear-gradient(135deg, #059669, #10b981) !important;
+            box-shadow: 0 0 16px rgba(16, 185, 129, 0.5) !important;
+            animation: pulse-resume 1.5s infinite;
+        }
+        @keyframes pulse-resume {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.03); }
+            100% { transform: scale(1); }
+        }
+
         .btn-stop {
-            background: #fee2e2;
-            border: 2px solid #fca5a5;
-            color: #991b1b;
-            padding: 10px 6px;
-            border-radius: 10px;
-            font-size: 13px;
+            background: #2a1215;
+            border: 1.5px solid #7f1d1d;
+            color: #f87171;
+            padding: 9px 6px;
+            border-radius: 8px;
+            font-size: 12px;
             font-weight: 800;
             cursor: pointer;
             transition: all 0.2s;
         }
         .btn-stop:hover:not(:disabled) {
-            background: #ef4444;
+            background: #dc2626;
             color: #ffffff;
-            border-color: #dc2626;
+            box-shadow: 0 0 12px rgba(220, 38, 38, 0.5);
         }
         .btn-stop:disabled {
-            opacity: 0.4;
+            opacity: 0.3;
             cursor: not-allowed;
-            background: #f1f5f9;
-            color: #94a3b8;
-            border-color: #cbd5e1;
+            background: #131b2e;
+            color: #475569;
+            border-color: #1e293b;
         }
         .btn-restart {
-            background: #f1f5f9;
-            border: 2px solid var(--border-ui);
+            background: #0f172a;
+            border: 1.5px solid var(--border-ui);
             color: var(--text-main);
-            padding: 10px 6px;
-            border-radius: 10px;
-            font-size: 13px;
+            padding: 9px 6px;
+            border-radius: 8px;
+            font-size: 12px;
             font-weight: 800;
             cursor: pointer;
             transition: all 0.2s;
         }
         .btn-restart:hover:not(:disabled) {
-            background: #e2e8f0;
-            border-color: #94a3b8;
+            background: #1e293b;
+            border-color: #475569;
         }
-        .btn-restart:disabled {
-            opacity: 0.4;
-            cursor: not-allowed;
-        }
+        .btn-restart:disabled { opacity: 0.3; cursor: not-allowed; }
 
         /* 模式三採樣按鈕 */
         .sample-grid {
@@ -276,11 +334,11 @@
             margin-bottom: 8px;
         }
         .sample-btn {
-            background: #f8fafc;
+            background: #090e1c;
             border: 1.5px solid var(--border-ui);
             color: var(--text-main);
-            padding: 6px;
-            border-radius: 8px;
+            padding: 5px;
+            border-radius: 6px;
             font-size: 11px;
             font-weight: bold;
             cursor: pointer;
@@ -290,30 +348,30 @@
             gap: 2px;
             transition: all 0.15s;
         }
-        .sample-btn:hover { background: #e2e8f0; }
+        .sample-btn:hover { border-color: var(--accent-cyan); }
         .sample-btn:active, .sample-btn.recording {
-            background: #fce7f3;
-            border-color: var(--game-pink);
-            color: #be185d;
+            background: #3b0724;
+            border-color: var(--accent-pink);
+            color: #f472b6;
             transform: scale(0.96);
         }
-        .sample-count { font-size: 10px; color: var(--game-blue); }
+        .sample-count { font-size: 9px; color: var(--accent-cyan); }
 
-        /* 競技舞台佈局 */
+        /* 競技舞台佈局 (完全對應附圖) */
         .stage-layout {
             display: grid;
-            grid-template-columns: 1fr 180px;
-            gap: 16px;
+            grid-template-columns: 1fr 140px;
+            gap: 14px;
         }
         .arena-box {
-            background: var(--bg-card);
-            border: 2px solid var(--border-ui);
-            border-radius: 18px;
-            padding: 18px 22px;
+            background: var(--bg-panel);
+            border: 1.5px solid var(--border-ui);
+            border-radius: 16px;
+            padding: 16px 20px;
             display: flex;
             flex-direction: column;
-            gap: 14px;
-            box-shadow: 0 4px 16px rgba(15, 23, 42, 0.04);
+            gap: 12px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
             position: relative;
         }
         .hud-bar {
@@ -322,69 +380,76 @@
             align-items: center;
         }
         .combo-badge {
-            font-size: 26px;
-            color: var(--game-amber);
+            font-size: 28px;
+            color: var(--accent-yellow);
             font-weight: 900;
+            letter-spacing: 0.5px;
+            text-shadow: 0 0 14px rgba(250, 204, 21, 0.5);
         }
         .score-pill {
-            background: linear-gradient(90deg, #ec4899, #8b5cf6);
+            background: var(--accent-pink);
             color: #fff;
             padding: 6px 20px;
-            border-radius: 20px;
-            font-size: 18px;
+            border-radius: 30px;
+            font-size: 16px;
             font-weight: 900;
+            box-shadow: 0 0 18px rgba(236, 72, 153, 0.5);
         }
 
         .ribbon-track-wrapper {
-            background: #f8fafc;
-            border: 2px solid var(--border-ui);
-            border-radius: 14px;
-            padding: 14px;
+            background: #080d1a;
+            border: 1.5px solid var(--border-ui);
+            border-radius: 12px;
+            padding: 12px;
             position: relative;
             overflow: hidden;
         }
         .ribbon-track {
             display: flex;
             align-items: center;
-            gap: 14px;
+            gap: 12px;
         }
         .action-card {
-            background: #ffffff;
-            border: 2px solid var(--border-ui);
-            border-radius: 12px;
-            min-width: 100px;
-            height: 140px;
+            background: #0d1527;
+            border: 1.5px solid var(--border-ui);
+            border-radius: 10px;
+            min-width: 90px;
+            height: 120px;
             display: flex;
             flex-direction: column;
             align-items: center;
             justify-content: center;
             position: relative;
-            box-shadow: 0 2px 6px rgba(15, 23, 42, 0.04);
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
             transition: all 0.25s ease;
         }
-        .action-card .symbol { font-size: 44px; line-height: 1; margin-bottom: 4px; }
-        .action-card .c-name { font-size: 15px; font-weight: 800; }
+        .action-card .symbol { font-size: 40px; line-height: 1; margin-bottom: 4px; }
+        .action-card .c-name { font-size: 13px; font-weight: 800; color: #cbd5e1; }
         .action-card.active-target {
-            min-width: 130px;
-            height: 160px;
-            border: 3px solid var(--game-pink);
+            min-width: 120px;
+            height: 140px;
+            border: 2px solid var(--accent-pink);
+            box-shadow: 0 0 16px rgba(236, 72, 153, 0.45);
             transform: scale(1.04);
             z-index: 2;
         }
-        .action-card.active-target .symbol { font-size: 58px; }
-        .action-card.upcoming { opacity: 0.65; transform: scale(0.92); }
+        .action-card.active-target .symbol { font-size: 52px; }
+        .action-card.active-target .c-name { color: #fff; }
+        .action-card.upcoming { opacity: 0.5; transform: scale(0.92); }
 
         .timer-bg {
             height: 8px;
-            background: #e2e8f0;
+            background: #0a1120;
             border-radius: 4px;
-            margin-top: 12px;
+            margin-top: 10px;
             overflow: hidden;
+            border: 1px solid #142036;
         }
         .timer-fill {
             height: 100%;
             width: 100%;
-            background: var(--game-blue);
+            background: linear-gradient(90deg, #00f0ff, #38bdf8);
+            box-shadow: 0 0 12px rgba(0, 240, 255, 0.7);
             transition: width 0.05s linear;
         }
 
@@ -400,7 +465,7 @@
             gap: 6px;
         }
         .meter-row {
-            background: #f8fafc;
+            background: #080d1a;
             border: 1px solid var(--border-ui);
             border-radius: 8px;
             padding: 6px 10px;
@@ -408,30 +473,33 @@
             font-weight: 600;
             display: flex;
             justify-content: space-between;
+            color: #94a3b8;
         }
         .meter-row.matched {
-            background: #dcfce7;
-            border-color: #86efac;
-            color: #15803d;
+            background: #064e3b;
+            border-color: #10b981;
+            color: #34d399;
             font-weight: bold;
+            box-shadow: 0 0 10px rgba(16, 185, 129, 0.25);
         }
 
-        /* 攀爬高度塔 */
+        /* 攀爬高度塔 (深藍科技直塔) */
         .tower-card {
-            background: var(--bg-card);
-            border: 2px solid var(--border-ui);
-            border-radius: 18px;
+            background: var(--bg-panel);
+            border: 1.5px solid var(--border-ui);
+            border-radius: 16px;
             padding: 14px 10px;
             display: flex;
             flex-direction: column;
             align-items: center;
-            box-shadow: 0 4px 16px rgba(15, 23, 42, 0.04);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
         }
         .rope-shaft {
             flex-grow: 1;
-            width: 6px;
-            background: #cbd5e1;
-            border-radius: 3px;
+            width: 4px;
+            background: #1e293b;
+            box-shadow: 0 0 8px rgba(56, 189, 248, 0.2);
+            border-radius: 2px;
             margin: 10px 0;
             position: relative;
             min-height: 250px;
@@ -441,8 +509,9 @@
             left: 50%;
             transform: translateX(-50%);
             bottom: 0%;
-            font-size: 34px;
+            font-size: 30px;
             transition: bottom 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+            filter: drop-shadow(0 0 8px rgba(0, 240, 255, 0.6));
         }
 
         #splash-text, #splash-text-mode2, #splash-text-mp {
@@ -450,7 +519,7 @@
             top: 40%;
             left: 50%;
             transform: translate(-50%, -50%) scale(0);
-            font-size: 42px;
+            font-size: 40px;
             font-weight: 900;
             letter-spacing: 2px;
             pointer-events: none;
@@ -459,40 +528,41 @@
         }
         #splash-text.show, #splash-text-mode2.show, #splash-text-mp.show { transform: translate(-50%, -50%) scale(1.15); }
 
-        /* 模式二：一二三木頭人 HUD 與 3 秒急煞懲罰遮罩 */
+        /* 模式二：一二三木頭人 HUD */
         .traffic-hud-bar {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            background: #0f172a;
-            border-radius: 12px;
-            padding: 10px 16px;
-            color: #fff;
+            background: #080d1a;
+            border: 1px solid var(--border-ui);
+            border-radius: 10px;
+            padding: 8px 14px;
         }
         .traffic-lights-box {
             display: flex;
-            gap: 12px;
+            gap: 10px;
             align-items: center;
-            background: #1e293b;
-            padding: 6px 16px;
-            border-radius: 30px;
+            background: #050811;
+            padding: 4px 12px;
+            border-radius: 20px;
+            border: 1px solid var(--border-ui);
         }
         .bulb-circle {
-            width: 28px;
-            height: 28px;
+            width: 24px;
+            height: 24px;
             border-radius: 50%;
-            opacity: 0.2;
+            opacity: 0.15;
             transition: all 0.2s ease;
         }
         .bulb-circle.red { background: #ef4444; }
         .bulb-circle.green { background: #10b981; }
-        .bulb-circle.active.red { opacity: 1; box-shadow: 0 0 18px #ef4444; }
-        .bulb-circle.active.green { opacity: 1; box-shadow: 0 0 18px #10b981; }
+        .bulb-circle.active.red { opacity: 1; box-shadow: 0 0 16px #ef4444; }
+        .bulb-circle.active.green { opacity: 1; box-shadow: 0 0 16px #10b981; }
 
         .freeze-overlay {
             position: absolute;
             top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(220, 38, 38, 0.92);
+            background: rgba(127, 29, 29, 0.94);
             backdrop-filter: blur(4px);
             display: none;
             flex-direction: column;
@@ -500,33 +570,33 @@
             justify-content: center;
             color: #ffffff;
             z-index: 100;
-            border-radius: 18px;
+            border-radius: 16px;
         }
         .freeze-title {
-            font-size: 26px;
+            font-size: 24px;
             font-weight: 900;
             margin-bottom: 6px;
         }
         .freeze-timer-count {
-            font-size: 72px;
+            font-size: 64px;
             font-weight: 900;
             line-height: 1;
             color: #fef08a;
         }
 
-        /* 互動式引導反思 Chatbot */
+        /* 互動式反思 Chatbot */
         .chatbot-bubble-btn {
             position: fixed;
             bottom: 20px;
             right: 20px;
-            background: linear-gradient(135deg, var(--game-blue), var(--game-purple));
+            background: linear-gradient(135deg, #0284c7, #8b5cf6);
             color: #ffffff;
             border: none;
             padding: 12px 20px;
             border-radius: 30px;
             font-weight: 800;
-            font-size: 14px;
-            box-shadow: 0 6px 20px rgba(2, 132, 199, 0.4);
+            font-size: 13px;
+            box-shadow: 0 6px 20px rgba(2, 132, 199, 0.5);
             cursor: pointer;
             z-index: 1000;
             display: flex;
@@ -540,23 +610,24 @@
             width: 380px;
             max-width: calc(100vw - 40px);
             height: 520px;
-            background: #ffffff;
+            background: var(--bg-panel);
             border: 2px solid var(--border-ui);
-            border-radius: 20px;
-            box-shadow: 0 12px 36px rgba(15, 23, 42, 0.2);
+            border-radius: 18px;
+            box-shadow: 0 16px 40px rgba(0, 0, 0, 0.8);
             display: none;
             flex-direction: column;
             overflow: hidden;
             z-index: 1000;
         }
         .chat-header {
-            background: linear-gradient(135deg, var(--game-blue), var(--game-purple));
+            background: #0f1d38;
             color: #ffffff;
-            padding: 14px 18px;
+            padding: 12px 16px;
             display: flex;
             justify-content: space-between;
             align-items: center;
             font-weight: 800;
+            border-bottom: 1px solid var(--border-ui);
         }
         .chat-body {
             flex-grow: 1;
@@ -565,24 +636,24 @@
             display: flex;
             flex-direction: column;
             gap: 12px;
-            background: #f8fafc;
+            background: #080d1a;
             font-size: 13px;
         }
         .chat-msg.bot .bubble {
-            background: #ffffff;
+            background: #101c36;
             border: 1px solid var(--border-ui);
             padding: 10px 14px;
-            border-radius: 14px 14px 14px 2px;
+            border-radius: 12px 12px 12px 2px;
             line-height: 1.5;
-            box-shadow: 0 2px 4px rgba(15, 23, 42, 0.03);
+            color: #e2e8f0;
         }
         .chat-msg.user { align-self: flex-end; }
         .chat-msg.user .bubble {
-            background: var(--game-blue);
+            background: #0284c7;
             color: #ffffff;
             padding: 10px 14px;
-            border-radius: 14px 14px 2px 14px;
-            box-shadow: 0 2px 6px rgba(2, 132, 199, 0.3);
+            border-radius: 12px 12px 2px 12px;
+            box-shadow: 0 2px 8px rgba(2, 132, 199, 0.4);
         }
         .chip-group {
             display: flex;
@@ -591,32 +662,35 @@
             margin-top: 8px;
         }
         .quick-chip {
-            background: #e0f2fe;
-            border: 1px solid #7dd3fc;
-            color: #0369a1;
-            padding: 5px 10px;
-            border-radius: 14px;
+            background: #0c1a2e;
+            border: 1px solid #0284c7;
+            color: #38bdf8;
+            padding: 4px 10px;
+            border-radius: 12px;
             font-size: 11px;
             cursor: pointer;
             font-weight: 700;
             transition: all 0.15s;
         }
-        .quick-chip:hover { background: #bae6fd; }
+        .quick-chip:hover { background: #0369a1; color: #fff; }
         .chat-footer {
             padding: 10px;
-            background: #ffffff;
+            background: #0c1424;
             border-top: 1px solid var(--border-ui);
             display: flex;
             gap: 8px;
         }
         .chat-input {
             flex-grow: 1;
+            background: #080d1a;
             border: 1.5px solid var(--border-ui);
+            color: #fff;
             border-radius: 8px;
             padding: 8px 12px;
             font-size: 13px;
             outline: none;
         }
+        .chat-input:focus { border-color: var(--accent-cyan); }
     </style>
 </head>
 <body>
@@ -627,31 +701,32 @@
     <div class="mode-nav-bar">
         <button class="mode-tab-btn active" id="tab-mode-1" onclick="switchSystemMode(1)">
             <span data-zh="🎮 模式一：GTM 駕駛艙" data-en="🎮 Mode 1: GTM Cockpit">🎮 模式一：GTM 駕駛艙</span>
-            <span style="font-size: 11px; font-weight: normal; opacity: 0.85;" data-zh="(像素特徵 + Grad-CAM XAI)" data-en="(Pixel Features + Grad-CAM)">(像素特徵 + Grad-CAM XAI)</span>
+            <span style="font-size: 10px; opacity: 0.8;" data-zh="(像素特徵 + Grad-CAM XAI)" data-en="(Pixel Features + Grad-CAM)">(像素特徵 + Grad-CAM XAI)</span>
         </button>
         <button class="mode-tab-btn" id="tab-mode-2" onclick="switchSystemMode(2)">
-            <span data-zh="🚦 模式二：一二三木頭人：AI 爬繩賽 🔒" data-en="🚦 Mode 2: 1-2-3 Freeze: AI Climbing Race 🔒">🚦 模式二：一二三木頭人：AI 爬繩賽 🔒</span>
-            <span style="font-size: 11px; font-weight: normal; opacity: 0.85;" data-zh="(GTM 視覺模型 + 違規凍結 3 秒)" data-en="(GTM Vision Model + 3s Freeze Penalty)">(GTM 視覺模型 + 違規凍結 3 秒)</span>
+            <span data-zh="🚦 模式二：一二三木頭人：AI 爬繩賽 🔒" data-en="🚦 Mode 2: 1-2-3 Freeze: AI Race 🔒">🚦 模式二：一二三木頭人：AI 爬繩賽 🔒</span>
+            <span style="font-size: 10px; opacity: 0.8;" data-zh="(GTM 視覺模型 + 違規凍結 3 秒)" data-en="(GTM Vision Model + 3s Freeze)">(GTM 視覺模型 + 違規凍結 3 秒)</span>
         </button>
         <button class="mode-tab-btn" id="tab-mode-3" onclick="switchSystemMode(3)">
             <span data-zh="✋ 模式三：MediaPipe 訓練艙 🔒" data-en="✋ Mode 3: MediaPipe Studio 🔒">✋ 模式三：MediaPipe 訓練艙 🔒</span>
-            <span style="font-size: 11px; font-weight: normal; opacity: 0.85;" data-zh="(21點骨骼幾何 + KNN 採樣)" data-en="(21-pt Skeleton + KNN Sampling)">(21點骨骼幾何 + KNN 採樣)</span>
+            <span style="font-size: 10px; opacity: 0.8;" data-zh="(21點骨骼幾何 + KNN 採樣)" data-en="(21-pt Skeleton + KNN)">(21點骨骼幾何 + KNN 採樣)</span>
         </button>
     </div>
 
-    <!-- 頂部資訊與語系切換條 -->
+    <!-- 頂部資訊條：組別、學號/編號、模型組別、提交 Drive 與語系切換 -->
     <div class="meta-strip">
-        <div style="font-size: 13px; font-weight: 800; color: var(--game-blue); display: flex; align-items: center; gap: 8px;">
-            <span data-zh="🤖 micro:bit 編號：" data-en="🤖 micro:bit ID: ">🤖 micro:bit 編號：</span>
-            <b id="shared-mb-id-display" style="color:var(--game-pink); font-size:16px;" data-zh="未填寫" data-en="Unset">未填寫</b>
-        </div>
-        
-        <div style="display: flex; gap: 10px; align-items: center;">
+        <div class="meta-left">
+            <input type="text" class="meta-input" id="group-id-input" placeholder="組別 (例: Group-01)" style="width: 140px;" data-ph-zh="組別 (例: Group-01)" data-ph-en="Group (e.g. Group-01)">
+            <input type="text" class="meta-input" id="shared-mb-id-input" placeholder="學號/編號 (例: S01)" style="width: 140px;" data-ph-zh="學號/編號 (例: S01)" data-ph-en="ID (e.g. S01)" oninput="syncMicrobitId(this.value)">
+            
             <select id="conditionType" onfocus="storePrevCondition(this.value)" onchange="handleConditionChange(this)">
                 <option value="No_XAI_Blackbox" selected data-zh="GTM 對照組 (黑盒無解釋)" data-en="Control: Blackbox">GTM 對照組 (黑盒無解釋)</option>
                 <option value="XAI_GradCAM" data-zh="🔒 GTM 實驗組 (Grad-CAM 熱力圖)" data-en="🔒 Experimental: Grad-CAM">🔒 GTM 實驗組 (Grad-CAM 熱力圖)</option>
             </select>
-            
+        </div>
+        
+        <div style="display: flex; gap: 8px; align-items: center;">
+            <button class="btn-drive" onclick="manualExportCurrentScore()" data-zh="📤 提交成績到 Drive" data-en="📤 Export to Drive">📤 提交成績到 Drive</button>
             <button class="lang-btn" id="lang-btn" onclick="toggleLanguage()">🌐 English</button>
         </div>
     </div>
@@ -664,10 +739,10 @@
             <div class="step-card" id="card-step1">
                 <div>
                     <div class="step-header">
-                        <span class="step-title" data-zh="🔌 步驟 1：輸入編號與連接" data-en="🔌 Step 1: Set ID & Connect">🔌 步驟 1：輸入編號與連接</span>
-                        <span class="step-tag" id="tag-step1" data-zh="未完成 ⚪" data-en="Incomplete ⚪">未完成 ⚪</span>
+                        <span class="step-title" data-zh="🔌 步驟 1：連接硬件" data-en="🔌 Step 1: Connect Hardware">🔌 步驟 1：連接硬件</span>
+                        <span class="step-tag" id="tag-step1" data-zh="未連接 ⚪" data-en="Disconnected ⚪">未連接 ⚪</span>
                     </div>
-                    <input type="number" class="id-input-field" id="mb-input-1" placeholder="輸入 micro:bit 編號 (例: 12)" data-ph-zh="輸入 micro:bit 編號 (例: 12)" data-ph-en="Enter micro:bit ID (e.g. 12)" oninput="syncMicrobitId(this.value)">
+                    <div style="font-size: 11px; color: var(--text-sub); margin-bottom: 8px;" data-zh="將發射端 micro:bit 直插電腦 USB" data-en="Plug transmitter micro:bit into USB">將發射端 micro:bit 直插電腦 USB</div>
                 </div>
                 <button class="step-btn" id="btn-step1" onclick="connectSerial()" data-zh="連接 Tx micro:bit" data-en="Connect Tx micro:bit">連接 Tx micro:bit</button>
             </div>
@@ -677,21 +752,21 @@
                         <span class="step-title" data-zh="📷 步驟 2：載入模型" data-en="📷 Step 2: Load Model">📷 步驟 2：載入模型</span>
                         <span class="step-tag" id="tag-step2" data-zh="未載入 ⚪" data-en="Unloaded ⚪">未載入 ⚪</span>
                     </div>
-                    <input type="text" id="modelUrl" placeholder="貼上 Teachable Machine 模型連結" data-ph-zh="貼上 Teachable Machine 模型連結" data-ph-en="Paste Teachable Machine model URL" style="background:#f8fafc; border:1px solid var(--border-ui); color:var(--text-main); width:100%; padding:8px; font-size:11px; border-radius:6px; margin-bottom: 8px;">
+                    <input type="text" id="modelUrl" placeholder="貼上 Teachable Machine 模型連結" data-ph-zh="貼上 Teachable Machine 模型連結" data-ph-en="Paste Teachable Machine model URL" style="background:#080d1a; border:1px solid var(--border-ui); color:var(--text-main); width:100%; padding:8px; font-size:11px; border-radius:6px; margin-bottom: 8px; outline:none;">
                 </div>
                 <button class="step-btn" id="btn-step2" onclick="initAI(1)" data-zh="啟動模型與鏡頭" data-en="Start Model & Camera">啟動模型與鏡頭</button>
             </div>
             <div class="step-card" id="card-step3">
                 <div>
                     <div class="step-header">
-                        <span class="step-title" data-zh="🚀 步驟 3：開始競技與重開" data-en="🚀 Step 3: Controls & Restart">🚀 步驟 3：開始競技與重開</span>
+                        <span class="step-title" data-zh="🚀 步驟 3：開始競技" data-en="🚀 Step 3: Controls">🚀 步驟 3：開始競技</span>
                         <span class="step-tag" id="tag-step3" data-zh="待解鎖 🔒" data-en="Locked 🔒">待解鎖 🔒</span>
                     </div>
-                    <div style="font-size: 11px; color: var(--text-sub); margin-bottom: 8px;" id="desc-step3" data-zh="需填寫編號、連線及載入模型" data-en="Requires ID, Serial, and Model">需填寫編號、連線及載入模型</div>
+                    <div style="font-size: 11px; color: var(--text-sub); margin-bottom: 8px;" id="desc-step3" data-zh="需先完成步驟 1 及步驟 2" data-en="Complete Step 1 & 2 first">需先完成步驟 1 及步驟 2</div>
                 </div>
                 <div class="btn-ctrl-group">
-                    <button class="btn-launch" id="btn-launch" onclick="startGame(1)" disabled data-zh="開始 🚀" data-en="Start 🚀">開始 🚀</button>
-                    <button class="btn-stop" id="btn-stop" onclick="stopGame(1)" disabled data-zh="停止 🛑" data-en="Stop 🛑">停止 🛑</button>
+                    <button class="btn-launch" id="btn-launch" onclick="togglePlayPause(1)" disabled data-zh="開始 🚀" data-en="Start 🚀">開始 🚀</button>
+                    <button class="btn-stop" id="btn-stop" onclick="pauseGame(1)" disabled data-zh="暫停 ⏸" data-en="Pause ⏸">暫停 ⏸</button>
                     <button class="btn-restart" id="btn-restart-1" onclick="restartGame(1)" disabled data-zh="重開 🔄" data-en="Restart 🔄">重開 🔄</button>
                 </div>
             </div>
@@ -713,7 +788,7 @@
                         <div id="webcam-container" style="width:220px; height:150px; background:#000; border-radius:10px; overflow:hidden; border:1px solid var(--border-ui); position:relative;"></div>
                         <div class="gradcam-legend-bar" id="gradcam-legend-ui" style="display:none; align-items:center; justify-content:space-between; font-size:9px; color:var(--text-sub); padding:4px 2px 0;">
                             <span data-zh="透明(無關)" data-en="Clear(None)">透明(無關)</span>
-                            <div class="gradcam-spectrum" style="flex-grow:1; height:5px; margin:0 6px; border-radius:3px; background:linear-gradient(to right, rgba(0,255,255,0.4) 0%, #00ff00 35%, #ffff00 70%, #ff0000 100%); border:1px solid #cbd5e1;"></div>
+                            <div class="gradcam-spectrum" style="flex-grow:1; height:4px; margin:0 6px; border-radius:2px; background:linear-gradient(to right, rgba(0,255,255,0.4) 0%, #00ff00 35%, #ffff00 70%, #ff0000 100%);"></div>
                             <span data-zh="🔥 核心特徵(紅)" data-en="🔥 Salient(Red)">🔥 核心特徵(紅)</span>
                         </div>
                     </div>
@@ -721,10 +796,10 @@
                 </div>
             </div>
             <div class="tower-card">
-                <div style="font-size: 26px;">🏆</div>
-                <div style="font-size: 10px; color: var(--text-sub); font-weight: bold;">FINISH</div>
+                <div style="font-size: 24px;">🏆</div>
+                <div style="font-size: 10px; color: var(--text-sub); font-weight: bold; margin-top:2px;">FINISH</div>
                 <div class="rope-shaft" id="rope-shaft"><div class="robot-indicator" id="robot-indicator">🤖</div></div>
-                <div style="font-size: 10px; color: var(--text-sub); font-weight: bold;">START</div>
+                <div style="font-size: 10px; color: var(--text-sub); font-weight: bold; margin-bottom:2px;">START</div>
                 <div style="font-size: 20px;">🚩</div>
             </div>
         </div>
@@ -738,10 +813,10 @@
             <div class="step-card" id="card-mode2-step1">
                 <div>
                     <div class="step-header">
-                        <span class="step-title" data-zh="🔌 步驟 1：輸入編號與連接" data-en="🔌 Step 1: Set ID & Connect">🔌 步驟 1：輸入編號與連接</span>
-                        <span class="step-tag" id="tag-mode2-serial" data-zh="未完成 ⚪" data-en="Incomplete ⚪">未完成 ⚪</span>
+                        <span class="step-title" data-zh="🔌 步驟 1：連接硬件" data-en="🔌 Step 1: Connect Hardware">🔌 步驟 1：連接硬件</span>
+                        <span class="step-tag" id="tag-mode2-serial" data-zh="未連接 ⚪" data-en="Disconnected ⚪">未連接 ⚪</span>
                     </div>
-                    <input type="number" class="id-input-field" id="mb-input-2" placeholder="輸入 micro:bit 編號 (例: 12)" data-ph-zh="輸入 micro:bit 編號 (例: 12)" data-ph-en="Enter micro:bit ID (e.g. 12)" oninput="syncMicrobitId(this.value)">
+                    <div style="font-size: 11px; color: var(--text-sub); margin-bottom: 8px;" data-zh="將發射端 micro:bit 直插電腦 USB" data-en="Plug transmitter micro:bit into USB">將發射端 micro:bit 直插電腦 USB</div>
                 </div>
                 <button class="step-btn" id="btn-mode2-serial" onclick="connectSerial()" data-zh="連接 Tx micro:bit" data-en="Connect Tx micro:bit">連接 Tx micro:bit</button>
             </div>
@@ -751,21 +826,21 @@
                         <span class="step-title" data-zh="📷 步驟 2：載入 GTM 模型" data-en="📷 Step 2: Load GTM Model">📷 步驟 2：載入 GTM 模型</span>
                         <span class="step-tag" id="tag-mode2-model" data-zh="未載入 ⚪" data-en="Unloaded ⚪">未載入 ⚪</span>
                     </div>
-                    <input type="text" id="modelUrl-mode2" placeholder="貼上 Teachable Machine 模型連結" data-ph-zh="貼上 Teachable Machine 模型連結" data-ph-en="Paste Teachable Machine model URL" style="background:#f8fafc; border:1px solid var(--border-ui); color:var(--text-main); width:100%; padding:8px; font-size:11px; border-radius:6px; margin-bottom: 8px;">
+                    <input type="text" id="modelUrl-mode2" placeholder="貼上 Teachable Machine 模型連結" data-ph-zh="貼上 Teachable Machine 模型連結" data-ph-en="Paste Teachable Machine model URL" style="background:#080d1a; border:1px solid var(--border-ui); color:var(--text-main); width:100%; padding:8px; font-size:11px; border-radius:6px; margin-bottom: 8px; outline:none;">
                 </div>
                 <button class="step-btn" id="btn-mode2-model" onclick="initAI(2)" data-zh="啟動 GTM 模型與鏡頭" data-en="Start GTM Model & Cam">啟動 GTM 模型與鏡頭</button>
             </div>
             <div class="step-card" id="card-mode2-step3">
                 <div>
                     <div class="step-header">
-                        <span class="step-title" data-zh="🚦 步驟 3：開始競技與重開" data-en="🚦 Step 3: Controls & Restart">🚦 步驟 3：開始競技與重開</span>
+                        <span class="step-title" data-zh="🚦 步驟 3：開始競技" data-en="🚦 Step 3: Controls">🚦 步驟 3：開始競技</span>
                         <span class="step-tag" id="tag-mode2-game" data-zh="待解鎖 🔒" data-en="Locked 🔒">待解鎖 🔒</span>
                     </div>
                     <div style="font-size: 11px; color: var(--text-sub); margin-bottom: 8px;" id="desc-mode2-step3" data-zh="綠燈出招前進，紅燈違者罰定身 3 秒！" data-en="Match on Green! Freeze on Red (3s penalty)!">綠燈出招前進，紅燈違者罰定身 3 秒！</div>
                 </div>
                 <div class="btn-ctrl-group">
-                    <button class="btn-launch" id="btn-launch-mode2" onclick="startTrafficGameMode2()" disabled data-zh="開始 🚦" data-en="Start 🚦">開始 🚦</button>
-                    <button class="btn-stop" id="btn-stop-mode2" onclick="stopTrafficGameMode2()" disabled data-zh="停止 🛑" data-en="Stop 🛑">停止 🛑</button>
+                    <button class="btn-launch" id="btn-launch-mode2" onclick="togglePlayPause(2)" disabled data-zh="開始 🚦" data-en="Start 🚦">開始 🚦</button>
+                    <button class="btn-stop" id="btn-stop-mode2" onclick="pauseGame(2)" disabled data-zh="暫停 ⏸" data-en="Pause ⏸">暫停 ⏸</button>
                     <button class="btn-restart" id="btn-restart-2" onclick="restartTrafficGameMode2()" disabled data-zh="重開 🔄" data-en="Restart 🔄">重開 🔄</button>
                 </div>
             </div>
@@ -776,7 +851,7 @@
                 <div class="freeze-overlay" id="freeze-penalty-overlay-m2">
                     <div class="freeze-title" data-zh="🚨 違規！急煞失敗罰凍結" data-en="🚨 VIOLATION! FREEZE PENALTY">🚨 違規！急煞失敗罰凍結</div>
                     <div class="freeze-timer-count" id="freeze-seconds-left-m2">3</div>
-                    <div style="font-size:14px; font-weight:bold; margin-top:8px;" data-zh="🚫 扣除 2 分，全畫面鎖定中..." data-en="🚫 -2 Points, Screen Locked...">🚫 扣除 2 分，全畫面鎖定中...</div>
+                    <div style="font-size:13px; font-weight:bold; margin-top:8px;" data-zh="🚫 扣除 2 分，全畫面鎖定中..." data-en="🚫 -2 Points, Screen Locked...">🚫 扣除 2 分，全畫面鎖定中...</div>
                 </div>
 
                 <div class="traffic-hud-bar">
@@ -784,7 +859,7 @@
                         <div class="bulb-circle red" id="m2-bulb-red"></div>
                         <div class="bulb-circle green active" id="m2-bulb-green"></div>
                     </div>
-                    <div style="font-size: 18px; font-weight: 900;" id="m2-traffic-status-text" data-zh="🟢 綠燈：出招前進！" data-en="🟢 GREEN: MATCH GESTURE!">🟢 綠燈：出招前進！</div>
+                    <div style="font-size: 16px; font-weight: 900;" id="m2-traffic-status-text" data-zh="🟢 綠燈：出招前進！" data-en="🟢 GREEN: MATCH GESTURE!">🟢 綠燈：出招前進！</div>
                     <div class="score-pill"><span data-zh="攀爬得分：" data-en="Score: ">攀爬得分：</span><span id="score-counter-mode2">0</span></div>
                 </div>
 
@@ -803,10 +878,10 @@
             </div>
 
             <div class="tower-card">
-                <div style="font-size: 26px;">🏆</div>
-                <div style="font-size: 10px; color: var(--text-sub); font-weight: bold;">FINISH</div>
+                <div style="font-size: 24px;">🏆</div>
+                <div style="font-size: 10px; color: var(--text-sub); font-weight: bold; margin-top:2px;">FINISH</div>
                 <div class="rope-shaft"><div class="robot-indicator" id="robot-indicator-mode2">🤖</div></div>
-                <div style="font-size: 10px; color: var(--text-sub); font-weight: bold;">START</div>
+                <div style="font-size: 10px; color: var(--text-sub); font-weight: bold; margin-bottom:2px;">START</div>
                 <div style="font-size: 20px;">🚩</div>
             </div>
         </div>
@@ -820,10 +895,10 @@
             <div class="step-card" id="card-mp-step1">
                 <div>
                     <div class="step-header">
-                        <span class="step-title" data-zh="🔌 步驟 1：輸入編號與連接" data-en="🔌 Step 1: Set ID & Connect">🔌 步驟 1：輸入編號與連接</span>
-                        <span class="step-tag" id="tag-mp-serial" data-zh="未完成 ⚪" data-en="Incomplete ⚪">未完成 ⚪</span>
+                        <span class="step-title" data-zh="🔌 步驟 1：連接硬件" data-en="🔌 Step 1: Connect Hardware">🔌 步驟 1：連接硬件</span>
+                        <span class="step-tag" id="tag-mp-serial" data-zh="未連接 ⚪" data-en="Disconnected ⚪">未連接 ⚪</span>
                     </div>
-                    <input type="number" class="id-input-field" id="mb-input-3" placeholder="輸入 micro:bit 編號 (例: 12)" data-ph-zh="輸入 micro:bit 編號 (例: 12)" data-ph-en="Enter micro:bit ID (e.g. 12)" oninput="syncMicrobitId(this.value)">
+                    <div style="font-size: 11px; color: var(--text-sub); margin-bottom: 8px;" data-zh="將發射端 micro:bit 直插電腦 USB" data-en="Plug transmitter micro:bit into USB">將發射端 micro:bit 直插電腦 USB</div>
                 </div>
                 <button class="step-btn" id="btn-mp-serial" onclick="connectSerial()" data-zh="連接 Tx micro:bit" data-en="Connect Tx micro:bit">連接 Tx micro:bit</button>
             </div>
@@ -850,8 +925,8 @@
                         <button class="sample-btn" id="btn-sample-Class 5" onmousedown="startSampling('Class 5')" onmouseup="stopSampling()">
                             <span data-zh="🫱 待機" data-en="🫱 Idle">🫱 待機</span><span class="sample-count" id="cnt-Class 5">0 幀</span>
                         </button>
-                        <button class="sample-btn" style="background:#fee2e2; border-color:#fca5a5; color:#991b1b;" onclick="clearDataset()">
-                            <span data-zh="🗑️ 重置" data-en="🗑 Reset">🗑️ 重置</span><span style="font-size:9px; color:#b91c1c;" data-zh="清空" data-en="Clear">清空</span>
+                        <button class="sample-btn" style="background:#260c10; border-color:#7f1d1d; color:#f87171;" onclick="clearDataset()">
+                            <span data-zh="🗑️ 重置" data-en="🗑 Reset">🗑️ 重置</span><span style="font-size:9px;" data-zh="清空" data-en="Clear">清空</span>
                         </button>
                     </div>
                 </div>
@@ -861,14 +936,14 @@
             <div class="step-card" id="card-mp-step3">
                 <div>
                     <div class="step-header">
-                        <span class="step-title" data-zh="🚀 步驟 3：開始競技與重開" data-en="🚀 Step 3: Controls & Restart">🚀 步驟 3：開始競技與重開</span>
+                        <span class="step-title" data-zh="🚀 步驟 3：開始競技" data-en="🚀 Step 3: Controls">🚀 步驟 3：開始競技</span>
                         <span class="step-tag" id="tag-mp-launch" data-zh="待解鎖 🔒" data-en="Locked 🔒">待解鎖 🔒</span>
                     </div>
-                    <div style="font-size: 11px; color: var(--text-sub); margin-bottom: 8px;" id="desc-mp-step3" data-zh="需填寫編號、連線並每款錄製 ≥8 幀" data-en="Requires ID, Serial, and ≥8 frames/class">需填寫編號、連線並每款錄製 ≥8 幀</div>
+                    <div style="font-size: 11px; color: var(--text-sub); margin-bottom: 8px;" id="desc-mp-step3" data-zh="需先填寫學號、連線並每款錄製 ≥8 幀" data-en="Requires ID, Serial, and ≥8 frames/class">需先填寫學號、連線並每款錄製 ≥8 幀</div>
                 </div>
                 <div class="btn-ctrl-group">
-                    <button class="btn-launch" id="btn-launch-mp" onclick="startMPGame()" disabled data-zh="開始 ✋" data-en="Start ✋">開始 ✋</button>
-                    <button class="btn-stop" id="btn-stop-mp" onclick="stopMPGame()" disabled data-zh="停止 🛑" data-en="Stop 🛑">停止 🛑</button>
+                    <button class="btn-launch" id="btn-launch-mp" onclick="togglePlayPause(3)" disabled data-zh="開始 ✋" data-en="Start ✋">開始 ✋</button>
+                    <button class="btn-stop" id="btn-stop-mp" onclick="pauseGame(3)" disabled data-zh="暫停 ⏸" data-en="Pause ⏸">暫停 ⏸</button>
                     <button class="btn-restart" id="btn-restart-3" onclick="restartMPGame()" disabled data-zh="重開 🔄" data-en="Restart 🔄">重開 🔄</button>
                 </div>
             </div>
@@ -894,10 +969,10 @@
                 </div>
             </div>
             <div class="tower-card">
-                <div style="font-size: 26px;">🏆</div>
-                <div style="font-size: 10px; color: var(--text-sub); font-weight: bold;">FINISH</div>
+                <div style="font-size: 24px;">🏆</div>
+                <div style="font-size: 10px; color: var(--text-sub); font-weight: bold; margin-top:2px;">FINISH</div>
                 <div class="rope-shaft"><div class="robot-indicator" id="robot-indicator-mp">🤖</div></div>
-                <div style="font-size: 10px; color: var(--text-sub); font-weight: bold;">START</div>
+                <div style="font-size: 10px; color: var(--text-sub); font-weight: bold; margin-bottom:2px;">START</div>
                 <div style="font-size: 20px;">🚩</div>
             </div>
         </div>
@@ -931,7 +1006,7 @@
     </div>
     <div class="chat-footer">
         <input type="text" class="chat-input" id="chat-input" placeholder="輸入你想講嘅嘢..." data-ph-zh="輸入你想講嘅嘢..." data-ph-en="Type your response..." onkeydown="if(event.key==='Enter') sendChatMessage()">
-        <button class="step-btn" style="width:auto; padding:6px 14px; background:var(--game-blue);" onclick="sendChatMessage()" data-zh="送出" data-en="Send">送出</button>
+        <button class="step-btn" style="width:auto; padding:6px 14px; background:#0284c7; border:none;" onclick="sendChatMessage()" data-zh="送出" data-en="Send">送出</button>
     </div>
 </div>
 
@@ -955,12 +1030,13 @@
 
     async function autoExportToGoogleSheet(modeName, finalScore, durationSeconds) {
         if (!sharedMicrobitId) {
-            console.warn("⚠️ 未設定 micro:bit 編號，取消上傳。");
+            console.warn("⚠️️ 未設定學號/micro:bit 編號，取消上傳。");
             return;
         }
 
         const payload = {
             sheetId: SPREADSHEET_ID,
+            groupId: document.getElementById("group-id-input").value.trim() || "Unassigned",
             microbitId: sharedMicrobitId,
             condition: document.getElementById("conditionType").value,
             mode: modeName,
@@ -981,6 +1057,22 @@
         } catch(e) {
             console.error("上傳失敗:", e);
         }
+    }
+
+    function manualExportCurrentScore() {
+        if (!sharedMicrobitId) {
+            alert(currentLang === 'zh' ? "請先在頂部輸入學號/編號！" : "Please enter your ID first!");
+            return;
+        }
+        let scoreToSubmit = 0;
+        let modeLabel = "Mode 1 (GTM)";
+        if (currentSystemMode === 1) scoreToSubmit = score1;
+        else if (currentSystemMode === 2) { scoreToSubmit = mode2Score; modeLabel = "Mode 2 (1-2-3 Freeze)"; }
+        else if (currentSystemMode === 3) { scoreToSubmit = mpScore; modeLabel = "Mode 3 (MediaPipe)"; }
+
+        const dur = modeStartTime ? Math.round((performance.now() - modeStartTime) / 1000) : 0;
+        autoExportToGoogleSheet(modeLabel, scoreToSubmit, dur);
+        alert(currentLang === 'zh' ? `✔ 成績 (${scoreToSubmit} 分) 已成功提交至 Google Drive 試算表！` : `✔ Current Score (${scoreToSubmit}) submitted to Drive!`);
     }
 
     // =========================================================================
@@ -1008,10 +1100,6 @@
     // =========================================================================
     function syncMicrobitId(val) {
         sharedMicrobitId = String(val).trim();
-        document.getElementById("mb-input-1").value = sharedMicrobitId;
-        document.getElementById("mb-input-2").value = sharedMicrobitId;
-        document.getElementById("mb-input-3").value = sharedMicrobitId;
-        document.getElementById("shared-mb-id-display").innerText = sharedMicrobitId ? ("No. " + sharedMicrobitId) : (currentLang === 'zh' ? "未填寫" : "Unset");
         checkCanUnlockStep3();
         checkCanUnlockMode2Step3();
         checkCanUnlockMPStep3();
@@ -1085,9 +1173,9 @@
 
             step1Ready = true;
             ["card-step1", "card-mode2-step1", "card-mp-step1"].forEach(id => document.getElementById(id).classList.add("done"));
-            ["tag-step1", "tag-mode2-serial", "tag-mp-serial"].forEach(id => document.getElementById(id).innerText = currentLang === 'zh' ? "已連線 🟢" : "Ready 🟢");
+            ["tag-step1", "tag-mode2-serial", "tag-mp-serial"].forEach(id => document.getElementById(id).innerText = currentLang === 'zh' ? "已連接 🟢" : "Ready 🟢");
             ["btn-step1", "btn-mode2-serial", "btn-mp-serial"].forEach(id => {
-                document.getElementById(id).innerText = currentLang === 'zh' ? "✔ 連線成功" : "✔ Connected";
+                document.getElementById(id).innerText = currentLang === 'zh' ? "✔ 連接成功" : "✔ Connected";
                 document.getElementById(id).classList.add("ready-btn");
             });
             checkCanUnlockStep3();
@@ -1117,20 +1205,28 @@
     const ACTIVE_TARGETS = ["Class 1", "Class 2", "Class 3", "Class 4"];
     const TIME_LIMIT_MS = 3000;
 
-    // 模式一變數
+    // 模式一變數 (支援「暫停/繼續」)
     let step2Ready = false, model1 = null, webcam1 = null, maxPredictions1 = 0;
     let convSubModel = null, headLayers = [], displayCanvas1, displayCtx1, offCanvas, offCtx;
     let gradCamThrottle = 0, cachedHeatmapCanvas = null;
-    let actionQueue1 = [], isRunning1 = false, isLocked1 = false, score1 = 0, combo1 = 0, roundStart1 = 0;
+    let actionQueue1 = [], isRunning1 = false, isPaused1 = false, isLocked1 = false;
+    let score1 = 0, combo1 = 0, timerRemaining1 = TIME_LIMIT_MS;
     let timerLoop1 = null;
 
-    // 模式二變數（一二三木頭人）
+    // 模式二變數 (支援「暫停/繼續」)
     let step2ReadyM2 = false, model2 = null, webcam2 = null, maxPredictions2 = 0;
     let displayCanvas2, displayCtx2;
-    let isMode2Running = false, isMode2Locked = false, mode2Score = 0;
+    let isMode2Running = false, isMode2Paused = false, isMode2Locked = false, mode2Score = 0;
     let mode2ActionQueue = [], mode2TimerLoop = null, trafficCycleTimerM2 = null;
     let trafficLightColorM2 = "GREEN";
     let freezeTimerM2 = null, freezeRemainingM2 = 3;
+    let mode2RemainingTimerMs = TIME_LIMIT_MS;
+
+    // 模式三變數 (支援「暫停/繼續」)
+    let handsMP = null, cameraMP = null, videoElementMP, canvasElementMP, canvasCtxMP;
+    let currentLandmarks = null, dataset = [], isSampling = false, samplingTarget = null, sampleInterval = null;
+    let step2MPReady = false, isMPRunning = false, isMPPaused = false, isMPLocked = false;
+    let mpScore = 0, mpActionQueue = [], mpTimerLoop = null, mpRemainingTimerMs = TIME_LIMIT_MS;
 
     async function initAI(modeNum) {
         const inputId = modeNum === 1 ? "modelUrl" : "modelUrl-mode2";
@@ -1143,7 +1239,7 @@
         }
 
         if (!url) {
-            alert(currentLang === 'zh' ? "請先填寫 Teachable Machine 模型連結！" : "Please paste your Teachable Machine model URL!");
+            alert(currentLang === 'zh' ? "請先貼上 Teachable Machine 模型連結！" : "Please paste your Teachable Machine model URL!");
             return;
         }
         if (url.endsWith("model.json")) url = url.replace("model.json", "");
@@ -1228,7 +1324,7 @@
     }
 
     // =========================================================================
-    // 7. 模式一：開始、停止、重開與競技循環
+    // 7. 模式一：開始 / 暫停（可繼續）/ 重開控制
     // =========================================================================
     function setupGradCAMComponents(tmLayersModel) {
         if (!tmLayersModel) return;
@@ -1292,6 +1388,168 @@
             launchBtn.classList.add("unlocked");
             document.getElementById("btn-restart-1").disabled = false;
         }
+    }
+
+    function togglePlayPause(modeNum) {
+        if (modeNum === 1) {
+            if (!isRunning1) {
+                // 從暫停恢復 或 全新開始
+                isRunning1 = true;
+                isPaused1 = false;
+                if (!modeStartTime) modeStartTime = performance.now();
+
+                const launchBtn = document.getElementById("btn-launch");
+                launchBtn.disabled = true;
+                launchBtn.classList.remove("is-resume");
+                launchBtn.innerText = currentLang === 'zh' ? "進行中 🚀" : "Running 🚀";
+
+                const stopBtn = document.getElementById("btn-stop");
+                stopBtn.disabled = false;
+                stopBtn.innerText = currentLang === 'zh' ? "暫停 ⏸" : "Pause ⏸";
+
+                if (actionQueue1.length === 0) {
+                    for (let i = 0; i < 5; i++) actionQueue1.push(ACTIVE_TARGETS[Math.floor(Math.random() * ACTIVE_TARGETS.length)]);
+                    renderQueue1();
+                    timerRemaining1 = TIME_LIMIT_MS;
+                }
+                resumeTimer1();
+            }
+        } else if (modeNum === 2) {
+            if (!isMode2Running) {
+                isMode2Running = true;
+                isMode2Paused = false;
+                if (!modeStartTime) modeStartTime = performance.now();
+
+                const launchBtn = document.getElementById("btn-launch-mode2");
+                launchBtn.disabled = true;
+                launchBtn.classList.remove("is-resume");
+                launchBtn.innerText = currentLang === 'zh' ? "進行中 🚦" : "Running 🚦";
+
+                const stopBtn = document.getElementById("btn-stop-mode2");
+                stopBtn.disabled = false;
+                stopBtn.innerText = currentLang === 'zh' ? "暫停 ⏸" : "Pause ⏸";
+
+                if (mode2ActionQueue.length === 0) {
+                    for (let i = 0; i < 5; i++) mode2ActionQueue.push(ACTIVE_TARGETS[Math.floor(Math.random() * ACTIVE_TARGETS.length)]);
+                    renderMode2Queue();
+                    mode2RemainingTimerMs = TIME_LIMIT_MS;
+                }
+                resumeMode2Timer();
+                runTrafficLightLoopM2();
+            }
+        } else if (modeNum === 3) {
+            if (!isMPRunning) {
+                isMPRunning = true;
+                isMPPaused = false;
+                if (!modeStartTime) modeStartTime = performance.now();
+
+                const launchBtn = document.getElementById("btn-launch-mp");
+                launchBtn.disabled = true;
+                launchBtn.classList.remove("is-resume");
+                launchBtn.innerText = currentLang === 'zh' ? "進行中 ✋" : "Running ✋";
+
+                const stopBtn = document.getElementById("btn-stop-mp");
+                stopBtn.disabled = false;
+                stopBtn.innerText = currentLang === 'zh' ? "暫停 ⏸" : "Pause ⏸";
+
+                if (mpActionQueue.length === 0) {
+                    for (let i = 0; i < 5; i++) mpActionQueue.push(ACTIVE_TARGETS[Math.floor(Math.random() * ACTIVE_TARGETS.length)]);
+                    renderMPQueue();
+                    mpRemainingTimerMs = TIME_LIMIT_MS;
+                }
+                resumeMPTimer();
+            }
+        }
+    }
+
+    // 暫停核心邏輯：保留所有分數、題目、秒數，隨時可按「繼續」接關
+    function pauseGame(modeNum) {
+        if (modeNum === 1 && isRunning1) {
+            isRunning1 = false;
+            isPaused1 = true;
+            clearInterval(timerLoop1);
+
+            const launchBtn = document.getElementById("btn-launch");
+            launchBtn.disabled = false;
+            launchBtn.classList.add("unlocked", "is-resume");
+            launchBtn.innerText = currentLang === 'zh' ? "繼續 ▶" : "Continue ▶";
+
+            const stopBtn = document.getElementById("btn-stop");
+            stopBtn.disabled = true;
+            stopBtn.innerText = currentLang === 'zh' ? "已暫停 ⏸" : "Paused ⏸";
+        } else if (modeNum === 2 && isMode2Running) {
+            isMode2Running = false;
+            isMode2Paused = true;
+            clearInterval(mode2TimerLoop);
+            clearTimeout(trafficCycleTimerM2);
+
+            const launchBtn = document.getElementById("btn-launch-mode2");
+            launchBtn.disabled = false;
+            launchBtn.classList.add("unlocked", "is-resume");
+            launchBtn.innerText = currentLang === 'zh' ? "繼續 ▶" : "Continue ▶";
+
+            const stopBtn = document.getElementById("btn-stop-mode2");
+            stopBtn.disabled = true;
+            stopBtn.innerText = currentLang === 'zh' ? "已暫停 ⏸" : "Paused ⏸";
+        } else if (modeNum === 3 && isMPRunning) {
+            isMPRunning = false;
+            isMPPaused = true;
+            clearInterval(mpTimerLoop);
+
+            const launchBtn = document.getElementById("btn-launch-mp");
+            launchBtn.disabled = false;
+            launchBtn.classList.add("unlocked", "is-resume");
+            launchBtn.innerText = currentLang === 'zh' ? "繼續 ▶" : "Continue ▶";
+
+            const stopBtn = document.getElementById("btn-stop-mp");
+            stopBtn.disabled = true;
+            stopBtn.innerText = currentLang === 'zh' ? "已暫停 ⏸" : "Paused ⏸";
+        }
+    }
+
+    function restartGame(modeNum) {
+        if (modeNum === 1) {
+            clearInterval(timerLoop1);
+            isRunning1 = false;
+            isPaused1 = false;
+            score1 = 0;
+            combo1 = 0;
+            isLocked1 = false;
+            actionQueue1 = [];
+            timerRemaining1 = TIME_LIMIT_MS;
+            updateHUD1();
+            togglePlayPause(1);
+        }
+    }
+
+    function renderQueue1() {
+        const ribbon = document.getElementById("queue-ribbon");
+        ribbon.innerHTML = "";
+        actionQueue1.forEach((clsKey, index) => {
+            const g = GESTURES[clsKey];
+            const card = document.createElement("div");
+            card.className = "action-card " + (index === 0 ? "active-target" : "upcoming");
+            card.innerHTML = `<div class="symbol">${g.symbol}</div><div class="c-name">${g.name}</div>`;
+            ribbon.appendChild(card);
+        });
+    }
+
+    function resumeTimer1() {
+        clearInterval(timerLoop1);
+        const startedAt = performance.now();
+        const initialRemaining = timerRemaining1;
+        const bar = document.getElementById("timer-bar");
+
+        timerLoop1 = setInterval(() => {
+            const elapsed = performance.now() - startedAt;
+            timerRemaining1 = Math.max(0, initialRemaining - elapsed);
+            bar.style.width = (timerRemaining1 / TIME_LIMIT_MS) * 100 + "%";
+
+            if (timerRemaining1 <= 0) {
+                clearInterval(timerLoop1);
+                handleTimeout1();
+            }
+        }, 30);
     }
 
     async function predictLoop1() {
@@ -1370,79 +1628,14 @@
         }
     }
 
-    function startGame(modeNum) {
-        if (modeNum === 1) {
-            isRunning1 = true; isLocked1 = false; score1 = 0; combo1 = 0; eventLogs = [];
-            modeStartTime = performance.now();
-            updateHUD1();
-            
-            document.getElementById("btn-launch").disabled = true;
-            document.getElementById("btn-stop").disabled = false;
-            document.getElementById("btn-restart-1").disabled = false;
-
-            actionQueue1 = [];
-            for (let i = 0; i < 5; i++) actionQueue1.push(ACTIVE_TARGETS[Math.floor(Math.random() * ACTIVE_TARGETS.length)]);
-            renderQueue1();
-            startTimer1();
-        }
-    }
-
-    function stopGame(modeNum) {
-        if (modeNum === 1 && isRunning1) {
-            isRunning1 = false;
-            clearInterval(timerLoop1);
-            const duration = Math.round((performance.now() - modeStartTime) / 1000);
-            document.getElementById("btn-launch").disabled = false;
-            document.getElementById("btn-stop").disabled = true;
-            autoExportToGoogleSheet("Mode 1 (GTM)", score1, duration);
-            alert((currentLang === 'zh' ? `🛑 競技已停止！遊玩時長: ${duration}秒，得分: ${score1}` : `🛑 Arena Stopped! Time: ${duration}s, Score: ${score1}`));
-        }
-    }
-
-    function restartGame(modeNum) {
-        if (modeNum === 1) {
-            clearInterval(timerLoop1);
-            isRunning1 = false;
-            score1 = 0;
-            combo1 = 0;
-            isLocked1 = false;
-            updateHUD1();
-            startGame(1);
-        }
-    }
-
-    function renderQueue1() {
-        const ribbon = document.getElementById("queue-ribbon");
-        ribbon.innerHTML = "";
-        actionQueue1.forEach((clsKey, index) => {
-            const g = GESTURES[clsKey];
-            const card = document.createElement("div");
-            card.className = "action-card " + (index === 0 ? "active-target" : "upcoming");
-            card.innerHTML = `<div class="symbol">${g.symbol}</div><div class="c-name">${g.name}</div>`;
-            ribbon.appendChild(card);
-        });
-    }
-
-    function startTimer1() {
-        clearInterval(timerLoop1);
-        roundStart1 = performance.now();
-        const bar = document.getElementById("timer-bar");
-        timerLoop1 = setInterval(() => {
-            const elapsed = performance.now() - roundStart1;
-            const remaining = Math.max(0, TIME_LIMIT_MS - elapsed);
-            bar.style.width = (remaining / TIME_LIMIT_MS) * 100 + "%";
-            if (remaining <= 0) { clearInterval(timerLoop1); handleTimeout1(); }
-        }, 30);
-    }
-
     async function handleSuccess1(matchedCls) {
         isLocked1 = true; clearInterval(timerLoop1);
         score1++; combo1++;
         if (combo1 >= 3) {
             if (typeof confetti === "function") confetti({ particleCount: 25, spread: 60, origin: { y: 0.6 } });
-            popSplash("🔥 " + combo1 + "x COMBO!", "var(--game-amber)", "splash-text");
+            popSplash("🔥 " + combo1 + "x COMBO!", "var(--accent-yellow)", "splash-text");
         } else {
-            popSplash("PERFECT! ⚡", "var(--game-green)", "splash-text");
+            popSplash("PERFECT! ⚡", "var(--accent-green)", "splash-text");
         }
         updateHUD1();
         sendRobotCommand("1");
@@ -1455,21 +1648,31 @@
             isRunning1 = false;
             const duration = Math.round((performance.now() - modeStartTime) / 1000);
             document.getElementById("btn-launch").disabled = false;
+            document.getElementById("btn-launch").innerText = currentLang === 'zh' ? "再次開始 🚀" : "Play Again 🚀";
             document.getElementById("btn-stop").disabled = true;
             autoExportToGoogleSheet("Mode 1 (GTM)", score1, duration);
-            alert(currentLang === 'zh' ? `🎉 恭喜完成！總耗時: ${duration}秒，成績已同步 Google Sheet！` : `🎉 Congratulations! Finished in ${duration}s! Data saved.`);
+            alert(currentLang === 'zh' ? `🎉 恭喜登頂完成！總耗時: ${duration}秒，成績已同步 Google Sheet！` : `🎉 Congratulations! Finished in ${duration}s! Data saved.`);
         } else {
-            setTimeout(() => { isLocked1 = false; if (isRunning1) startTimer1(); }, 800);
+            setTimeout(() => {
+                isLocked1 = false;
+                if (isRunning1) {
+                    timerRemaining1 = TIME_LIMIT_MS;
+                    resumeTimer1();
+                }
+            }, 750);
         }
     }
 
     function handleTimeout1() {
-        combo1 = 0; popSplash("MISS! ✖", "var(--game-pink)", "splash-text");
+        combo1 = 0; popSplash("MISS! ✖", "var(--accent-pink)", "splash-text");
         updateHUD1();
         actionQueue1.shift();
         actionQueue1.push(ACTIVE_TARGETS[Math.floor(Math.random() * ACTIVE_TARGETS.length)]);
         renderQueue1();
-        if (isRunning1) startTimer1();
+        if (isRunning1) {
+            timerRemaining1 = TIME_LIMIT_MS;
+            resumeTimer1();
+        }
     }
 
     function updateHUD1() {
@@ -1485,7 +1688,7 @@
     }
 
     // =========================================================================
-    // 8. 模式二：一二三木頭人：AI 爬繩賽 (開始、停止、重開控制)
+    // 8. 模式二：一二三木頭人：AI 爬繩賽 (開始 / 暫停可繼續 / 重開)
     // =========================================================================
     function checkCanUnlockMode2Step3() {
         if (step1Ready && step2ReadyM2 && sharedMicrobitId) {
@@ -1498,48 +1701,20 @@
         }
     }
 
-    function startTrafficGameMode2() {
-        isMode2Running = true; isMode2Locked = false; mode2Score = 0;
-        modeStartTime = performance.now();
-        document.getElementById("score-counter-mode2").innerText = mode2Score;
-        document.getElementById("robot-indicator-mode2").style.bottom = "0%";
-        
-        document.getElementById("btn-launch-mode2").disabled = true;
-        document.getElementById("btn-stop-mode2").disabled = false;
-        document.getElementById("btn-restart-2").disabled = false;
-
-        mode2ActionQueue = [];
-        for (let i = 0; i < 5; i++) mode2ActionQueue.push(ACTIVE_TARGETS[Math.floor(Math.random() * ACTIVE_TARGETS.length)]);
-        renderMode2Queue();
-        startMode2Timer();
-        runTrafficLightLoopM2();
-    }
-
-    function stopTrafficGameMode2() {
-        if (isMode2Running) {
-            isMode2Running = false;
-            clearInterval(mode2TimerLoop);
-            clearTimeout(trafficCycleTimerM2);
-            clearInterval(freezeTimerM2);
-            document.getElementById("freeze-penalty-overlay-m2").style.display = "none";
-
-            const duration = Math.round((performance.now() - modeStartTime) / 1000);
-            document.getElementById("btn-launch-mode2").disabled = false;
-            document.getElementById("btn-stop-mode2").disabled = true;
-            autoExportToGoogleSheet("Mode 2 (一二三木頭人：AI 爬繩賽)", mode2Score, duration);
-            alert((currentLang === 'zh' ? `🛑 木頭人競賽已結束！遊玩時長: ${duration}秒，最終得分: ${mode2Score}` : `🛑 Arena Stopped! Time: ${duration}s, Score: ${mode2Score}`));
-        }
-    }
-
     function restartTrafficGameMode2() {
         clearInterval(mode2TimerLoop);
         clearTimeout(trafficCycleTimerM2);
         clearInterval(freezeTimerM2);
         document.getElementById("freeze-penalty-overlay-m2").style.display = "none";
         isMode2Running = false;
+        isMode2Paused = false;
         mode2Score = 0;
         isMode2Locked = false;
-        startTrafficGameMode2();
+        mode2ActionQueue = [];
+        mode2RemainingTimerMs = TIME_LIMIT_MS;
+        document.getElementById("score-counter-mode2").innerText = "0";
+        document.getElementById("robot-indicator-mode2").style.bottom = "0%";
+        togglePlayPause(2);
     }
 
     function renderMode2Queue() {
@@ -1554,21 +1729,27 @@
         });
     }
 
-    function startMode2Timer() {
+    function resumeMode2Timer() {
         clearInterval(mode2TimerLoop);
-        const start = performance.now();
+        const startedAt = performance.now();
+        const initialRem = mode2RemainingTimerMs;
         const bar = document.getElementById("timer-bar-mode2");
+
         mode2TimerLoop = setInterval(() => {
             if (isMode2Locked) return;
-            const elapsed = performance.now() - start;
-            const remaining = Math.max(0, TIME_LIMIT_MS - elapsed);
-            bar.style.width = (remaining / TIME_LIMIT_MS) * 100 + "%";
-            if (remaining <= 0) {
+            const elapsed = performance.now() - startedAt;
+            mode2RemainingTimerMs = Math.max(0, initialRem - elapsed);
+            bar.style.width = (mode2RemainingTimerMs / TIME_LIMIT_MS) * 100 + "%";
+
+            if (mode2RemainingTimerMs <= 0) {
                 clearInterval(mode2TimerLoop);
                 mode2ActionQueue.shift();
                 mode2ActionQueue.push(ACTIVE_TARGETS[Math.floor(Math.random() * ACTIVE_TARGETS.length)]);
                 renderMode2Queue();
-                if (isMode2Running) startMode2Timer();
+                if (isMode2Running) {
+                    mode2RemainingTimerMs = TIME_LIMIT_MS;
+                    resumeMode2Timer();
+                }
             }
         }, 30);
     }
@@ -1641,7 +1822,7 @@
                 document.getElementById("score-counter-mode2").innerText = mode2Score;
                 document.getElementById("robot-indicator-mode2").style.bottom = Math.min(92, (mode2Score / 15) * 92) + "%";
                 sendRobotCommand("1");
-                popSplash("PERFECT! ⚡", "var(--game-green)", "splash-text-mode2");
+                popSplash("PERFECT! ⚡", "var(--accent-green)", "splash-text-mode2");
 
                 mode2ActionQueue.shift();
                 mode2ActionQueue.push(ACTIVE_TARGETS[Math.floor(Math.random() * ACTIVE_TARGETS.length)]);
@@ -1656,7 +1837,13 @@
                     autoExportToGoogleSheet("Mode 2 (一二三木頭人：AI 爬繩賽)", mode2Score, duration);
                     alert(currentLang === 'zh' ? `🎉 太厲害了！木頭人大挑戰耗時 ${duration}秒 成功通關！` : `🎉 Victory! Completed in ${duration}s!`);
                 } else {
-                    setTimeout(() => { isMode2Locked = false; if (isMode2Running) startMode2Timer(); }, 700);
+                    setTimeout(() => {
+                        isMode2Locked = false;
+                        if (isMode2Running) {
+                            mode2RemainingTimerMs = TIME_LIMIT_MS;
+                            resumeMode2Timer();
+                        }
+                    }, 700);
                 }
             }
         } else if (trafficLightColorM2 === "RED") {
@@ -1689,7 +1876,8 @@
                 overlay.style.display = "none";
                 isMode2Locked = false;
                 if (isMode2Running) {
-                    startMode2Timer();
+                    mode2RemainingTimerMs = TIME_LIMIT_MS;
+                    resumeMode2Timer();
                     runTrafficLightLoopM2();
                 }
             }
@@ -1697,12 +1885,8 @@
     }
 
     // =========================================================================
-    // 9. 模式三：MediaPipe 訓練艙 (開始、停止、重開控制)
+    // 9. 模式三：MediaPipe 訓練艙 (開始 / 暫停可繼續 / 重開)
     // =========================================================================
-    let handsMP = null, cameraMP = null, videoElementMP, canvasElementMP, canvasCtxMP;
-    let currentLandmarks = null, dataset = [], isSampling = false, samplingTarget = null, sampleInterval = null;
-    let step2MPReady = false, isMPRunning = false, isMPLocked = false, mpScore = 0, mpActionQueue = [], mpTimerLoop = null;
-
     async function initMediaPipe() {
         const btn = document.getElementById("btn-mp-start");
         btn.innerText = currentLang === 'zh' ? "載入 MediaPipe 引擎中..." : "Loading MediaPipe...";
@@ -1762,7 +1946,7 @@
             [0,1],[1,2],[2,3],[3,4],[0,5],[5,6],[6,7],[7,8],[5,9],[9,10],[10,11],[11,12],
             [9,13],[13,14],[14,15],[15,16],[13,17],[17,18],[18,19],[19,20],[0,17]
         ];
-        canvasCtxMP.strokeStyle = "#0284c7"; canvasCtxMP.lineWidth = 3;
+        canvasCtxMP.strokeStyle = "#00f0ff"; canvasCtxMP.lineWidth = 2.5;
         CONNECTIONS.forEach(([i, j]) => {
             canvasCtxMP.beginPath();
             canvasCtxMP.moveTo(landmarks[i].x * canvasElementMP.width, landmarks[i].y * canvasElementMP.height);
@@ -1865,40 +2049,17 @@
         }
     }
 
-    function startMPGame() {
-        isMPRunning = true; isMPLocked = false; mpScore = 0;
-        modeStartTime = performance.now();
-        document.getElementById("score-counter-mp").innerText = mpScore;
-        document.getElementById("robot-indicator-mp").style.bottom = "0%";
-        
-        document.getElementById("btn-launch-mp").disabled = true;
-        document.getElementById("btn-stop-mp").disabled = false;
-        document.getElementById("btn-restart-3").disabled = false;
-
-        mpActionQueue = [];
-        for (let i = 0; i < 5; i++) mpActionQueue.push(ACTIVE_TARGETS[Math.floor(Math.random() * ACTIVE_TARGETS.length)]);
-        renderMPQueue();
-        startMPTimer();
-    }
-
-    function stopMPGame() {
-        if (isMPRunning) {
-            isMPRunning = false;
-            clearInterval(mpTimerLoop);
-            const duration = Math.round((performance.now() - modeStartTime) / 1000);
-            document.getElementById("btn-launch-mp").disabled = false;
-            document.getElementById("btn-stop-mp").disabled = true;
-            autoExportToGoogleSheet("Mode 3 (MediaPipe)", mpScore, duration);
-            alert((currentLang === 'zh' ? `🛑 骨骼競技已停止！遊玩時長: ${duration}秒，最終得分: ${mpScore}` : `🛑 Arena Stopped! Time: ${duration}s, Score: ${mpScore}`));
-        }
-    }
-
     function restartMPGame() {
         clearInterval(mpTimerLoop);
         isMPRunning = false;
+        isMPPaused = false;
         mpScore = 0;
         isMPLocked = false;
-        startMPGame();
+        mpActionQueue = [];
+        mpRemainingTimerMs = TIME_LIMIT_MS;
+        document.getElementById("score-counter-mp").innerText = "0";
+        document.getElementById("robot-indicator-mp").style.bottom = "0%";
+        togglePlayPause(3);
     }
 
     function renderMPQueue() {
@@ -1913,20 +2074,26 @@
         });
     }
 
-    function startMPTimer() {
+    function resumeMPTimer() {
         clearInterval(mpTimerLoop);
-        const start = performance.now();
+        const startedAt = performance.now();
+        const initialRem = mpRemainingTimerMs;
         const bar = document.getElementById("timer-bar-mp");
+
         mpTimerLoop = setInterval(() => {
-            const elapsed = performance.now() - start;
-            const remaining = Math.max(0, TIME_LIMIT_MS - elapsed);
-            bar.style.width = (remaining / TIME_LIMIT_MS) * 100 + "%";
-            if (remaining <= 0) {
+            const elapsed = performance.now() - startedAt;
+            mpRemainingTimerMs = Math.max(0, initialRem - elapsed);
+            bar.style.width = (mpRemainingTimerMs / TIME_LIMIT_MS) * 100 + "%";
+
+            if (mpRemainingTimerMs <= 0) {
                 clearInterval(mpTimerLoop);
                 mpActionQueue.shift();
                 mpActionQueue.push(ACTIVE_TARGETS[Math.floor(Math.random() * ACTIVE_TARGETS.length)]);
                 renderMPQueue();
-                if (isMPRunning) startMPTimer();
+                if (isMPRunning) {
+                    mpRemainingTimerMs = TIME_LIMIT_MS;
+                    resumeMPTimer();
+                }
             }
         }, 30);
     }
@@ -1949,7 +2116,13 @@
             autoExportToGoogleSheet("Mode 3 (MediaPipe)", mpScore, duration);
             alert(currentLang === 'zh' ? `🎉 恭喜完成！總耗時: ${duration}秒，數據已自動儲存至 Google Sheet！` : `🎉 Mode 3 Finished! Time: ${duration}s.`);
         } else {
-            setTimeout(() => { isMPLocked = false; if (isMPRunning) startMPTimer(); }, 800);
+            setTimeout(() => {
+                isMPLocked = false;
+                if (isMPRunning) {
+                    mpRemainingTimerMs = TIME_LIMIT_MS;
+                    resumeMPTimer();
+                }
+            }, 800);
         }
     }
 
